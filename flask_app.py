@@ -31,6 +31,8 @@ app.secret_key = "tpCff4LR9ldTlZBUUmQO"
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+# --------------- USER CLASS
+
 # to create a new user:
 # > flask shell
 # > from flask_app import db, User
@@ -54,6 +56,7 @@ class User(UserMixin, db.Model):
     FAisOV = db.Column(db.Boolean, nullable=False)
     FAisADM = db.Column(db.Boolean, nullable=False)
     FAisAD = db.Column(db.Boolean, nullable=False)
+    FAisDCD = db.Column(db.Boolean, nullable=False)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
@@ -65,6 +68,51 @@ class User(UserMixin, db.Model):
 def load_user(user_id):
     return User.query.filter_by(username=user_id).first()
 
+# --------------- CAT CLASS
+
+class Cat(db.Model):
+
+    __tablename__ = "cats"
+
+    id = db.Column(db.Integer, primary_key=True)
+    owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    nextowner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    name = db.Column(db.String(32))
+    color = db.Column(db.Integer)
+    longhair = db.Column(db.Integer)
+    registre = db.Column(db.String(8))
+    identif = db.Column(db.String(16))
+    description = db.Column(db.String(1024))
+    vetshort = db.Column(db.Integer)
+
+# --------------- VETINFO CLASS
+
+class VetInfo(db.Model):
+
+    __tablename__ = "vetinfo"
+
+    id = db.Column(db.Integer, primary_key=True)
+    cat_id = db.Column(db.Integer, db.ForeignKey('cats.id'), nullable=False)
+    vtype = db.Column(db.Integer)
+    vdate = db.Column(db.DateTime, default=datetime.now)
+    planned = db.Column(db.Boolean)
+    requested = db.Column(db.Boolean)
+    validated = db.Column(db.Boolean)
+    comments = db.Column(db.String(1024))
+
+# --------------- EVENT CLASS
+
+class Event(db.Model):
+
+    __tablename__ = "events"
+
+    id = db.Column(db.Integer, primary_key=True)
+    cat_id = db.Column(db.Integer, db.ForeignKey('cats.id'), nullable=False)
+    edate = db.Column(db.DateTime, default=datetime.now)
+    etext = db.Column(db.String(1024))
+
+
+
 class Comment(db.Model):
 
     __tablename__ = "comments"
@@ -75,19 +123,75 @@ class Comment(db.Model):
     commenter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     commenter = db.relationship('User', foreign_keys=commenter_id)
 
+
+# --------------- WEB PAGES
+
 @app.route('/', methods=["GET", "POST"])
 def index():
-    if request.method == "GET":
-        return render_template("main_page.html", comments=Comment.query.all())
-
     if not current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('login'))
 
-    comment = Comment(content=request.form["contents"], commenter=current_user)
-    db.session.add(comment)
-    db.session.commit()
+    # generate the page
+    if request.method == "GET":
+        return render_template("main_page.html", user=current_user, cats=Cat.query.filter_by(owner_id=current_user.id).all(), icats=Cat.query.filter_by(nextowner_id=current_user.id).all())
+
+    # handle commands
+    cmd = request.form["action"]
+
+
+    #comment = Comment(content=request.form["contents"], commenter=current_user)
+    #db.session.add(comment)
+    #db.session.commit()
 
     return redirect(url_for('index'))
+
+
+@app.route("/cat", methods=["POST"])
+def catpage():
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+
+    cmd = request.form["action"]
+
+    # prepare the list of FAs for admins
+    if current_user.FAisADM:
+        FAlist=User.query.filter_by(FAisFA=True).all()
+    else:
+        FAlist=[]
+
+    # generate an empty page to add a new cat
+    if cmd == "adm_addcat" and current_user.FAisADM:
+        theCat = Cat(registre="")
+        return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist)
+
+    # existing cat, populate the page with the available data
+    theCat = Cat.query.filter_by(id=request.form["catid"]).first();
+
+    # check if you can access this
+    if theCat.owner != current_user.id and not current_user.FAisADM:
+        return redirect(url_for('/'))
+
+    # handle generation of the page
+    if cmd == "fa_viewcat":
+        return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist)
+
+    # cat commands
+    if cmd == "fa_updatecat" and current_user.FAisFA:
+        # update cat information
+        return redirect(url_for('/'))
+
+    if cmd == "fa_addvet" and current_user.FAisFA:
+        # add vet information
+        return render_template("cat_page.html", user=current_user, cat=theCat, falist=[])
+
+    if cmd == "fa_givecat" and current_user.FAisFA:
+        # give cat to another owner
+        return redirect(url_for('/'))
+
+    # admin cat commands
+    # display info about a cat
+    return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist)
+
 
 @app.route("/login/", methods=["GET", "POST"])
 def login():

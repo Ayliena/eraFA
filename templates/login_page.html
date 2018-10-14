@@ -6,7 +6,7 @@
 
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
 
-        <title>My scratchboard page: log in</title>
+        <title>Familles d'accueil ERA</title>
     </head>
 
     <body>
@@ -19,7 +19,7 @@
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" href="#">My scratchpad: login page</a>
+                    <a class="navbar-brand" href="#">FA ERA: connexion</a>
                 </div>
             </div>
         </nav>
@@ -29,16 +29,16 @@
             <div class="row">
                 {% if error %}
                 <div class="alert alert-warning" role="alert">
-                    Incorrect username or password
+                    Utilisateur ou mot de passe non valable.
                 </div>
                 {% endif %}
                 <form action="." method="POST">
                   <div class="form-group">
-                    <label for="username">Username:</label>
+                    <label for="username">Utilisateur:</label>
                     <input class="form-control" id="username" name="username" placeholder="Enter your username">
                   </div>
                   <div class="form-group">
-                    <label for="password">Password:</label>
+                    <label for="password">Mot de passe:</label>
                     <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password">
                   </div>
                   <button type="submit" class="btn btn-success">Log in</button>

@@ -1,6 +1,6 @@
 <html>
     <head>
-        <title>My scratchboard page</title>
+        <title>Familles d'accueil ERA</title>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -18,7 +18,17 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="#">My scratchpad</a>
+            <a class="navbar-brand" href="#">{{ user.FAid }} ({{ user.FAname }}) [
+                {% if current_user.FAisFA %}
+                    FA
+                {% endif %}
+                {% if current_user.FAisOV %}
+                    SV
+                {% endif %}
+                {% if current_user.FAisADM %}
+                    GR
+                {% endif %} ]
+           </a>
         </div>
         <ul class="nav navbar-nav navbar-right">
         {% if current_user.is_authenticated %}
@@ -33,38 +43,51 @@
 
     <div class="container">
 
-        {% for comment in comments %}
+        <h2>Chats detenus</h2>
+
+        {% for cat in cats %}
          <div class="row" style="margin-bottom: 1ex">
             <div>
-                {{ comment.content }}
+                {{ cat.registre }} / {{ cat.identif }} / {{ cat.name }} / {{ cat.color }} / {{ cat.longhair }} / {{ cat.vetshort }}
             </div>
+        </div>
+        {% else %}
+            <div class="row">Aucun</div>
+        {% endfor %}
+
+        {% if icats %}
+            <h2>Chats recus</h2>
+        {% endif %}
+
+        {% for cat in icats %}
+        <div class="row" style="margin-bottom: 1ex">
             <div>
-                <small>
-                Posted
-                {% if comment.posted %}
-                    {{ comment.posted.strftime("%A, %d %B %Y at %H:%M") }}
-                {% else %}
-                    at an unknown time
-                {% endif %}
-                by
-                {% if comment.commenter %}
-                    {{ comment.commenter.FAname }}
-                {% else %}
-                    anonymous
-                {% endif %}
-                </small>
+                {{ cat.registre }} / {{ cat.identif }} / {{ cat.name }} / {{ cat.color }} / {{ cat.longhair }} / {{ cat.vetshort }} / {{ cat.owner_id }}
             </div>
         </div>
         {% endfor %}
 
-        {% if current_user.is_authenticated %}
+        <hr>
+
+        {% if user.FAisOV %}
+        <form  action="." method="POST">
             <div class="row">
-                <form action="." method="POST">
-                    <textarea class="form-control" name="contents" placeholder="Enter a comment"></textarea>
-                    <input type="submit" class="btn btn-success" value="Post comment">
-                </form>
+                Commandes disponibles en tant que Superviseur:<br>
+                    <button type="submit" name="action" value="sv_viewFA">Vision par FA</button>
+                    <button type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button>
             </div>
+        </form>
         {% endif %}
+        {% if user.FAisADM %}
+        <div class="row">
+            Commandes disponibles en tant que Gestionnaire-Registre:<br>
+                <form action="cat" method="POST"><button type="submit" name="action" value="adm_addcat">Rajouter un chat</button></form>
+                <form action="list" method="POST"><button type="submit" name="action" value="adm_manageAD">Chats adoptes</button>
+                <button type="submit" name="action" value="adm_manageDCD">Chats decedes</button>
+                <button type="submit" name="action" value="adm_manageFA">Chats en FA</button></form>
+        </div>
+        {% endif %}
+
      </div><!-- /.container -->
 </body>
 </html>
