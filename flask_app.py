@@ -78,6 +78,7 @@ class Cat(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     nextowner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     name = db.Column(db.String(32))
+    sex = db.Column(db.Integer)
     color = db.Column(db.Integer)
     longhair = db.Column(db.Integer)
     registre = db.Column(db.String(8))
@@ -127,6 +128,7 @@ class Comment(db.Model):
 # --------------- WEB PAGES
 
 @app.route('/', methods=["GET", "POST"])
+@app.route('/index', methods=["GET", "POST"])
 def index():
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
@@ -136,7 +138,7 @@ def index():
         return render_template("main_page.html", user=current_user, cats=Cat.query.filter_by(owner_id=current_user.id).all(), icats=Cat.query.filter_by(nextowner_id=current_user.id).all())
 
     # handle commands
-    cmd = request.form["action"]
+    # cmd = request.form["action"]
 
 
     #comment = Comment(content=request.form["contents"], commenter=current_user)
@@ -153,6 +155,9 @@ def catpage():
 
     cmd = request.form["action"]
 
+    if cmd == "fa_return":
+        return redirect(url_for('index'))
+
     # prepare the list of FAs for admins
     if current_user.FAisADM:
         FAlist=User.query.filter_by(FAisFA=True).all()
@@ -160,25 +165,62 @@ def catpage():
         FAlist=[]
 
     # generate an empty page to add a new cat
-    if cmd == "adm_addcat" and current_user.FAisADM:
+    if cmd == "adm_newcat" and current_user.FAisADM:
         theCat = Cat(registre="")
         return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist)
 
+    if (cmd == "adm_addcathere" or cmd == "adm_addcatgiveFA" or cmd == "adm_addcatputFA") and current_user.FAisADM:
+        # generate the new cat using the form information
+        theCat = Cat(registre=request.form["c_registre"], name=request.form["c_name"], sex=request.form["c_sex"],
+                    color=request.form["c_color"], longhair=request.form["c_hlen"], identif=request.form["c_identif"],
+                    description=request.form["c_description"])
+
+        # if for any reason the FA is invalid, then put it here
+        if cmd != "adm_addcathere":
+            FAid = request.form["FAid"];
+            # validate the id
+            faexists = db.session.query(User.id).filter_by(id=FAid).scalar() is not None;
+
+            if cmd == "adm_addcatgiveFA" and faexists:
+                theCat.owner_id = current_user.id
+                theCat.nextowner_id = FAid
+            elif cmd == "adm_addcatputFA" and faexists:
+                theCat.owner = FAid
+            else:
+                theCat.owner = current_user.id
+
+        else: # cmd == "addcathere"
+            theCat.owner_id = current_user.id
+
+        db.session.add(theCat)
+        db.session.commit()
+        return redirect(url_for('index'))
+
     # existing cat, populate the page with the available data
     theCat = Cat.query.filter_by(id=request.form["catid"]).first();
+    if theCat == None:
+        return redirect(url_for('index'))
 
     # check if you can access this
-    if theCat.owner != current_user.id and not current_user.FAisADM:
-        return redirect(url_for('/'))
+    if theCat.owner_id != current_user.id and not current_user.FAisADM:
+        return redirect(url_for('index'))
 
     # handle generation of the page
     if cmd == "fa_viewcat":
         return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist)
 
     # cat commands
-    if cmd == "fa_updatecat" and current_user.FAisFA:
+    if cmd == "fa_modcat" and current_user.FAisFA:
         # update cat information
-        return redirect(url_for('/'))
+        theCat.name = request.form["c_name"]
+        theCat.sex=request.form["c_sex"]
+        theCat.color=request.form["c_color"]
+        theCat.longhair=request.form["c_hlen"]
+        theCat.identif=request.form["c_identif"]
+        theCat.description=request.form["c_description"]
+        db.session.commit()
+
+        return redirect(url_for('index'))
 
     if cmd == "fa_addvet" and current_user.FAisFA:
         # add vet information

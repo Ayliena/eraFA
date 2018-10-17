@@ -19,13 +19,13 @@
                 <span class="icon-bar"></span>
             </button>
             <a class="navbar-brand" href="#">{{ user.FAid }} ({{ user.FAname }}) [
-                {% if current_user.FAisFA %}
+                {% if user.FAisFA %}
                     FA
                 {% endif %}
-                {% if current_user.FAisOV %}
+                {% if user.FAisOV %}
                     SV
                 {% endif %}
-                {% if current_user.FAisADM %}
+                {% if user.FAisADM %}
                     GR
                 {% endif %} ]
            </a>
@@ -47,9 +47,11 @@
 
         {% for cat in cats %}
          <div class="row" style="margin-bottom: 1ex">
-            <div>
-                {{ cat.registre }} / {{ cat.identif }} / {{ cat.name }} / {{ cat.color }} / {{ cat.longhair }} / {{ cat.vetshort }}
-            </div>
+            <form action="cat" method="POST">
+                <input type="hidden" name="catid" value="{{cat.id}}">
+                <button type="submit" name="action" value="fa_viewcat">+</button>
+                {{ cat.registre }} / {{ cat.identif }} / {{ cat.name }} / {{ cat.sex }} / {{ cat.color }} / {{ cat.longhair }} / {{ cat.description }} / {{ cat.vetshort }}
+            </form>
         </div>
         {% else %}
             <div class="row">Aucun</div>
@@ -62,7 +64,7 @@
         {% for cat in icats %}
         <div class="row" style="margin-bottom: 1ex">
             <div>
-                {{ cat.registre }} / {{ cat.identif }} / {{ cat.name }} / {{ cat.color }} / {{ cat.longhair }} / {{ cat.vetshort }} / {{ cat.owner_id }}
+                {{ cat.registre }} / {{ cat.identif }} / {{ cat.name }} / {{ cat.sex }} / {{ cat.color }} / {{ cat.longhair }} / {{ cat.description }} / {{ cat.vetshort }} / {{ cat.owner_id }}
             </div>
         </div>
         {% endfor %}
@@ -70,7 +72,7 @@
         <hr>
 
         {% if user.FAisOV %}
-        <form  action="." method="POST">
+        <form  action="list" method="POST">
             <div class="row">
                 Commandes disponibles en tant que Superviseur:<br>
                     <button type="submit" name="action" value="sv_viewFA">Vision par FA</button>
@@ -81,7 +83,7 @@
         {% if user.FAisADM %}
         <div class="row">
             Commandes disponibles en tant que Gestionnaire-Registre:<br>
-                <form action="cat" method="POST"><button type="submit" name="action" value="adm_addcat">Rajouter un chat</button></form>
+                <form action="cat" method="POST"><button type="submit" name="action" value="adm_newcat">Rajouter un chat</button></form>
                 <form action="list" method="POST"><button type="submit" name="action" value="adm_manageAD">Chats adoptes</button>
                 <button type="submit" name="action" value="adm_manageDCD">Chats decedes</button>
                 <button type="submit" name="action" value="adm_manageFA">Chats en FA</button></form>

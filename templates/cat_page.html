@@ -7,17 +7,38 @@
 
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
     </head>
-    <script>
-        window.onload=function() {
-            var sel1 = document.myform.sel_FA_give;
-            var sel2 = document.myform.sel_FA_give;
-            var i = 1;
-            {% for fa in falist %}
-                sel1.options[i] = new Option("{{ fa.FAname }}", i);
-                sel2.options[i] = new Option("{{ fa.FAname }}", i);
-                ++i;
-            {% endfor %}
+    <script type="text/javascript">
+        function populatecolor(selid) {
+            var cols = ["INCONNU","TIGRE","TABBY BLANC"];
+            var sel, i, option;
+            sel = document.getElementById(selid);
+
+            for (i = 0; i < cols.length; ++i) {
+                option = document.createElement('option');
+                option.value = i;
+                option.text = cols[i];
+                sel.add(option);
+            }
          }
+
+        window.onload=function() {
+            populatecolor("c_color");
+            {% if cat.sex %} document.getElementById("c_sex").value = {{ cat.sex }}; {% endif %}
+            {% if cat.color %} document.getElementById("c_color").value = {{ cat.color }}; {% endif %}
+            {% if cat.longhair %} document.getElementById("c_hlen").value = {{ cat.color }}; {% endif %}
+
+            var sel = document.getElementById("sel_FA_put");
+            var i = 0;
+
+            var faid = [  {% for fa in falist %} "{{fa.id}}", {% endfor %} ];
+            var fas = [ {% for fa in falist %} "{{fa.FAname}}", {% endfor %} ];
+            for (i = 0; i < fas.length; ++i) {
+                option = document.createElement('option');
+                option.value = faid[i];
+                option.text = fas[i];
+                sel.add(option);
+            }
+        }
     </script>
 <body>
     <nav class="navbar navbar-inverse">
@@ -29,14 +50,14 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="#">{{ user.FAid }} ({{ user.FAname }}) [
-                {% if current_user.FAisFA %}
+            <a class="navbar-brand" href="/">{{ user.FAid }} ({{ user.FAname }}) [
+                {% if user.FAisFA %}
                     FA
                 {% endif %}
-                {% if current_user.FAisOV %}
+                {% if user.FAisOV %}
                     SV
                 {% endif %}
-                {% if current_user.FAisADM %}
+                {% if user.FAisADM %}
                     GR
                 {% endif %} ]
            </a>
@@ -64,40 +85,53 @@
         {% else %}
             Nouveau chat
         {% endif %}
+    </h2>
 
-    <form action="." method="POST">
+    <form action="cat" id="c_form" method="POST">
+        <input type="hidden" name="catid" value="{{cat.id}}">
         {% if cat.registre %}
-            Registre: <b>{{ cat.registre }<br>
+            Registre: <b>{{ cat.registre }}</b><br>
         {% else %}
-            Registre: <input type="text" name="nc_registre" placeholder="xxx-xx"><br>
+            Registre: <input type="text" name="c_registre" placeholder="xxx-xx"><br>
         {% endif %}
 
         {% if cat.identif %}
-            Identification: <input type="text" name="nc_registre" value="{{ cat.identif }}"><br>
+            Identification: <input type="text" name="c_identif" value="{{ cat.identif }}"><br>
         {% else %}
-            Identification: <input type="text" name="nc_registre" placeholder="numero de puce"><br>
+            Identification: <input type="text" name="c_identif" placeholder="numero de puce"><br>
         {% endif %}
 
-        Nom: <input type="text" name="nc_name" value="{{ cat.name }}"><br>
-        Couleur: <select name="nc_color">
+        {% if cat.name %}
+            Nom: <input type="text" name="c_name" value="{{ cat.name }}"><br>
+        {% else %}
+            Nom: <input type="text" name="c_name" placeholder="Nom du chat"><br>
+        {% endif %}
+        Sexe: <select name="c_sex" id="c_sex">
             <option value="0">INCONNU</option>
-            <option value="1">TIGRE</option>
-            <option value="2">TABBY BLANC</option>
+            <option value="1">FEMELLE</option>
+            <option value="2">MALE</option>
+         </select><br>
+       Couleur: <select name="c_color" id="c_color">
         </select><br>
-        Poil: <select name="nc_hlen">
+        Poil: <select name="c_hlen">
             <option value="0">COURT</option>
             <option value="1">MI-LONG</option>
             <option value="2">LONG</option>
          </select><br>
-            Description: <textarea class="form-control" name="contents" placeholder="Description et/ou signes particuliers"></textarea>
+        {% if cat.description %}
+            Description: <textarea class="form-control" name="c_description">{{ cat.description }}</textarea>
+        {% else %}
+            Description: <textarea class="form-control" name="c_description" placeholder="Description et/ou signes particuliers"></textarea>
+        {% endif %}
 
         {% if cat.registre %}
-            <button type="submit" value="fa_modcat">Mettre a jour les informations</button><br>
+            <button type="submit" name="action" value="fa_return">Revenir a la liste</button>
+            <button type="submit" name="action" value="fa_modcat">Mettre a jour les informations</button><br>
         {% else %}
             Une fois les informations remplies:<br>
-            <button type="submit" value="adm_addcathere">Rajouter le chat chez moi</button><br>
-            <button type="submit" value="adm_addcatgiveFA">Donner le chat a:</button><select name="sel_FA_put"></select>
-            <button type="submit" value="adm_addcatputFA">Placer le chat chez:</button><select name="sel_FA_put"></select>
+            <button type="submit" name="action" value="adm_addcathere">Rajouter le chat chez moi</button><br>
+            <button type="submit" name="action" value="adm_addcatgiveFA">Donner le chat a:</button>
+            <button type="submit" name="action" value="adm_addcatputFA">Placer le chat chez:</button><select id="sel_FA_put" name="FAid"></select>
         {% endif %}
     </form>
 
