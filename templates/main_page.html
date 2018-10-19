@@ -50,11 +50,28 @@
             <form action="cat" method="POST">
                 <input type="hidden" name="catid" value="{{cat.id}}">
                 <button type="submit" name="action" value="fa_viewcat">+</button>
-                {{ cat.registre }} / {{ cat.identif }} / {{ cat.name }} / {{ cat.sex }} / {{ cat.color }} / {{ cat.longhair }} / {{ cat.description }} / {{ cat.vetshort }}
+                {{ cat.registre }} / {{ cat.identif }} / {{ cat.name }} / {{ tabsex[cat.sex] }} / {{ tabcol[cat.color] }} / {{ tabhair[cat.longhair] }} / {{ cat.description }} / {{ cat.vetshort }}
             </form>
         </div>
         {% else %}
             <div class="row">Aucun</div>
+        {% endfor %}
+
+        {% if ocats %}
+            <h2>Chats donnes</h2>
+        {% endif %}
+
+        {% for cat in ocats %}
+        <div class="row" style="margin-bottom: 1ex">
+            <div>
+                {{ cat.registre }} / {{ cat.identif }} / {{ cat.name }} / {{ tabsex[cat.sex] }} / {{ tabcol[cat.color] }} / {{ tabhair[cat.longhair] }}  / {{ cat.description }} / {{ cat.vetshort }} / {{ cat.nextowner_id }}
+                Donne a: {{ cat.nextowner.FAname }}
+                <form action="." method="POST">
+                    <input type="hidden" name="catid" value="{{cat.id}}">
+                    <button type="submit" name="action" value="fa_canceltr">Annuller le transfert</button>
+                </form>
+            </div>
+        </div>
         {% endfor %}
 
         {% if icats %}
@@ -64,7 +81,12 @@
         {% for cat in icats %}
         <div class="row" style="margin-bottom: 1ex">
             <div>
-                {{ cat.registre }} / {{ cat.identif }} / {{ cat.name }} / {{ cat.sex }} / {{ cat.color }} / {{ cat.longhair }} / {{ cat.description }} / {{ cat.vetshort }} / {{ cat.owner_id }}
+                {{ cat.registre }} / {{ cat.identif }} / {{ cat.name }} / {{ tabsex[cat.sex] }} / {{ tabcol[cat.color] }} / {{ tabhair[cat.longhair] }}  / {{ cat.description }} / {{ cat.vetshort }} / {{ cat.owner_id }}
+                Recu de: {{ cat.owner.FAname }}
+                <form action="." method="POST">
+                    <input type="hidden" name="catid" value="{{cat.id}}">
+                    <button type="submit" name="action" value="fa_accepttr">Accepter le transfert</button>
+                </form>
             </div>
         </div>
         {% endfor %}

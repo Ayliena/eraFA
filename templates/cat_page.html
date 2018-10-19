@@ -9,7 +9,9 @@
     </head>
     <script type="text/javascript">
         function populatecolor(selid) {
-            var cols = ["INCONNU","TIGRE","TABBY BLANC"];
+            var cols = ["INCONNU", "BEIGE", "BEIGE ET BLANC", "BLANC", "BLUE POINT", "CREME", "ECAILLE DE TORTUE", "GRIS", "GRIS CHARTREUX", "GRIS ET BLANC",
+                "NOIR", "NOIR ET BLANC", "NOIR ET SMOKE", "NOIR PLASTRON BLANC", "ROUX", "ROUX ET BLANC", "SEAL POINT", "TABBY BLANC", "TABBY BRUN", "TABBY GRIS",
+                "TIGRE", "TIGRE BEIGE", "TIGRE BRUN", "TIGRE CREME", "TIGRE GRIS", "TRICOLORE"];
             var sel, i, option;
             sel = document.getElementById(selid);
 
@@ -27,7 +29,7 @@
             {% if cat.color %} document.getElementById("c_color").value = {{ cat.color }}; {% endif %}
             {% if cat.longhair %} document.getElementById("c_hlen").value = {{ cat.color }}; {% endif %}
 
-            var sel = document.getElementById("sel_FA_put");
+            var sel = document.getElementById("sel_FA");
             var i = 0;
 
             var faid = [  {% for fa in falist %} "{{fa.id}}", {% endfor %} ];
@@ -127,11 +129,12 @@
         {% if cat.registre %}
             <button type="submit" name="action" value="fa_return">Revenir a la liste</button>
             <button type="submit" name="action" value="fa_modcat">Mettre a jour les informations</button><br>
+            <button type="submit" name="action" value="fa_givecat">Donner le chat a:</button><select id="sel_FA" name="FAid"></select>
         {% else %}
             Une fois les informations remplies:<br>
             <button type="submit" name="action" value="adm_addcathere">Rajouter le chat chez moi</button><br>
             <button type="submit" name="action" value="adm_addcatgiveFA">Donner le chat a:</button>
-            <button type="submit" name="action" value="adm_addcatputFA">Placer le chat chez:</button><select id="sel_FA_put" name="FAid"></select>
+            <button type="submit" name="action" value="adm_addcatputFA">Placer le chat chez:</button><select id="sel_FA" name="FAid"></select>
         {% endif %}
     </form>
 

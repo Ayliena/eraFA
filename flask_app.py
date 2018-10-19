@@ -3,6 +3,7 @@
 
 from flask import Flask, render_template, redirect, request, url_for
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import and_
 from flask_login import login_user, LoginManager, UserMixin, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash
 from datetime import datetime
@@ -30,6 +31,15 @@ db = SQLAlchemy(app)
 app.secret_key = "tpCff4LR9ldTlZBUUmQO"
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+
+# --------------- STATIC DATA
+
+TabColor = ["INCONNU", "BEIGE", "BEIGE ET BLANC", "BLANC", "BLUE POINT", "CREME", "ECAILLE DE TORTUE", "GRIS", "GRIS CHARTREUX", "GRIS ET BLANC",
+             "NOIR", "NOIR ET BLANC", "NOIR ET SMOKE", "NOIR PLASTRON BLANC", "ROUX", "ROUX ET BLANC", "SEAL POINT", "TABBY BLANC", "TABBY BRUN", "TABBY GRIS",
+             "TIGRE", "TIGRE BEIGE", "TIGRE BRUN", "TIGRE CREME", "TIGRE GRIS", "TRICOLORE"]
+TabSex = ["INCONNU", "FEMELLE", "MALE"]
+TabHair = ["COURT", "MI-LONG", "LONG"];
 
 # --------------- USER CLASS
 
@@ -76,11 +86,14 @@ class Cat(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    owner = db.relationship('User', foreign_keys=owner_id)
     nextowner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    nextowner = db.relationship('User', foreign_keys=nextowner_id)
     name = db.Column(db.String(32))
     sex = db.Column(db.Integer)
     color = db.Column(db.Integer)
     longhair = db.Column(db.Integer)
+    birthdate = db.Column(db.DateTime)
     registre = db.Column(db.String(8))
     identif = db.Column(db.String(16))
     description = db.Column(db.String(1024))
@@ -135,11 +148,40 @@ def index():
 
     # generate the page
     if request.method == "GET":
-        return render_template("main_page.html", user=current_user, cats=Cat.query.filter_by(owner_id=current_user.id).all(), icats=Cat.query.filter_by(nextowner_id=current_user.id).all())
+        return render_template("main_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+            cats=Cat.query.filter( and_(Cat.owner_id==current_user.id, Cat.nextowner_id== None) ).all(),
+            ocats=Cat.query.filter( and_(Cat.owner_id==current_user.id, Cat.nextowner_id != None) ).all(),
+            icats=Cat.query.filter_by(nextowner_id=current_user.id).all())
 
     # handle commands
-    # cmd = request.form["action"]
+    cmd = request.form["action"]
 
+    # get the cat
+    theCat = Cat.query.filter_by(id=request.form["catid"]).first();
+    if theCat == None:
+        return render_template("error_page.html", user=current_user, errormessage="invalid cat id")
+        return redirect(url_for('index'))
+
+    # check if you can access this
+    if theCat.owner_id != current_user.id and theCat.nextowner_id != current_user.id and not current_user.FAisADM:
+        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data")
+        return redirect(url_for('index'))
+
+    # handle accept/cancel transfert
+    if cmd == "fa_accepttr" and current_user.FAisFA and current_user.id == theCat.nextowner_id:
+        # transfer here
+        theCat.owner_id = theCat.nextowner_id
+        theCat.nextowner_id = None
+        db.session.commit()
+
+        return redirect(url_for('index'))
+
+    if cmd == "fa_canceltr" and current_user.FAisFA and current_user.id == theCat.owner_id:
+        # cancel the transfer
+        theCat.nextowner_id = None
+        db.session.commit()
+
+        return redirect(url_for('index'))
 
     #comment = Comment(content=request.form["contents"], commenter=current_user)
     #db.session.add(comment)
@@ -158,11 +200,8 @@ def catpage():
     if cmd == "fa_return":
         return redirect(url_for('index'))
 
-    # prepare the list of FAs for admins
-    if current_user.FAisADM:
-        FAlist=User.query.filter_by(FAisFA=True).all()
-    else:
-        FAlist=[]
+    # prepare the list of FAs for transfers
+    FAlist=User.query.filter_by(FAisFA=True).all()
 
     # generate an empty page to add a new cat
     if cmd == "adm_newcat" and current_user.FAisADM:
@@ -177,7 +216,7 @@ def catpage():
 
         # if for any reason the FA is invalid, then put it here
         if cmd != "adm_addcathere":
-            FAid = request.form["FAid"];
+            FAid = int(request.form["FAid"]);
             # validate the id
             faexists = db.session.query(User.id).filter_by(id=FAid).scalar() is not None;
 
@@ -185,9 +224,9 @@ def catpage():
                 theCat.owner_id = current_user.id
                 theCat.nextowner_id = FAid
             elif cmd == "adm_addcatputFA" and faexists:
-                theCat.owner = FAid
+                theCat.owner_id = FAid
             else:
-                theCat.owner = current_user.id
+                theCat.owner_id = current_user.id
 
         else: # cmd == "addcathere"
             theCat.owner_id = current_user.id
@@ -199,10 +238,12 @@ def catpage():
     # existing cat, populate the page with the available data
     theCat = Cat.query.filter_by(id=request.form["catid"]).first();
     if theCat == None:
+        return render_template("error_page.html", user=current_user, errormessage="invalid cat id")
         return redirect(url_for('index'))
 
     # check if you can access this
     if theCat.owner_id != current_user.id and not current_user.FAisADM:
+        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data")
         return redirect(url_for('index'))
 
     # handle generation of the page
@@ -219,6 +260,18 @@ def catpage():
         theCat.identif=request.form["c_identif"]
         theCat.description=request.form["c_description"]
         db.session.commit()
+
+        return redirect(url_for('index'))
+
+    if cmd == "fa_givecat" and current_user.FAisFA:
+        # cat information is not updated
+        FAid = int(request.form["FAid"]);
+        # validate the id
+        faexists = db.session.query(User.id).filter_by(id=FAid).scalar() is not None;
+
+        if faexists and FAid != current_user.id:
+            theCat.nextowner_id = FAid
+            db.session.commit()
 
         return redirect(url_for('index'))
 
