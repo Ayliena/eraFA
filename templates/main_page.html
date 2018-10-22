@@ -7,7 +7,16 @@
 
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
     </head>
-
+    <script>
+        function showHide(elem) {
+            var x = document.getElementById(elem);
+            if (x.style.display === "none") {
+                x.style.display = "block";
+            } else {
+                x.style.display = "none";
+            }
+        }
+    </script>
 <body>
     <nav class="navbar navbar-inverse">
     <div class="container">
@@ -46,12 +55,24 @@
         <h2>Chats detenus</h2>
 
         {% for cat in cats %}
-         <div class="row" style="margin-bottom: 1ex">
-            <form action="cat" method="POST">
-                <input type="hidden" name="catid" value="{{cat.id}}">
-                <button type="submit" name="action" value="fa_viewcat">+</button>
-                {{ cat.registre }} / {{ cat.identif }} / {{ cat.name }} / {{ tabsex[cat.sex] }} / {{ tabcol[cat.color] }} / {{ tabhair[cat.longhair] }} / {{ cat.description }} / {{ cat.vetshort }}
-            </form>
+         <div class="row">
+             <div class="col-sm-1">
+                <form action="cat" method="POST">
+                    <input type="hidden" name="catid" value="{{cat.id}}">
+                    <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong>{{cat.registre}}</strong></button>
+                    <a href="#" onClick="showHide('desc{{cat.registre}}');">D</a></form>
+            </div>
+            <div class="col-sm-2">{{ cat.identif }}</div>
+            <div class="col-sm-2">{{ cat.name }}</div>
+            <div class="col-sm-1">{{ tabsex[cat.sex] }}</div>
+            <div class="col-sm-2">{{ tabcol[cat.color] }}</div>
+            <div class="col-sm-1">{{ tabhair[cat.longhair] }}</div>
+            <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
+            <div class="col-sm-2">{% if cat.adoptable %}<p class="bg-success">Adoptable</p>{% else %}<p class="bg-danger">Non adoptable</p>{% endif %}</div>
+        </div>
+        <div class="row" style="display: none;" id="desc{{cat.registre}}">
+            <div class="col-sm-1"></div>
+            <div class="col-sm-11"><p class="small">{{ cat.description }}</p></div>
         </div>
         {% else %}
             <div class="row">Aucun</div>
@@ -62,16 +83,33 @@
         {% endif %}
 
         {% for cat in ocats %}
-        <div class="row" style="margin-bottom: 1ex">
-            <div>
-                {{ cat.registre }} / {{ cat.identif }} / {{ cat.name }} / {{ tabsex[cat.sex] }} / {{ tabcol[cat.color] }} / {{ tabhair[cat.longhair] }}  / {{ cat.description }} / {{ cat.vetshort }} / {{ cat.nextowner_id }}
-                Donne a: {{ cat.nextowner.FAname }}
-                <form action="." method="POST">
+         <div class="row">
+             <div class="col-sm-1">
+                <form action="cat" method="POST">
                     <input type="hidden" name="catid" value="{{cat.id}}">
-                    <button type="submit" name="action" value="fa_canceltr">Annuller le transfert</button>
-                </form>
+                    <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong>{{cat.registre}}</strong></button>
+                    <a href="#" onClick="showHide('desc{{cat.registre}}');">D</a></form>
             </div>
+            <div class="col-sm-2">{{ cat.identif }}</div>
+            <div class="col-sm-2">{{ cat.name }}</div>
+            <div class="col-sm-1">{{ tabsex[cat.sex] }}</div>
+            <div class="col-sm-2">{{ tabcol[cat.color] }}</div>
+            <div class="col-sm-1">{{ tabhair[cat.longhair] }}</div>
+            <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
+            <div class="col-sm-2">{% if cat.adoptable %}<p class="bg-success">Adoptable</p>{% else %}<p class="bg-danger">Non adoptable</p>{% endif %}</div>
         </div>
+        <div class="row" style="display: none;" id="desc{{cat.registre}}">
+            <div class="col-sm-1"></div>
+            <div class="col-sm-11"><p class="small">{{ cat.description }}</p></div>
+        </div>
+        <form action="." method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
+            <div class="row">
+            <div class="col-sm-1"></div>
+            <div class="col-sm-3"><p>Donne a: {{ cat.nextowner.FAname }}</p></div>
+            <div class="col-sm-1"></div>
+            <div><button type="submit" name="action" value="fa_canceltr">Annuler le transfert</button></div>
+            </div>
+        </form>
         {% endfor %}
 
         {% if icats %}
@@ -79,16 +117,32 @@
         {% endif %}
 
         {% for cat in icats %}
-        <div class="row" style="margin-bottom: 1ex">
-            <div>
-                {{ cat.registre }} / {{ cat.identif }} / {{ cat.name }} / {{ tabsex[cat.sex] }} / {{ tabcol[cat.color] }} / {{ tabhair[cat.longhair] }}  / {{ cat.description }} / {{ cat.vetshort }} / {{ cat.owner_id }}
-                Recu de: {{ cat.owner.FAname }}
-                <form action="." method="POST">
+         <div class="row">
+             <div class="col-sm-1">
+                <form action="cat" method="POST">
                     <input type="hidden" name="catid" value="{{cat.id}}">
-                    <button type="submit" name="action" value="fa_accepttr">Accepter le transfert</button>
-                </form>
+                    <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong>{{cat.registre}}</strong></button>
+                    <a href="#" onClick="showHide('desc{{cat.registre}}');">D</a></form>
             </div>
+            <div class="col-sm-2">{{ cat.identif }}</div>
+            <div class="col-sm-2">{{ cat.name }}</div>
+            <div class="col-sm-1">{{ tabsex[cat.sex] }}</div>
+            <div class="col-sm-2">{{ tabcol[cat.color] }}</div>
+            <div class="col-sm-1">{{ tabhair[cat.longhair] }}</div>
+            <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
+            <div class="col-sm-2">{% if cat.adoptable %}<p class="bg-success">Adoptable</p>{% else %}<p class="bg-danger">Non adoptable</p>{% endif %}</div>
         </div>
+        <div class="row" style="display: none;" id="desc{{cat.registre}}">
+            <div class="col-sm-1"></div>
+            <div class="col-sm-11"><p class="small">{{ cat.description }}</p></div>
+        </div>
+        <form action="." method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
+            <div class="row">
+            <div class="col-sm-1"></div>
+            <div class="col-sm-3"><p>Recu de: {{ cat.owner.FAname }}</p></div>
+            <div class="col-sm-2"><button type="submit" name="action" value="fa_accepttr">Accepter le transfert</button></div>
+            </div>
+        </form>
         {% endfor %}
 
         <hr>

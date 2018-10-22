@@ -28,6 +28,7 @@
             {% if cat.sex %} document.getElementById("c_sex").value = {{ cat.sex }}; {% endif %}
             {% if cat.color %} document.getElementById("c_color").value = {{ cat.color }}; {% endif %}
             {% if cat.longhair %} document.getElementById("c_hlen").value = {{ cat.color }}; {% endif %}
+            {% if cat.adoptable %} document.getElementById("c_adoptable").value = 1; {% endif %}
 
             var sel = document.getElementById("sel_FA");
             var i = 0;
@@ -82,7 +83,7 @@
             {% if cat.name %}
                 {{ cat.name }}
             {% else %}
-                pas de nom
+                aucun nom
             {% endif %}
         {% else %}
             Nouveau chat
@@ -91,50 +92,74 @@
 
     <form action="cat" id="c_form" method="POST">
         <input type="hidden" name="catid" value="{{cat.id}}">
+        <div class="row form-group">
+            <div class="col-sm-1">Registre:</div>
+            <div class="col-sm-3">
+                {% if cat.registre %} <b>{{ cat.registre }}</b>
+                {% else %} <input type="text" name="c_registre" placeholder="xxx-xx"> {% endif %}
+            </div>
+            <div class="col-sm-2"><select name="c_adoptable" id="c_adoptable">
+                <option value="0">Non adoptable</option>
+                <option value="1">Disponible a l'adoption</option></select>
+            </div>
+        </div>
+        <div class="row form-group">
+            <div class="col-sm-1">Nom:</div>
+            <div class="col-sm-2">
+                {% if cat.name %} <input type="text" name="c_name" value="{{ cat.name }}">
+                {% else %} <input type="text" name="c_name" placeholder="Nom du chat"> {% endif %}
+            </div>
+            <div class="col-sm-1">Identification:</div>
+            <div class="col-sm-2">
+                {% if cat.identif %} <input type="text" name="c_identif" value="{{ cat.identif }}">
+                {% else %} <input type="text" name="c_identif" placeholder="numero de puce"> {% endif %}
+            </div>
+        </div>
+        <div class="row form-group">
+            <div class="col-sm-2">Sexe:
+                <select name="c_sex" id="c_sex">
+                <option value="0">INCONNU</option>
+                <option value="1">FEMELLE</option>
+                <option value="2">MALE</option></select>
+            </div>
+            <div class="col-sm-2">Poil:
+                <select name="c_hlen" id="c_hlen">
+                <option value="0">COURT</option>
+                <option value="1">MI-LONG</option>
+                <option value="2">LONG</option>
+                </select>
+            </div>
+            <div class="col-sm-3">Couleur:
+                <select name="c_color" id="c_color">
+                </select>
+            </div>
+        </div>
+
+        {% if cat.description %} Description:<div class="form-group"><textarea class="form-control" name="c_description">{{ cat.description }}</textarea></div>
+        {% else %} Description:<div class="form-group"><textarea class="form-control" name="c_description" placeholder="Description et/ou signes particuliers"></textarea></div> {% endif %}
+
         {% if cat.registre %}
-            Registre: <b>{{ cat.registre }}</b><br>
+        <div class="row form-group">
+            <div class="col-sm-2"><button type="submit" name="action" value="fa_modcat">Mettre a jour les informations</button></div>
+            <div class="col-sm-2"><button type="submit" name="action" value="fa_return">Annuler les changements</button></div>
+            <div class="col-sm-1"></div>
+            <div class="col-sm-2"><button type="submit" name="action" value="fa_adopted">Indiquer que le chat a ete adopte</button></div>
+            <div class="col-sm-2"><button type="submit" name="action" value="fa_dead">Indiquer que le chat est decede</button></div>
+        </div>
+        <div class="row">
+            <div class="col-sm-5"><button type="submit" name="action" value="fa_givecat">Donner le chat a:</button><select id="sel_FA" name="FAid"></select></div>
+        </div>
         {% else %}
-            Registre: <input type="text" name="c_registre" placeholder="xxx-xx"><br>
-        {% endif %}
-
-        {% if cat.identif %}
-            Identification: <input type="text" name="c_identif" value="{{ cat.identif }}"><br>
-        {% else %}
-            Identification: <input type="text" name="c_identif" placeholder="numero de puce"><br>
-        {% endif %}
-
-        {% if cat.name %}
-            Nom: <input type="text" name="c_name" value="{{ cat.name }}"><br>
-        {% else %}
-            Nom: <input type="text" name="c_name" placeholder="Nom du chat"><br>
-        {% endif %}
-        Sexe: <select name="c_sex" id="c_sex">
-            <option value="0">INCONNU</option>
-            <option value="1">FEMELLE</option>
-            <option value="2">MALE</option>
-         </select><br>
-       Couleur: <select name="c_color" id="c_color">
-        </select><br>
-        Poil: <select name="c_hlen">
-            <option value="0">COURT</option>
-            <option value="1">MI-LONG</option>
-            <option value="2">LONG</option>
-         </select><br>
-        {% if cat.description %}
-            Description: <textarea class="form-control" name="c_description">{{ cat.description }}</textarea>
-        {% else %}
-            Description: <textarea class="form-control" name="c_description" placeholder="Description et/ou signes particuliers"></textarea>
-        {% endif %}
-
-        {% if cat.registre %}
-            <button type="submit" name="action" value="fa_return">Revenir a la liste</button>
-            <button type="submit" name="action" value="fa_modcat">Mettre a jour les informations</button><br>
-            <button type="submit" name="action" value="fa_givecat">Donner le chat a:</button><select id="sel_FA" name="FAid"></select>
-        {% else %}
-            Une fois les informations remplies:<br>
-            <button type="submit" name="action" value="adm_addcathere">Rajouter le chat chez moi</button><br>
+        <div class="row form-group">
+            Une fois les informations remplies:
+        </div>
+        <div class="row form-group">
+            <button type="submit" name="action" value="adm_addcathere">Rajouter le chat chez moi</button>
+        </div>
+        <div class="row form-group">
             <button type="submit" name="action" value="adm_addcatgiveFA">Donner le chat a:</button>
             <button type="submit" name="action" value="adm_addcatputFA">Placer le chat chez:</button><select id="sel_FA" name="FAid"></select>
+        </div>
         {% endif %}
     </form>
 

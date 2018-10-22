@@ -98,6 +98,7 @@ class Cat(db.Model):
     identif = db.Column(db.String(16))
     description = db.Column(db.String(1024))
     vetshort = db.Column(db.Integer)
+    adoptable = db.Column(db.Boolean)
 
 # --------------- VETINFO CLASS
 
@@ -212,7 +213,7 @@ def catpage():
         # generate the new cat using the form information
         theCat = Cat(registre=request.form["c_registre"], name=request.form["c_name"], sex=request.form["c_sex"],
                     color=request.form["c_color"], longhair=request.form["c_hlen"], identif=request.form["c_identif"],
-                    description=request.form["c_description"])
+                    description=request.form["c_description"], adoptable=(request.form["c_adoptable"]=="1"))
 
         # if for any reason the FA is invalid, then put it here
         if cmd != "adm_addcathere":
@@ -259,6 +260,7 @@ def catpage():
         theCat.longhair=request.form["c_hlen"]
         theCat.identif=request.form["c_identif"]
         theCat.description=request.form["c_description"]
+        theCat.adoptable=(request.form["c_adoptable"] == "1")
         db.session.commit()
 
         return redirect(url_for('index'))
