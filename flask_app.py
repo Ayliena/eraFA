@@ -67,6 +67,11 @@ class User(UserMixin, db.Model):
     FAisADM = db.Column(db.Boolean, nullable=False)
     FAisAD = db.Column(db.Boolean, nullable=False)
     FAisDCD = db.Column(db.Boolean, nullable=False)
+#    cats = db.relationship('Cat', backref='owner_id', lazy='dynamic')
+#    icats = db.relationship('Cat', backref='nextowner_id', lazy='dynamic')
+
+    def __repr__(self):
+        return "<User {}>".format(self.FAname)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
@@ -99,6 +104,12 @@ class Cat(db.Model):
     description = db.Column(db.String(1024))
     vetshort = db.Column(db.Integer)
     adoptable = db.Column(db.Boolean)
+    vetvisits = db.relationship('VetInfo', backref='cat', lazy=True)
+    events = db.relationship('Event', backref='cat', lazy=True)
+
+    def __repr__(self):
+        return "<Cat {}>".format(self.registre)
+
 
 # --------------- VETINFO CLASS
 
@@ -128,15 +139,15 @@ class Event(db.Model):
 
 
 
-class Comment(db.Model):
-
-    __tablename__ = "comments"
-
-    id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.String(4096))
-    posted = db.Column(db.DateTime, default=datetime.now)
-    commenter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    commenter = db.relationship('User', foreign_keys=commenter_id)
+#class Comment(db.Model):
+#
+#    __tablename__ = "comments"
+#
+#    id = db.Column(db.Integer, primary_key=True)
+#    content = db.Column(db.String(4096))
+#    posted = db.Column(db.DateTime, default=datetime.now)
+#    commenter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+#    commenter = db.relationship('User', foreign_keys=commenter_id)
 
 
 # --------------- WEB PAGES
@@ -153,12 +164,35 @@ def index():
             cats=Cat.query.filter( and_(Cat.owner_id==current_user.id, Cat.nextowner_id== None) ).all(),
             ocats=Cat.query.filter( and_(Cat.owner_id==current_user.id, Cat.nextowner_id != None) ).all(),
             icats=Cat.query.filter_by(nextowner_id=current_user.id).all())
+#            cats=current_user.cats, icats=current_user.icats)
 
     # handle commands
     cmd = request.form["action"]
 
+    # alternate GET command for another FA
+    if cmd == "sv_fastate" and (current_user.FAisOV or current_user.FAisADM):
+        FAid = int(request.form["FAid"]);
+        # validate the id
+        theFA = User.query.filter_by(id=FAid).first()
+        faexists = theFA is not None;
+
+        if faexists:
+            # check for special FAs
+            if theFA.FAisAD or theFA.FAisDCD:
+                return render_template("main_spc_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                    cats=Cat.query.filter( and_(Cat.owner_id==FAid, Cat.nextowner_id== None) ).all())
+
+            return render_template("main_spc_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                cats=Cat.query.filter( and_(Cat.owner_id==FAid, Cat.nextowner_id== None) ).all(),
+                ocats=Cat.query.filter( and_(Cat.owner_id==FAid, Cat.nextowner_id != None) ).all(),
+                icats=Cat.query.filter_by(nextowner_id=FAid).all())
+
+        # if the fa doesn't exist, return to index
+        return render_template("error_page.html", user=current_user, errormessage="attempt to view invalid FA")
+        return redirect(url_for('index'))
+
     # get the cat
-    theCat = Cat.query.filter_by(id=request.form["catid"]).first();
+    theCat = Cat.query.filter_by(id=request.form["catid"]).first()
     if theCat == None:
         return render_template("error_page.html", user=current_user, errormessage="invalid cat id")
         return redirect(url_for('index'))
@@ -170,6 +204,9 @@ def index():
 
     # handle accept/cancel transfert
     if cmd == "fa_accepttr" and current_user.FAisFA and current_user.id == theCat.nextowner_id:
+        # generate the event
+        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="recu chez {} de {}".format(current_user.FAname, theCat.nextowner.FAname))
+        db.session.add(theEvent)
         # transfer here
         theCat.owner_id = theCat.nextowner_id
         theCat.nextowner_id = None
@@ -178,15 +215,22 @@ def index():
         return redirect(url_for('index'))
 
     if cmd == "fa_canceltr" and current_user.FAisFA and current_user.id == theCat.owner_id:
+        # generate the event
+        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="transfert de {} a {} annulle".format(current_user.FAname, theCat.nextowner.FAname))
+        db.session.add(theEvent)
         # cancel the transfer
         theCat.nextowner_id = None
         db.session.commit()
 
         return redirect(url_for('index'))
 
-    #comment = Comment(content=request.form["contents"], commenter=current_user)
-    #db.session.add(comment)
-    #db.session.commit()
+    if cmd == "adm_deletecat" and current_user.FAisADM:
+        # erase the cat and all the associated information from the database
+        # NOTE THAT THIS IS IRREVERSIBLE AND LEAVES NO TRACE
+        Event.query.filter_by(cat_id=theCat.id).delete()
+        VetInfo.query.filter_by(cat_id=theCat.id).delete()
+        db.session.delete(theCat)
+        db.session.commit()
 
     return redirect(url_for('index'))
 
@@ -232,6 +276,10 @@ def catpage():
         else: # cmd == "addcathere"
             theCat.owner_id = current_user.id
 
+        # generate the event
+        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="rajoute dans le systeme")
+        db.session.add(theEvent)
+
         db.session.add(theCat)
         db.session.commit()
         return redirect(url_for('index'))
@@ -261,6 +309,9 @@ def catpage():
         theCat.identif=request.form["c_identif"]
         theCat.description=request.form["c_description"]
         theCat.adoptable=(request.form["c_adoptable"] == "1")
+        # generate the event  IS RECORDING THIS USEFUL?
+#        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="rajoute dans le systeme")
+#        db.session.add(theEvent)
         db.session.commit()
 
         return redirect(url_for('index'))
@@ -271,8 +322,45 @@ def catpage():
         # validate the id
         faexists = db.session.query(User.id).filter_by(id=FAid).scalar() is not None;
 
-        if faexists and FAid != current_user.id:
+        if faexists and FAid != theCat.owner_id:
             theCat.nextowner_id = FAid
+            # generate the event
+            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="donne par {} a {}".format(current_user.FAname, theCat.nextowner.FAname))
+            db.session.add(theEvent)
+            db.session.commit()
+
+        return redirect(url_for('index'))
+
+    if cmd == "fa_adopted" and current_user.FAisFA:
+        FAspecialAD=User.query.filter_by(FAisAD=True).first()
+        theCat.owner_id = FAspecialAD.id
+        # generate the event
+        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="donne aux adoptants par {}".format(current_user.FAname))
+        db.session.add(theEvent)
+        db.session.commit()
+        return redirect(url_for('index'))
+
+    if cmd == "fa_dead" and current_user.FAisFA:
+        FAspecialDCD=User.query.filter_by(FAisDCD=True).first()
+        theCat.owner_id = FAspecialDCD.id
+        # generate the event
+        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="indique decede par {}".format(current_user.FAname))
+        db.session.add(theEvent)
+        db.session.commit()
+        return redirect(url_for('index'))
+
+    if cmd == "adm_putcat" and current_user.FAisADM:
+        # cat information is not updated
+        FAid = int(request.form["FAid"])
+        # validate the id
+        faexists = db.session.query(User.id).filter_by(id=FAid).scalar() is not None
+
+        if faexists and FAid != theCat.owner_id:
+            theCat.owner_id = FAid
+            theCat.nextowner_id = None
+            # generate the event
+            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="transfere par {} a {}".format(current_user.FAname, theCat.owner.FAname))
+            db.session.add(theEvent)
             db.session.commit()
 
         return redirect(url_for('index'))
@@ -281,13 +369,30 @@ def catpage():
         # add vet information
         return render_template("cat_page.html", user=current_user, cat=theCat, falist=[])
 
-    if cmd == "fa_givecat" and current_user.FAisFA:
-        # give cat to another owner
-        return redirect(url_for('/'))
-
     # admin cat commands
     # display info about a cat
     return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist)
+
+
+@app.route("/list", methods=["POST"])
+def listpage():
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+
+    cmd = request.form["action"]
+
+    if cmd == "sv_viewFA" and (current_user.FAisADM or current_user.FAisOV):
+        # normal FAs
+        FAlist=User.query.filter_by(FAisFA=True).all()
+        # special FAs
+        if current_user.FAisADM:
+            FAspecialAD=User.query.filter_by(FAisAD=True).first()
+            FAspecialDCD=User.query.filter_by(FAisDCD=True).first()
+
+        return render_template("list_page.html", user=current_user, falist=FAlist, faad=FAspecialAD, fadcd=FAspecialDCD)
+
+    # default is return to index
+    return redirect(url_for('index'))
 
 
 @app.route("/login/", methods=["GET", "POST"])
@@ -303,6 +408,9 @@ def login():
         return render_template("login_page.html", error=True)
 
     login_user(user)
+    # store last access
+    user.FAlastop = datetime.now()
+    db.session.commit()
 
     return redirect(url_for('index'))
 

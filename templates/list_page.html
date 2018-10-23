@@ -1,0 +1,78 @@
+<html>
+    <head>
+        <title>Familles d'accueil ERA</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+    </head>
+    <script>
+        function showHide(elem) {
+            var x = document.getElementById(elem);
+            if (x.style.display === "none") {
+                x.style.display = "block";
+            } else {
+                x.style.display = "none";
+            }
+        }
+    </script>
+<body>
+    <nav class="navbar navbar-inverse">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">{{ user.FAid }} ({{ user.FAname }}) [
+                {% if user.FAisFA %} FA {% endif %}
+                {% if user.FAisOV %} SV {% endif %}
+                {% if user.FAisADM %} GR {% endif %} ]
+            </a>
+        </div>
+        <ul class="nav navbar-nav navbar-right">
+        {% if current_user.is_authenticated %}
+            <li><a href="{{ url_for('logout') }}">Log out</a></li>
+        {% else %}
+            <li><a href="{{ url_for('login') }}">Log in</a></li>
+        {% endif %}
+        </ul>
+    </div>
+    </nav>
+
+
+    <div class="container">
+        {% if falist %}
+            <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+            {% for fa in falist %}
+                <div class="row">
+                    <div class="col-sm-2"><button class="btn btn-default" name="FAid" value="{{fa.id}}">{{ fa.FAid }}</button> :</div>
+                    <div class="col-sm-4">{{ fa.FAname }} [
+                    {% if fa.FAisFA %} FA {% endif %}
+                    {% if fa.FAisOV %} SV {% endif %}
+                    {% if fa.FAisADM %} GR {% endif %} ]
+                    </div>
+                    {% if fa.FAlastop %}
+                    <div class="col-sm-3">
+                        Derniere connexion: {{ fa.FAlastop.strftime("%d/%m/%Y %H:%M") }}
+                    </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            </form>
+        {% endif %}
+
+        {% if faad %} <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+            <div class="row"><button class="btn btn-default" name="FAid" value="{{faad.id}}">Chats adoptes</div>
+            </form>{% endif %}
+
+        {% if fadcd %} <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+            <div class="row"><button class="btn btn-default" name="FAid" value="{{fadcd.id}}">Chats decedes</div>
+            </form>{% endif %}
+
+    </div><!-- /.container -->
+</body>
+</html>

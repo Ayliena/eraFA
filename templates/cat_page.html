@@ -54,16 +54,10 @@
                 <span class="icon-bar"></span>
             </button>
             <a class="navbar-brand" href="/">{{ user.FAid }} ({{ user.FAname }}) [
-                {% if user.FAisFA %}
-                    FA
-                {% endif %}
-                {% if user.FAisOV %}
-                    SV
-                {% endif %}
-                {% if user.FAisADM %}
-                    GR
-                {% endif %} ]
-           </a>
+                {% if user.FAisFA %} FA {% endif %}
+                {% if user.FAisOV %} SV {% endif %}
+                {% if user.FAisADM %} GR {% endif %} ]
+            </a>
         </div>
         <ul class="nav navbar-nav navbar-right">
         {% if current_user.is_authenticated %}
@@ -138,6 +132,18 @@
         {% if cat.description %} Description:<div class="form-group"><textarea class="form-control" name="c_description">{{ cat.description }}</textarea></div>
         {% else %} Description:<div class="form-group"><textarea class="form-control" name="c_description" placeholder="Description et/ou signes particuliers"></textarea></div> {% endif %}
 
+        {% if user.FAisADM %}
+            <h3>Historique du chat</h3>
+            {% for ev in cat.events %}
+                <div class="row">
+                    <div class="col-sm-2">{{ ev.edate.strftime("%d/%m/%Y %H:%M") }}</div>
+                    <div class="col-sm-10">{{ ev.etext }}</div>
+                </div>
+            {% else %}
+                Aucun evenement
+            {% endfor %}
+        {% endif %}
+
         {% if cat.registre %}
         <div class="row form-group">
             <div class="col-sm-2"><button type="submit" name="action" value="fa_modcat">Mettre a jour les informations</button></div>
@@ -147,7 +153,9 @@
             <div class="col-sm-2"><button type="submit" name="action" value="fa_dead">Indiquer que le chat est decede</button></div>
         </div>
         <div class="row">
-            <div class="col-sm-5"><button type="submit" name="action" value="fa_givecat">Donner le chat a:</button><select id="sel_FA" name="FAid"></select></div>
+            <div class="col-sm-5"><button type="submit" name="action" value="fa_givecat">Donner le chat a:</button>
+                {% if user.FAisADM %}<button type="submit" name="action" value="adm_putcat">Transferer le chat chez:</button>{% endif %}
+                <select id="sel_FA" name="FAid"></select></div>
         </div>
         {% else %}
         <div class="row form-group">
