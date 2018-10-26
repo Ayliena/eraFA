@@ -103,7 +103,7 @@
             <div class="col-sm-1"></div>
             <div class="col-sm-3"><p>Donne a: {{ cat.nextowner.FAname }}</p></div>
             <div class="col-sm-1"></div>
-            <div><button type="submit" name="action" value="fa_canceltr">Annuler le transfert</button></div>
+            {% if not otheruser %}<div><button type="submit" name="action" value="fa_canceltr">Annuler le transfert</button></div>{% endif %}
             </div>
         </form>
         {% endfor %}
@@ -136,7 +136,7 @@
             <div class="row">
             <div class="col-sm-1"></div>
             <div class="col-sm-3"><p>Recu de: {{ cat.owner.FAname }}</p></div>
-            <div class="col-sm-2"><button type="submit" name="action" value="fa_accepttr">Accepter le transfert</button></div>
+            {% if not otheruser %}<div class="col-sm-2"><button type="submit" name="action" value="fa_accepttr">Accepter le transfert</button></div>{% endif %}
             </div>
         </form>
         {% endfor %}
