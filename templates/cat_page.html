@@ -41,7 +41,7 @@
             populatecolor("c_color");
             {% if cat.sex %} document.getElementById("c_sex").value = {{ cat.sex }}; {% endif %}
             {% if cat.color %} document.getElementById("c_color").value = {{ cat.color }}; {% endif %}
-            {% if cat.longhair %} document.getElementById("c_hlen").value = {{ cat.color }}; {% endif %}
+            {% if cat.longhair %} document.getElementById("c_hlen").value = {{ cat.longhair }}; {% endif %}
             {% if cat.adoptable %} document.getElementById("c_adoptable").value = 1; {% endif %}
 
             var sel = document.getElementById("sel_FA");
@@ -57,10 +57,10 @@
             }
 
             populatevets("visit_vet");
-            {% for vv in cat.vetvisits %}
+            {% for vv in cat.vetvisits %}{% if vv.planned %}
             populatevets("oldv_{{vv.id}}_vet");
             document.getElementById("oldv_{{vv.id}}_vet").value = {{vv.vet_id}};
-            {% endfor %}
+            {% endif %}{% endfor %}
         }
     </script>
 <body>
@@ -161,17 +161,17 @@
                     {{ vv.doneby.FAname }}:
                     <select name="oldv_{{vv.id}}_state"><option value="0">Effectuee le</option><option value="1" selected>Planifiee pour le</option></select>
                     <input type="text" name="oldv_{{vv.id}}_date" value="{{vv.vdate.strftime("%d/%m/%y")}}">
-                    chez  <select name="oldv_{{vv.id}}_vet"></select>
+                    chez  <select name="oldv_{{vv.id}}_vet" id="oldv_{{vv.id}}_vet"></select>
                 </div>
                 <div class="row form-group">
-                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_pv">Primo vaccination</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_r1">1er rappel</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_r2">2eme rappel</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_sc">Sterilisation/Castration</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_id">Identification</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_tf">Test FIV/FelV</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_gen">Soins / autre</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_rr">Rappel annuel</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_pv"{% if vv.vtype[0] != '-' %} checked{% endif %}>Primo vaccination</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_r1"{% if vv.vtype[1] != '-' %} checked{% endif %}>1er rappel</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_r2"{% if vv.vtype[2] != '-' %} checked{% endif %}>2eme rappel</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_sc"{% if vv.vtype[3] != '-' %} checked{% endif %}>Sterilisation/Castration</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_id"{% if vv.vtype[4] != '-' %} checked{% endif %}>Identification</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_tf"{% if vv.vtype[5] != '-' %} checked{% endif %}>Test FIV/FelV</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_gen"{% if vv.vtype[6] != '-' %} checked{% endif %}>Soins / autre</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_rr"{% if vv.vtype[7] != '-' %} checked{% endif %}>Rappel annuel</label>
                 </div>
                 <div class="row form-group">
                     <textarea class="form-control" name="oldv_{{vv.id}}_comments" placeholder="Commentaires / informations additionnelles"></textarea>

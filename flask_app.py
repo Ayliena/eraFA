@@ -2,7 +2,7 @@
 # ERA FA management flask app
 
 # jsonify is for debugging
-from flask import Flask, render_template, redirect, request, url_for,jsonify
+from flask import Flask, render_template, redirect, request, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import and_
 from flask_login import login_user, LoginManager, UserMixin, logout_user, login_required, current_user
@@ -46,50 +46,50 @@ TabHair = ["COURT", "MI-LONG", "LONG"]
 VETlist = [ [8, "Veto (commentaires)"], [ 6, "AMCB Veterinaires" ], [7, "Clinique Mont. Verte"]  ]
 
 # special FA ids (static)
-FAidAD = 3
+FAidAD = 2
 FAidDCD = 5
 
 # --------------- HELPER FUNCTIONS
 
-def vetMapToString(vetmap):
-    str = "-------";
-    if vetmap["visit_pv"]:
+def vetMapToString(vetmap, prefix):
+    str =["-", "-", "-", "-", "-", "-", "-", "-"]
+    if prefix+"_pv" in vetmap:
         str[0] = 'V'
-    if vetmap["visit_r1"]:
+    if prefix+"_r1" in vetmap:
         str[1] = '1'
-    if vetmap["visit_r2"]:
+    if prefix+"_r2" in vetmap:
         str[2] = '2'
-    if vetmap["visit_sc"]:
+    if prefix+"_sc" in vetmap:
         str[3] = 'S'
-    if vetmap["visit_id"]:
+    if prefix+"_id" in vetmap:
         str[4] = 'P'
-    if vetmap["visit_tf"]:
+    if prefix+"_tf" in vetmap:
         str[5] = 'T'
-    if vetmap["visit_gen"]:
+    if prefix+"_gen" in vetmap:
         str[6] = 'X'
-    if vetmap["visit_rr"]:
+    if prefix+"_rr" in vetmap:
         str[7] = 'R'
-    return str
+    return "".join(str)
 
-def vetStringToMap(vetstr):
+def vetStringToMap(vetstr, prefix):
     vmap = {}
-    vmap["visit_pv"] = (str[0] == 'V')
-    vmap["visit_r1"] = (str[1] == '1')
-    vmap["visit_r2"] = (str[2] == '2')
-    vmap["visit_sc"] = (str[3] == 'S')
-    vmap["visit_id"] = (str[4] == 'P')
-    vmap["visit_tf"] = (str[5] == 'T')
-    vmap["visit_gen"] = (str[6] == 'X')
-    vmap["visit_rr"] = (str[7] == 'R')
+    vmap[prefix+"_pv"] = (str[0] == 'V')
+    vmap[prefix+"_r1"] = (str[1] == '1')
+    vmap[prefix+"_r2"] = (str[2] == '2')
+    vmap[prefix+"_sc"] = (str[3] == 'S')
+    vmap[prefix+"_id"] = (str[4] == 'P')
+    vmap[prefix+"_tf"] = (str[5] == 'T')
+    vmap[prefix+"_gen"] = (str[6] == 'X')
+    vmap[prefix+"_rr"] = (str[7] == 'R')
     return vmap
 
 def vetAddStrings(vetstr1, vetstr2):
-    str = vetstr1;
+    str = list(vetstr1)
     for i in range(0,7):
         if str[i] == '-':
-            str[i] = vetstr2[i];
+            str[i] = vetstr2[i]
 
-    return str
+    return "".join(str)
 
 # --------------- USER CLASS
 
@@ -220,7 +220,7 @@ def index():
         return render_template("main_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
             cats=Cat.query.filter( and_(Cat.owner_id==current_user.id, Cat.nextowner_id== None) ).all(),
             ocats=Cat.query.filter( and_(Cat.owner_id==current_user.id, Cat.nextowner_id != None) ).all(),
-            icats=Cat.query.filter_by(nextowner_id=current_user.id).all())
+            icats=Cat.query.filter_by(nextowner_id=current_user.id).all(), FAidAD=FAidAD, FAidDCD=FAidDCD)
 #            cats=current_user.cats, icats=current_user.icats)
 
     # handle commands
@@ -237,12 +237,12 @@ def index():
             # check for special FAs
             if theFA.FAisAD or theFA.FAisDCD:
                 return render_template("main_spc_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    cats=Cat.query.filter( and_(Cat.owner_id==FAid, Cat.nextowner_id== None) ).all())
+                    cats=Cat.query.filter( and_(Cat.owner_id==FAid, Cat.nextowner_id== None) ).all(), FAidAD=FAidAD, FAidDCD=FAidDCD)
 
             return render_template("main_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
                 cats=Cat.query.filter( and_(Cat.owner_id==FAid, Cat.nextowner_id== None) ).all(),
                 ocats=Cat.query.filter( and_(Cat.owner_id==FAid, Cat.nextowner_id != None) ).all(),
-                icats=Cat.query.filter_by(nextowner_id=FAid).all())
+                icats=Cat.query.filter_by(nextowner_id=FAid).all(), FAidAD=FAidAD, FAidDCD=FAidDCD)
 
         # if the fa doesn't exist, return to index
         return render_template("error_page.html", user=current_user, errormessage="attempt to view invalid FA")
@@ -312,7 +312,7 @@ def catpage():
 
     if (cmd == "adm_addcathere" or cmd == "adm_addcatgiveFA" or cmd == "adm_addcatputFA") and current_user.FAisADM:
         # generate the new cat using the form information
-        vetstr = vetMapToString(request.form)
+        vetstr = vetMapToString(request.form, "visit")
 
         theCat = Cat(registre=request.form["c_registre"], name=request.form["c_name"], sex=request.form["c_sex"],
                     color=request.form["c_color"], longhair=request.form["c_hlen"], identif=request.form["c_identif"],
@@ -335,11 +335,13 @@ def catpage():
         else: # cmd == "addcathere"
             theCat.owner_id = current_user.id
 
+        db.session.add(theCat)
+        db.session.commit()
+
         # generate the event
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="rajoute dans le systeme par {}".format(current_user.FAname))
         db.session.add(theEvent)
 
-        db.session.add(theCat)
         db.session.commit()
         return redirect(url_for('index'))
 
@@ -372,10 +374,9 @@ def catpage():
         theCat.adoptable=(request.form["c_adoptable"] == "1")
 
         # generate the vetinfo record, if any, and the associated event
-        newvisit =  ("visit_pv" in request.form or "visit_r1" in request.form or "visit_r2" in request.form or
-            "visit_sc" in request.form or "visit_id" in request.form or "visit_tf" in request.form or "visit_gen" in  request.form)
+        VisitType = vetMapToString(request.form, "visit")
 
-        if newvisit:
+        if VisitType != "--------":
             # validate the vet
             vetId = next((x for x in VETlist if x[0]==int(request.form["visit_vet"])), None)
 
@@ -389,15 +390,79 @@ def catpage():
             except ValueError:
                 VisitDate = datetime.now()
 
-            VisitType = ""
+            VisitPlanned = (int(request.form["visit_state"]) == 1)
+
+            # if executed, then cumulate with the global
+            if not VisitPlanned:
+                theCat.vetshort = vetAddStrings(theCat.vetshort, VisitType)
 
             theVisit = VetInfo(cat_id=theCat.id, doneby_id=current_user.id, vet_id=vetId, vtype=VisitType, vdate=VisitDate,
-                planned=(request.form["visit_state"] == 1), comments=request.form["visit_comments"])
+                planned=VisitPlanned, comments=request.form["visit_comments"])
             db.session.add(theVisit)
 
-        # TODO
-#        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="rajoute dans le systeme")
-#        db.session.add(theEvent)
+            # if not planned, add it as event
+            if not VisitPlanned:
+                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite veterinaire {} effectuee".format(current_user.FAname, VisitType))
+                db.session.add(theEvent)
+
+        # iterate through all the planned visits and see if they have been updated....
+        # extract all planned visits which are now executed
+        modvisits = []
+        for k in request.form.keys():
+            if k.startswith("oldv_") and k.endswith("_state") and int(request.form[k]) == 0:
+                modvisits.append(k)
+
+        for mv in modvisits:
+            # extract and validate the id
+            mvid = mv[5:-6]
+
+            theVisit = VetInfo.query.filter_by(id=mvid).first();
+            if not theVisit:
+                return render_template("error_page.html", user=current_user, errormessage="planned visit not found (invalid id)")
+
+            # make sure it's related to this cat
+            if theVisit.cat_id != theCat.id:
+                return render_template("error_page.html", user=current_user, errormessage="visit/cat id mismatch")
+
+            # generate the form name prefix
+            prefix = "oldv_"+mvid
+
+            # modify the visit with the new data (we'll need to get all of it....)
+            # if all reasons have been removed, erase it
+            VisitType = vetMapToString(request.form, prefix)
+
+            if VisitType == "--------":
+                # all reasons removed, erase this
+                db.session.delete(theVisit)
+
+            else:
+                # update the record
+                theVisit.VisitType = VisitType
+
+                try:
+                    VisitDate = datetime.strptime(request.form[prefix+"_date"], "%d/%m/%y")
+                except ValueError:
+                    VisitDate = datetime.now()
+                theVisit.visitDate = VisitDate
+
+                theVisit.planned = False
+
+                # validate the vet
+                vetId = next((x for x in VETlist if x[0]==int(request.form[prefix+"_vet"])), None)
+
+                if not vetId:
+                    return render_template("error_page.html", user=current_user, errormessage="vet id is invalid")
+                else:
+                    vetId = vetId[0]
+
+                theVisit.comments = request.form[prefix+"_comments"]
+
+                theCat.vetshort = vetAddStrings(theCat.vetshort, VisitType)
+
+                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite veterinaire {} effectuee le {}".format(current_user.FAname, VisitType, VisitDate))
+                db.session.add(theEvent)
+
+        # end for mv in modvisits
 
         db.session.commit()
 
@@ -456,10 +521,6 @@ def catpage():
 
         return redirect(url_for('index'))
 
-    if cmd == "fa_addvet" and current_user.FAisFA:
-        # add vet information
-        return render_template("cat_page.html", user=current_user, cat=theCat, falist=[])
-
     # admin cat commands
     # display info about a cat
     return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist)
@@ -475,12 +536,8 @@ def listpage():
     if cmd == "sv_viewFA" and (current_user.FAisADM or current_user.FAisOV):
         # normal FAs
         FAlist=User.query.filter_by(FAisFA=True).all()
-        # special FAs
-        if current_user.FAisADM:
-            FAspecialAD=User.query.filter_by(FAisAD=True).first()
-            FAspecialDCD=User.query.filter_by(FAisDCD=True).first()
 
-        return render_template("list_page.html", user=current_user, falist=FAlist, faad=FAspecialAD, fadcd=FAspecialDCD)
+        return render_template("list_page.html", user=current_user, falist=FAlist, FAidAD=FAidAD, FAidDCD=FAidDCD)
 
     # default is return to index
     return redirect(url_for('index'))

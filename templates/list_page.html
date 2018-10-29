@@ -65,13 +65,13 @@
             </form>
         {% endif %}
 
-        {% if faad %} <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
-            <div class="row"><button class="btn btn-default" name="FAid" value="{{faad.id}}">Chats adoptes</div>
-            </form>{% endif %}
+        <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+            <div class="row"><button class="btn btn-default" name="FAid" value="{{FAidAD}}">Chats adoptes</button></div>
+            </form>
 
-        {% if fadcd %} <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
-            <div class="row"><button class="btn btn-default" name="FAid" value="{{fadcd.id}}">Chats decedes</div>
-            </form>{% endif %}
+        <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+            <div class="row"><button class="btn btn-default" name="FAid" value="{{FAidDCD}}">Chats decedes</button></div>
+            </form>
 
     </div><!-- /.container -->
 </body>
