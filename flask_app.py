@@ -2,7 +2,7 @@
 # ERA FA management flask app
 
 # jsonify is for debugging
-from flask import Flask, render_template, redirect, request, url_for
+from flask import Flask, render_template, redirect, request, url_for, session, Response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import and_
 from flask_login import login_user, LoginManager, UserMixin, logout_user, login_required, current_user
@@ -217,8 +217,32 @@ def index():
 
     # generate the page
     if request.method == "GET":
+        # are we looking at a page from another FA?
+        if "otherFA" in session and (current_user.FAisOV or current_user.FAisADM):
+            FAid = session["otherFA"]
+
+            # special lists?
+            if FAid == "special-all":
+                return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                    catlist=Cat.query.all(), FAidAD=FAidAD, FAidDCD=FAidDCD)
+
+            # validate the id
+            theFA = User.query.filter_by(id=FAid).first()
+            faexists = theFA is not None;
+
+            if faexists:
+                # check for special FAs
+                if theFA.FAisAD or theFA.FAisDCD:
+                    return render_template("main_spc_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                        cats=Cat.query.filter( and_(Cat.owner_id==FAid, Cat.nextowner_id==None) ).all(), FAidAD=FAidAD, FAidDCD=FAidDCD)
+
+                return render_template("main_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                    cats=Cat.query.filter( and_(Cat.owner_id==FAid, Cat.nextowner_id==None) ).all(),
+                    ocats=Cat.query.filter( and_(Cat.owner_id==FAid, Cat.nextowner_id != None) ).all(),
+                    icats=Cat.query.filter_by(nextowner_id=FAid).all(), FAidAD=FAidAD, FAidDCD=FAidDCD)
+
         return render_template("main_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-            cats=Cat.query.filter( and_(Cat.owner_id==current_user.id, Cat.nextowner_id== None) ).all(),
+            cats=Cat.query.filter( and_(Cat.owner_id==current_user.id, Cat.nextowner_id==None) ).all(),
             ocats=Cat.query.filter( and_(Cat.owner_id==current_user.id, Cat.nextowner_id != None) ).all(),
             icats=Cat.query.filter_by(nextowner_id=current_user.id).all(), FAidAD=FAidAD, FAidDCD=FAidDCD)
 #            cats=current_user.cats, icats=current_user.icats)
@@ -229,23 +253,7 @@ def index():
     # alternate GET command for another FA
     if cmd == "sv_fastate" and (current_user.FAisOV or current_user.FAisADM):
         FAid = int(request.form["FAid"]);
-        # validate the id
-        theFA = User.query.filter_by(id=FAid).first()
-        faexists = theFA is not None;
-
-        if faexists:
-            # check for special FAs
-            if theFA.FAisAD or theFA.FAisDCD:
-                return render_template("main_spc_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    cats=Cat.query.filter( and_(Cat.owner_id==FAid, Cat.nextowner_id== None) ).all(), FAidAD=FAidAD, FAidDCD=FAidDCD)
-
-            return render_template("main_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                cats=Cat.query.filter( and_(Cat.owner_id==FAid, Cat.nextowner_id== None) ).all(),
-                ocats=Cat.query.filter( and_(Cat.owner_id==FAid, Cat.nextowner_id != None) ).all(),
-                icats=Cat.query.filter_by(nextowner_id=FAid).all(), FAidAD=FAidAD, FAidDCD=FAidDCD)
-
-        # if the fa doesn't exist, return to index
-        return render_template("error_page.html", user=current_user, errormessage="attempt to view invalid FA")
+        session["otherFA"] = FAid
         return redirect(url_for('index'))
 
     # get the cat
@@ -292,7 +300,16 @@ def index():
     return redirect(url_for('index'))
 
 
+@app.route("/self")
+@login_required
+def selfpage():
+    # a version of the main page which brings you back to your list
+    session["otherFA"] = None
+    return redirect(url_for('index'))
+
+
 @app.route("/cat", methods=["POST"])
+@login_required
 def catpage():
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
@@ -527,6 +544,7 @@ def catpage():
 
 
 @app.route("/list", methods=["POST"])
+@login_required
 def listpage():
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
@@ -538,6 +556,19 @@ def listpage():
         FAlist=User.query.filter_by(FAisFA=True).all()
 
         return render_template("list_page.html", user=current_user, falist=FAlist, FAidAD=FAidAD, FAidDCD=FAidDCD)
+
+    if cmd == "sv_globalTab" and (current_user.FAisADM or current_user.FAisOV):
+        # list of all cats
+        session["otherFA"] = "special-all"
+        return redirect(url_for('index'))
+
+    if cmd == "sv_globalCSV" and (current_user.FAisADM or current_user.FAisOV):
+        csv = '1,2,3\n4,5,6\n'
+        return Response(
+            csv,
+            mimetype="text/csv",
+            headers={"Content-disposition":
+                     "attachment; filename=chats.csv"})
 
     # default is return to index
     return redirect(url_for('index'))

@@ -27,7 +27,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="/">{{ user.FAid }} ({{ user.FAname }}) [
+            <a class="navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }}) [
                 {% if user.FAisFA %} FA {% endif %}
                 {% if user.FAisOV %} SV {% endif %}
                 {% if user.FAisADM %} GR {% endif %} ]
@@ -81,15 +81,6 @@
             <div class="row">Aucun</div>
         {% endfor %}
         <hr>
-        {% if user.FAisOV %}
-        <form  action="list" method="POST">
-            <div class="row">
-                Commandes disponibles en tant que Superviseur:<br>
-                    <button type="submit" name="action" value="sv_viewFA">Vision par FA</button>
-                    <button type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button>
-            </div>
-        </form>
-        {% endif %}
 
         {% if user.FAisOV %}
         <form  action="list" method="POST">

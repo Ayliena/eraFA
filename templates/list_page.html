@@ -5,7 +5,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     </head>
     <script>
         function showHide(elem) {
@@ -27,7 +27,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="/">{{ user.FAid }} ({{ user.FAname }}) [
+            <a class="navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }}) [
                 {% if user.FAisFA %} FA {% endif %}
                 {% if user.FAisOV %} SV {% endif %}
                 {% if user.FAisADM %} GR {% endif %} ]
@@ -46,6 +46,8 @@
 
     <div class="container">
         {% if falist %}
+            <h2>Familles d'accueil</h2>
+
             <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
             {% for fa in falist %}
                 <div class="row">
@@ -63,16 +65,62 @@
                 </div>
             {% endfor %}
             </form>
+
+            <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+               <div class="row"><button class="btn btn-default" name="FAid" value="{{FAidAD}}">Chats adoptes</button></div>
+               </form>
+
+           <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+              <div class="row"><button class="btn btn-default" name="FAid" value="{{FAidDCD}}">Chats decedes</button></div>
+              </form>
         {% endif %}
 
-        <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
-            <div class="row"><button class="btn btn-default" name="FAid" value="{{FAidAD}}">Chats adoptes</button></div>
-            </form>
+        {% if catlist %}
+            <h2>Tableau global des chats</h2>
+            {% for cat in catlist %}
+                 <div class="row">
+                    <div class="col-sm-1">
+                        <form action="cat" method="POST">
+                            <input type="hidden" name="catid" value="{{cat.id}}">
+                            <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong>{{cat.registre}}</strong></button>
+                            <a href="#" onClick="showHide('desc{{cat.registre}}');">D</a></form>
+                    </div>
+                    <div class="col-sm-2">{{ cat.identif }}</div>
+                    <div class="col-sm-2">{{ cat.name }}</div>
+                    <div class="col-sm-1">{{ tabsex[cat.sex] }}</div>
+                    <div class="col-sm-2">{{ tabcol[cat.color] }}</div>
+                    <div class="col-sm-1">{{ tabhair[cat.longhair] }}</div>
+                    <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
+                    <div class="col-sm-2">{% if cat.adoptable %}<p class="bg-success">Adoptable</p>{% else %}<p class="bg-danger">Non adoptable</p>{% endif %}</div>
+                </div>
+                <div class="row" style="display: none;" id="desc{{cat.registre}}">
+                    <div class="col-sm-1"></div>
+                    <div class="col-sm-11"><p class="small">{{ cat.description }}</p></div>
+                </div>
+            {% else %}
+                Aucun chat est enregistre dans le systeme.
+            {% endfor %}
+        {% endif %}
 
-        <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
-            <div class="row"><button class="btn btn-default" name="FAid" value="{{FAidDCD}}">Chats decedes</button></div>
+        {% if user.FAisOV %}
+        <form  action="list" method="POST">
+            <div class="row">
+                Commandes disponibles en tant que Superviseur:<br>
+                    <button type="submit" name="action" value="sv_viewFA">Vision par FA</button>
+                    <button type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button>
+            </div>
+        </form>
+        {% endif %}
+        {% if user.FAisADM %}
+        <div class="row">Commandes disponibles en tant que Gestionnaire-Registre:</div>
+            <form action="cat" method="POST"><div class="row form-group">
+                <button type="submit" name="action" value="adm_newcat">Rajouter un chat</button></div>
             </form>
-
+            <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+                <div class="row form-group"><button name="FAid" value="{{FAidAD}}">Chats adoptes</button>
+                <button name="FAid" value="{{FAidDCD}}">Chats decedes</button></div>
+            </form>
+        {% endif %}
     </div><!-- /.container -->
 </body>
 </html>
