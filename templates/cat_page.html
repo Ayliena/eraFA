@@ -5,7 +5,9 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+        <link href="https://stackpath.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
     </head>
     <script type="text/javascript">
         function populatecolor(selid) {
@@ -22,7 +24,6 @@
                 sel.add(option);
             }
          }
-
         function populatevets(selid) {
             var vetids = [8, 6, 7];
             var vetnames = ["Veto (commentaires)", "AMCB veterinaires", "Clinique Mont. Verte"];
@@ -36,7 +37,6 @@
                 sel.add(option);
             }
         }
-
         window.onload=function() {
             populatecolor("c_color");
             {% if cat.sex %} document.getElementById("c_sex").value = {{ cat.sex }}; {% endif %}
@@ -130,23 +130,26 @@
             </div>
         </div>
         <div class="row form-group">
-            <div class="col-sm-2">Sexe:
-                <select name="c_sex" id="c_sex">
+            <div class="col-sm-1">Sexe:</div>
+            <div class="col-sm-2"><select name="c_sex" id="c_sex">
                 <option value="0">INCONNU</option>
                 <option value="1">FEMELLE</option>
-                <option value="2">MALE</option></select>
+                <option value="2">MALE</option></select></div>
+            <div class="col-sm-1">Naissance:</div>
+            <div class="col-sm-2">
+                {% if cat.birthdate %} <input type="text" name="c_birthdate" value="{{ cat.birthdate.strftime("%d/%m/%y") }}">
+                {% else %} <input type="text" class="form-control" name="c_birthdate" placeholder="date de naissance"> {% endif %}
             </div>
-            <div class="col-sm-2">Poil:
-                <select name="c_hlen" id="c_hlen">
+        </div>
+        <div class="row form-group">
+            <div class="col-sm-1">Poil:</div>
+            <div class="col-sm-2"><select name="c_hlen" id="c_hlen">
                 <option value="0">COURT</option>
                 <option value="1">MI-LONG</option>
-                <option value="2">LONG</option>
-                </select>
-            </div>
-            <div class="col-sm-3">Couleur:
-                <select name="c_color" id="c_color">
-                </select>
-            </div>
+                <option value="2">LONG</option></select></div>
+            <div class="col-sm-1">Couleur:</div>
+            <div class="col-sm-2"><select name="c_color" id="c_color">
+                </select></div>
         </div>
 
         {% if cat.description %} Description:<div class="form-group"><textarea class="form-control" name="c_description">{{ cat.description }}</textarea></div>
@@ -179,7 +182,7 @@
                 {% else %}
                 <div class="row form-group">
                     {{ vv.doneby.FAname }}:
-                    effectuee le {{ vv.vdate.strftime("%d/%m/%Y") }} aupres de {{ vv.vet.FAname }}
+                    effectuee le {{ vv.vdate.strftime("%d/%m/%y") }} aupres de {{ vv.vet.FAname }}
                 </div>
                 <div class="row form-group">
                     {% if vv.vtype[0] != '-' %}- Primo Vaccination {% endif %}

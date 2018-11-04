@@ -37,11 +37,12 @@ login_manager.init_app(app)
 # --------------- STATIC DATA
 
 # NOTE: it must also be changed in main_page.html and cat_page.html
-TabColor = ["INCONNU", "BEIGE", "BEIGE ET BLANC", "BLANC", "BLUE POINT", "CREME", "ECAILLE DE TORTUE", "GRIS", "GRIS CHARTREUX", "GRIS ET BLANC",
-             "NOIR", "NOIR ET BLANC", "NOIR ET SMOKE", "NOIR PLASTRON BLANC", "ROUX", "ROUX ET BLANC", "SEAL POINT", "TABBY BLANC", "TABBY BRUN", "TABBY GRIS",
+TabColor = ["??couleur??", "BEIGE", "BEIGE ET BLANC", "BLANC", "BLUE POINT", "CREME", "ECAILLE DE TORTUE", "Gris", "GRIS CHARTREUX", "GRIS ET BLANC",
+             "Noir", "NOIR ET BLANC", "NOIR ET SMOKE", "NOIR PLASTRON BLANC", "ROUX", "ROUX ET BLANC", "SEAL POINT", "Tabby blanc", "TABBY BRUN", "TABBY GRIS",
              "TIGRE", "TIGRE BEIGE", "TIGRE BRUN", "TIGRE CREME", "TIGRE GRIS", "TRICOLORE"]
-TabSex = ["INCONNU", "FEMELLE", "MALE"]
-TabHair = ["COURT", "MI-LONG", "LONG"]
+TabSex = ["??sexe??", "Femelle", "Male"]
+TabHair = ["", ", poil mi-long", ", poil long"]
+#TabHair = ["COURT", "MI-LONG", "LONG"]
 # static since it changes rarely, NOTE: it must also be changed in cat_page.html
 VETlist = [ [8, "Veto (commentaires)"], [ 6, "AMCB Veterinaires" ], [7, "Clinique Mont. Verte"]  ]
 
@@ -94,6 +95,7 @@ def vetAddStrings(vetstr1, vetstr2):
 # --------------- USER CLASS
 
 # to create a new user:
+# > export FLASK_APP=flask_app.py
 # > flask shell
 # > from flask_app import db, User
 # > from werkzeug.security import generate_password_hash
@@ -331,7 +333,12 @@ def catpage():
         # generate the new cat using the form information
         vetstr = vetMapToString(request.form, "visit")
 
-        theCat = Cat(registre=request.form["c_registre"], name=request.form["c_name"], sex=request.form["c_sex"],
+        try:
+            bdate = datetime.strptime(request.form["c_birthdate"], "%d/%m/%y")
+        except ValueError:
+            bdate = None
+
+        theCat = Cat(registre=request.form["c_registre"], name=request.form["c_name"], sex=request.form["c_sex"], birthdate=bdate,
                     color=request.form["c_color"], longhair=request.form["c_hlen"], identif=request.form["c_identif"],
                     description=request.form["c_description"], vetshort=vetstr, adoptable=(request.form["c_adoptable"]=="1"))
 
@@ -384,6 +391,10 @@ def catpage():
         # update cat information
         theCat.name = request.form["c_name"]
         theCat.sex=request.form["c_sex"]
+        try:
+            theCat.birthdate = datetime.strptime(request.form["c_birthdate"], "%d/%m/%y")
+        except ValueError:
+            theCat.birthdate = None
         theCat.color=request.form["c_color"]
         theCat.longhair=request.form["c_hlen"]
         theCat.identif=request.form["c_identif"]

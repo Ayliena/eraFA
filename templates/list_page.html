@@ -16,6 +16,25 @@
                 x.style.display = "none";
             }
         }
+        function readableAge(days) {
+            if (days < 12*7)  return Math.floor(days/7).toString()+"s";
+            else if (days < 365) return Math.floor(days/30.42).toString()+"m";
+            else if (days < 1095) {
+                var sm = Math.floor((days % 365) / 183) * 6;
+                return Math.floor(days/365).toString()+"a"+sm.toString()+"m";
+            }
+            else return Math.floor(days/365).toString()+"a";
+        }
+        window.onload=function() {
+            var i, dates = document.querySelectorAll('[id^="bd_"]');
+            var today = new Date().getTime() / 1000;
+
+            for (i = 0; i < dates.length; ++i) {
+                days = Math.floor((today - parseInt(dates[i].innerHTML))/86400);
+                dates[i].innerHTML = readableAge(days);
+                // Math.floor(parseInt(dates[i].innerHTML)/86400;
+            }
+        }
     </script>
 <body>
     <nav class="navbar navbar-inverse">
@@ -78,25 +97,26 @@
         {% if catlist %}
             <h2>Tableau global des chats</h2>
             {% for cat in catlist %}
-                 <div class="row">
-                    <div class="col-sm-1">
-                        <form action="cat" method="POST">
-                            <input type="hidden" name="catid" value="{{cat.id}}">
-                            <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong>{{cat.registre}}</strong></button>
-                            <a href="#" onClick="showHide('desc{{cat.registre}}');">D</a></form>
-                    </div>
-                    <div class="col-sm-2">{{ cat.identif }}</div>
-                    <div class="col-sm-2">{{ cat.name }}</div>
-                    <div class="col-sm-1">{{ tabsex[cat.sex] }}</div>
-                    <div class="col-sm-2">{{ tabcol[cat.color] }}</div>
-                    <div class="col-sm-1">{{ tabhair[cat.longhair] }}</div>
-                    <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
-                    <div class="col-sm-2">{% if cat.adoptable %}<p class="bg-success">Adoptable</p>{% else %}<p class="bg-danger">Non adoptable</p>{% endif %}</div>
+             <div class="row">
+                 <div class="col-sm-1">
+                    <form action="cat" method="POST">
+                        <input type="hidden" name="catid" value="{{cat.id}}">
+                        <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong>{{cat.registre}}</strong></button>
+                        <a href="#" onClick="showHide('desc{{cat.registre}}');">D</a></form>
                 </div>
-                <div class="row" style="display: none;" id="desc{{cat.registre}}">
-                    <div class="col-sm-1"></div>
-                    <div class="col-sm-11"><p class="small">{{ cat.description }}</p></div>
-                </div>
+                <div class="col-sm-2">{{ cat.identif }}</div>
+                <div class="col-sm-4">
+                    <b>{% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}</b> ({{ tabsex[cat.sex] }},
+                    {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}??age??{% endif %},
+                    {{ tabcol[cat.color] }}{{ tabhair[cat.longhair] }})</div>
+                <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
+                <div class="col-sm-2">{{ cat.owner.FAname }}</div>
+                <div class="col-sm-2">{% if cat.adoptable %}<p class="bg-success">Adoptable</p>{% else %}<span class="bg-danger">Non adoptable</span>{% endif %}</div>
+            </div>
+            <div class="row" style="display: none;" id="desc{{cat.registre}}">
+                <div class="col-sm-1"></div>
+                <div class="col-sm-11"><p class="small">{{ cat.description }}</p></div>
+            </div>
             {% else %}
                 Aucun chat est enregistre dans le systeme.
             {% endfor %}
