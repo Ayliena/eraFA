@@ -74,11 +74,12 @@
                 <form action="cat" method="POST">
                     <input type="hidden" name="catid" value="{{cat.id}}">
                     <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong>{{cat.registre}}</strong></button>
-                    <a href="#" onClick="showHide('desc{{cat.registre}}');">D</a></form>
+                </form>
             </div>
             <div class="col-sm-2">{{ cat.identif }}</div>
             <div class="col-sm-4">
-                <b>{% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}</b> ({{ tabsex[cat.sex] }},
+                <a href="#" onClick="showHide('desc{{cat.registre}}');"><b>{% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}</b></a>
+                ({{ tabsex[cat.sex] }},
                 {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}??age??{% endif %},
                 {{ tabcol[cat.color] }}{{ tabhair[cat.longhair] }})</div>
             <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
@@ -91,87 +92,21 @@
         {% else %}
             <div class="row">Aucun</div>
         {% endfor %}
-
-        {% if ocats %}
-            <h2>Chats donnes</h2>
-        {% endif %}
-
-        {% for cat in ocats %}
-         <div class="row">
-             <div class="col-sm-1">
-                <form action="cat" method="POST">
-                    <input type="hidden" name="catid" value="{{cat.id}}">
-                    <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong>{{cat.registre}}</strong></button>
-                    <a href="#" onClick="showHide('desc{{cat.registre}}');">D</a></form>
-            </div>
-            <div class="col-sm-2">{{ cat.identif }}</div>
-            <div class="col-sm-2">{{ cat.name }}</div>
-            <div class="col-sm-1">{{ tabsex[cat.sex] }}</div>
-            <div class="col-sm-2">{{ tabcol[cat.color] }}</div>
-            <div class="col-sm-1">{{ tabhair[cat.longhair] }}</div>
-            <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
-            <div class="col-sm-2">{% if cat.adoptable %}<p class="bg-success"> Adoptable </p>{% else %}<p class="bg-danger">Non adoptable</p>{% endif %}</div>
-        </div>
-        <div class="row" style="display: none;" id="desc{{cat.registre}}">
-            <div class="col-sm-1"></div>
-            <div class="col-sm-11"><p class="small">{{ cat.description }}</p></div>
-        </div>
-        <form action="." method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
-            <div class="row">
-            <div class="col-sm-1"></div>
-            <div class="col-sm-3"><p>Donne a: {{ cat.nextowner.FAname }}</p></div>
-            <div class="col-sm-1"></div>
-            {% if not otheruser %}<div><button type="submit" name="action" value="fa_canceltr">Annuler le transfert</button></div>{% endif %}
-            </div>
-        </form>
-        {% endfor %}
-
-        {% if icats %}
-            <h2>Chats recus</h2>
-        {% endif %}
-
-        {% for cat in icats %}
-         <div class="row">
-             <div class="col-sm-1">
-                <form action="cat" method="POST">
-                    <input type="hidden" name="catid" value="{{cat.id}}">
-                    <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong>{{cat.registre}}</strong></button>
-                    <a href="#" onClick="showHide('desc{{cat.registre}}');">D</a></form>
-            </div>
-            <div class="col-sm-2">{{ cat.identif }}</div>
-            <div class="col-sm-2">{{ cat.name }}</div>
-            <div class="col-sm-1">{{ tabsex[cat.sex] }}</div>
-            <div class="col-sm-2">{{ tabcol[cat.color] }}</div>
-            <div class="col-sm-1">{{ tabhair[cat.longhair] }}</div>
-            <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
-            <div class="col-sm-2">{% if cat.adoptable %}<p class="bg-success">Adoptable</p>{% else %}<p class="bg-danger">Non adoptable</p>{% endif %}</div>
-        </div>
-        <div class="row" style="display: none;" id="desc{{cat.registre}}">
-            <div class="col-sm-1"></div>
-            <div class="col-sm-11"><p class="small">{{ cat.description }}</p></div>
-        </div>
-        <form action="." method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
-            <div class="row">
-            <div class="col-sm-1"></div>
-            <div class="col-sm-3"><p>Recu de: {{ cat.owner.FAname }}</p></div>
-            {% if not otheruser %}<div class="col-sm-2"><button type="submit" name="action" value="fa_accepttr">Accepter le transfert</button></div>{% endif %}
-            </div>
-        </form>
-        {% endfor %}
-
         <hr>
-
         {% if user.FAisOV %}
-        <form  action="list" method="POST">
-            <div class="row">
-                Commandes disponibles en tant que Superviseur:<br>
-                    <button type="submit" name="action" value="sv_viewFA">Vision par FA</button>
-                    <button type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button>
-            </div>
-        </form>
+        <div class="row">
+            Commandes disponibles en tant que Superviseur:
+        </div>
+        <div class="row">
+            <form  action="list" method="POST">
+                <button type="submit" name="action" value="sv_viewFA">Vision par FA</button>
+                <button type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button>
+            </form>
+        </div>
         {% endif %}
         {% if user.FAisADM %}
-        <div class="row">Commandes disponibles en tant que Gestionnaire-Registre:</div>
+        <div class="row">
+            <p>Commandes disponibles en tant que Gestionnaire-Registre:</p>
             <form action="cat" method="POST"><div class="row form-group">
                 <button type="submit" name="action" value="adm_newcat">Rajouter un chat</button></div>
             </form>
@@ -179,6 +114,7 @@
                 <div class="row form-group"><button name="FAid" value="{{FAidAD}}">Chats adoptes</button>
                 <button name="FAid" value="{{FAidDCD}}">Chats decedes</button></div>
             </form>
+        </div>
         {% endif %}
 
      </div><!-- /.container -->

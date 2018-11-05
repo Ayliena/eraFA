@@ -147,8 +147,6 @@ class Cat(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     owner = db.relationship('User', foreign_keys=owner_id)
-    nextowner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    nextowner = db.relationship('User', foreign_keys=nextowner_id)
     name = db.Column(db.String(32))
     sex = db.Column(db.Integer)
     color = db.Column(db.Integer)
@@ -233,20 +231,11 @@ def index():
             faexists = theFA is not None;
 
             if faexists:
-                # check for special FAs
-                if theFA.FAisAD or theFA.FAisDCD:
-                    return render_template("main_spc_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                        cats=Cat.query.filter( and_(Cat.owner_id==FAid, Cat.nextowner_id==None) ).all(), FAidAD=FAidAD, FAidDCD=FAidDCD)
-
                 return render_template("main_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    cats=Cat.query.filter( and_(Cat.owner_id==FAid, Cat.nextowner_id==None) ).all(),
-                    ocats=Cat.query.filter( and_(Cat.owner_id==FAid, Cat.nextowner_id != None) ).all(),
-                    icats=Cat.query.filter_by(nextowner_id=FAid).all(), FAidAD=FAidAD, FAidDCD=FAidDCD)
+                    cats=Cat.query.filter_by(owner_id=FAid).all(), FAidAD=FAidAD, FAidDCD=FAidDCD)
 
         return render_template("main_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-            cats=Cat.query.filter( and_(Cat.owner_id==current_user.id, Cat.nextowner_id==None) ).all(),
-            ocats=Cat.query.filter( and_(Cat.owner_id==current_user.id, Cat.nextowner_id != None) ).all(),
-            icats=Cat.query.filter_by(nextowner_id=current_user.id).all(), FAidAD=FAidAD, FAidDCD=FAidDCD)
+            cats=Cat.query.filter_by(owner_id=current_user.id).all(), FAidAD=FAidAD, FAidDCD=FAidDCD)
 #            cats=current_user.cats, icats=current_user.icats)
 
     # handle commands
@@ -267,28 +256,6 @@ def index():
     # check if you can access this
     if theCat.owner_id != current_user.id and theCat.nextowner_id != current_user.id and not current_user.FAisADM:
         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data")
-        return redirect(url_for('index'))
-
-    # handle accept/cancel transfert
-    if cmd == "fa_accepttr" and current_user.FAisFA and current_user.id == theCat.nextowner_id:
-        # generate the event
-        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="recu chez {} de {}".format(current_user.FAname, theCat.nextowner.FAname))
-        db.session.add(theEvent)
-        # transfer here
-        theCat.owner_id = theCat.nextowner_id
-        theCat.nextowner_id = None
-        db.session.commit()
-
-        return redirect(url_for('index'))
-
-    if cmd == "fa_canceltr" and current_user.FAisFA and current_user.id == theCat.owner_id:
-        # generate the event
-        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="transfert de {} a {} annulle".format(current_user.FAname, theCat.nextowner.FAname))
-        db.session.add(theEvent)
-        # cancel the transfer
-        theCat.nextowner_id = None
-        db.session.commit()
-
         return redirect(url_for('index'))
 
     if cmd == "adm_deletecat" and current_user.FAisADM:
@@ -348,10 +315,7 @@ def catpage():
             # validate the id
             faexists = db.session.query(User.id).filter_by(id=FAid).scalar() is not None;
 
-            if cmd == "adm_addcatgiveFA" and faexists:
-                theCat.owner_id = current_user.id
-                theCat.nextowner_id = FAid
-            elif cmd == "adm_addcatputFA" and faexists:
+            if cmd == "adm_addcatputFA" and faexists:
                 theCat.owner_id = FAid
             else:
                 theCat.owner_id = current_user.id
