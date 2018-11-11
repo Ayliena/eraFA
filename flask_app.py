@@ -4,7 +4,7 @@
 # jsonify is for debugging
 from flask import Flask, render_template, redirect, request, url_for, session, Response
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import and_
+# from sqlalchemy import and_
 from flask_login import login_user, LoginManager, UserMixin, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash
 from datetime import datetime
@@ -37,14 +37,14 @@ login_manager.init_app(app)
 # --------------- STATIC DATA
 
 # NOTE: it must also be changed in main_page.html and cat_page.html
-TabColor = ["??couleur??", "BEIGE", "BEIGE ET BLANC", "BLANC", "BLUE POINT", "CREME", "ECAILLE DE TORTUE", "Gris", "GRIS CHARTREUX", "GRIS ET BLANC",
-             "Noir", "NOIR ET BLANC", "NOIR ET SMOKE", "NOIR PLASTRON BLANC", "ROUX", "ROUX ET BLANC", "SEAL POINT", "Tabby blanc", "TABBY BRUN", "TABBY GRIS",
-             "TIGRE", "TIGRE BEIGE", "TIGRE BRUN", "TIGRE CREME", "TIGRE GRIS", "TRICOLORE"]
+TabColor = ["??couleur??", "Beige", "Beige et blanc", "Blanc", "Blue point", "Creme", "Ecaille de tortue", "Gris", "Gris chartreux", "Gris et blanc",
+             "Noir", "Noir et blanc", "Noir et smoke", "Noir plastron blanc", "Roux", "Roux et blanc", "Seal point", "Tabby blanc", "Tabby brun", "Tabby gris",
+             "Tigre", "Tigre beige", "Tigre brun", "Tigre creme", "Tigre gris", "Tricolore"]
 TabSex = ["??sexe??", "Femelle", "Male"]
 TabHair = ["", ", poil mi-long", ", poil long"]
 #TabHair = ["COURT", "MI-LONG", "LONG"]
 # static since it changes rarely, NOTE: it must also be changed in cat_page.html
-VETlist = [ [8, "Veto (commentaires)"], [ 6, "AMCB Veterinaires" ], [7, "Clinique Mont. Verte"]  ]
+VETlist = [ [8, "Autre (commentaires)"], [ 6, "AMCB Veterinaires" ], [7, "Clinique Mont. Verte"]  ]
 
 # special FA ids (static)
 FAidAD = 2
@@ -92,6 +92,20 @@ def vetAddStrings(vetstr1, vetstr2):
 
     return "".join(str)
 
+#
+# --------------- DATABASE INITIALIZATION (required special FAs)
+#
+# > export FLASK_APP=flask_app.py
+# > flask shell
+# > from flask_app import db, User
+# > newuserAD = User(username="--adopted--", password_hash="nologinAD", FAname="Chats adoptes", FAid="ADOPTIONS", FAemail="invalid@invalid", FAisFA=False, FAisOV=False, FAisADM=False, FAisAD=True, FAisDCD=False, FAisVET=False, FAisHIST=False)
+# > newuserDCD = User(username="--decedes--", password_hash="nologinDCD", FAname="Chats decedes", FAid="DECES", FAemail="invalid@invalid", FAisFA=False, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=True, FAisVET=False, FAisHIST=False)
+# > newuserHIST = User(username="--historique--", password_hash="nologinHIST", FAname="Chats: historique", FAid="HISTORIQUE", FAemail="invalid@invalid", FAisFA=False, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=False, FAisHIST=True)
+# > db.session.add(newuserAD)
+# > db.session.add(newuserDCD)
+# > db.session.add(newuserHIST)
+# > db.session.commit()
+
 # --------------- USER CLASS
 
 # to create a new user:
@@ -99,11 +113,11 @@ def vetAddStrings(vetstr1, vetstr2):
 # > flask shell
 # > from flask_app import db, User
 # > from werkzeug.security import generate_password_hash
-# newuser = User(username="login", password_hash=generate_password_hash("password"), FAname="FA name - ERA", FAid="FA name - public", FAemail="FA email addr", FAisFA=True, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=False)
-# newuserFA = User(username="login", password_hash=generate_password_hash("password"), FAname="FA name - ERA", FAid="FA name - public", FAemail="FA email addr", FAisFA=True, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=False)
-# newuserVET = User(username="login", password_hash=generate_password_hash("password"), FAname="VET name(long)", FAid="name(short)", FAemail="invalid@invalid", FAisFA=False, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=True)
-# db.session.add(newuser)
-# db.session.commit()
+# > newuser = User(username="login", password_hash=generate_password_hash("password"), FAname="FA name - ERA", FAid="FA name - public", FAemail="FA email addr", FAisFA=True, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=False, FAisHIST=False)
+# > newuserFA = User(username="login", password_hash=generate_password_hash("password"), FAname="FA name - ERA", FAid="FA name - public", FAemail="FA email addr", FAisFA=True, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=False, FAisHIST=False)
+# > newuserVET = User(username="login", password_hash=generate_password_hash("password"), FAname="VET name(long)", FAid="name(short)", FAemail="invalid@invalid", FAisFA=False, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=True, FAisHIST=False)
+# > db.session.add(newuser)
+# > db.session.commit()
 
 class User(UserMixin, db.Model):
 
@@ -122,6 +136,7 @@ class User(UserMixin, db.Model):
     FAisAD = db.Column(db.Boolean, nullable=False)
     FAisDCD = db.Column(db.Boolean, nullable=False)
     FAisVET = db.Column(db.Boolean, nullable=False)
+    FAisHIST = db.Column(db.Boolean, nullable=False)
 #    cats = db.relationship('Cat', backref='owner_id', lazy='dynamic')
 #    icats = db.relationship('Cat', backref='nextowner_id', lazy='dynamic')
 
@@ -139,6 +154,8 @@ def load_user(user_id):
     return User.query.filter_by(username=user_id).first()
 
 # --------------- CAT CLASS
+
+# ORDER BY SUBSTR(registre....) e usando CHAR_LENGTH()
 
 class Cat(db.Model):
 
@@ -206,6 +223,12 @@ class Event(db.Model):
 #    commenter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
 #    commenter = db.relationship('User', foreign_keys=commenter_id)
 
+# test page
+
+@app.route('/misc')
+@login_required
+def miscpage():
+    return render_template("misc_page.html", user=current_user)
 
 # --------------- WEB PAGES
 
@@ -254,7 +277,7 @@ def index():
         return redirect(url_for('index'))
 
     # check if you can access this
-    if theCat.owner_id != current_user.id and theCat.nextowner_id != current_user.id and not current_user.FAisADM:
+    if theCat.owner_id != current_user.id and not current_user.FAisADM:
         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data")
         return redirect(url_for('index'))
 
@@ -537,8 +560,32 @@ def listpage():
         session["otherFA"] = "special-all"
         return redirect(url_for('index'))
 
-    if cmd == "sv_globalCSV" and (current_user.FAisADM or current_user.FAisOV):
-        csv = '1,2,3\n4,5,6\n'
+    # default is return to index
+    return redirect(url_for('index'))
+
+
+@app.route("/listcsv")
+@login_required
+def listdownload():
+    if current_user.FAisADM or current_user.FAisOV:
+        # generate the global table as CSV file
+        catlist=Cat.query.all()
+
+        csv="FA,Registre,Puce,Nom,Sexe,Date Naissance,Couleur,Poil,Veterinaire,Adoptable,Description\n"
+
+        for cat in catlist:
+            # historical cats are ignored
+            if cat.owner.FAisHIST:
+                continue
+
+            # this is looking for trouble.....
+            cdesc = cat.description
+            cdesc.replace('"', '""')
+
+            csv += ('"'+cat.owner.FAname+'",'+cat.registre+','+cat.identif+',"'+cat.name+'",'+
+                TabSex[cat.sex]+','+(cat.birthdate.strftime("%d/%m/%y") if cat.birthdate else '')+','+TabColor[cat.color]+','+
+                TabHair[cat.longhair]+','+cat.vetshort+','+('Adoptable' if cat.adoptable else '')+',"'+cdesc+'"\n')
+
         return Response(
             csv,
             mimetype="text/csv",

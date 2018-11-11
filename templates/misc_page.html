@@ -5,18 +5,25 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+<!---*** Start: JQuery 3.3.1 version. ***--->
+<script language="javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<!---*** End: JQuery 3.3.1 version. ***--->
+<!---*** Start: Bootstrap 3.3.7 version files. ***--->
+<script language="javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<!---*** End: Bootstrap 3.3.7 version files. ***--->
+
+<script language="javascript" src="https://momentjs.com/downloads/moment.js"></script>
+<script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/js/bootstrap-datetimepicker.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/css/bootstrap-datetimepicker.min.css">
     </head>
     <script>
-        function showHide(elem) {
-            var x = document.getElementById(elem);
-            if (x.style.display === "none") {
-                x.style.display = "block";
-            } else {
-                x.style.display = "none";
-            }
-        }
-    </script>
+$(document).ready(function() {
+  $('.datepick').datetimepicker({
+    format: 'DD/MM/YY'
+  });
+});
+</script>
 <body>
     <nav class="navbar navbar-inverse">
     <div class="container">
@@ -46,61 +53,16 @@
 
     <div class="container">
 
-        <h2>{{ otheruser.FAname }}</h2>
-
-        {% for cat in cats %}
-         <div class="row">
-             <div class="col-sm-1">
-                <form action="cat" method="POST">
-                    <input type="hidden" name="catid" value="{{cat.id}}">
-                    <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong>{{cat.registre}}</strong></button>
-                    <a href="#" onClick="showHide('desc{{cat.registre}}');">D</a></form>
-            </div>
-            <div class="col-sm-2">{{ cat.identif }}</div>
-            <div class="col-sm-2">{{ cat.name }}</div>
-            <div class="col-sm-1">{{ tabsex[cat.sex] }}</div>
-            <div class="col-sm-2">{{ tabcol[cat.color] }}</div>
-            <div class="col-sm-1">{{ tabhair[cat.longhair] }}</div>
-            <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
-            <div class="col-sm-2">{% if cat.adoptable %}<p class="bg-success">Adoptable</p>{% else %}<p class="bg-danger">Non adoptable</p>{% endif %}</div>
-        </div>
-        <div class="row" style="display: none;" id="desc{{cat.registre}}">
-            <div class="col-sm-1"></div>
-            <div class="col-sm-11"><p class="small">{{ cat.description }}</p></div>
-        </div>
-        <form action="." method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
-            <div class="row">
-                <div class="col-sm-1"></div>
-                <div class="col-sm-3">
-                    {% if otheruser.FAisAD %}<button type="submit" name="action" value="adm_deletecat">Confirmer l'adoption et EFFACER LE CHAT DU LOGICIEL FA</button>{% endif %}
-                    {% if otheruser.FAisDCD %}<button type="submit" name="action" value="adm_deletecat">Confirmer le deces et EFFACER LE CHAT DU LOGICIEL FA</button>{% endif %}
-                </div>
-            </div>
-        </form>
-        {% else %}
-            <div class="row">Aucun</div>
-        {% endfor %}
-        <hr>
-
-        {% if user.FAisOV %}
-        <form  action="list" method="POST">
-            <div class="row">
-                Commandes disponibles en tant que Superviseur:<br>
-                    <button type="submit" name="action" value="sv_viewFA">Vision par FA</button>
-                    <button type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button>
-            </div>
-        </form>
-        {% endif %}
-        {% if user.FAisADM %}
-        <div class="row">Commandes disponibles en tant que Gestionnaire-Registre:</div>
-            <form action="cat" method="POST"><div class="row form-group">
-                <button type="submit" name="action" value="adm_newcat">Rajouter un chat</button></div>
-            </form>
-            <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
-                <div class="row form-group"><button name="FAid" value="{{FAidAD}}">Chats adoptes</button>
-                <button name="FAid" value="{{FAidDCD}}">Chats decedes</button></div>
-            </form>
-        {% endif %}
+<form action="misc" method="POST">
+<div class="form-group required">
+  <div class="input-group datepick">
+    <input type="text" class="form-control" name="frmSaveOffice_startdt" id="frmSaveOffice_startdt" required>
+    <div class="input-group-addon">
+      <span class="glyphicon glyphicon-calendar"></span>
+    </div>
+  </div>
+</div>
+</form>
 
      </div><!-- /.container -->
 </body>

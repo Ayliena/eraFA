@@ -5,7 +5,17 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<!---*** Start: JQuery 3.3.1 version. ***--->
+<script language="javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<!---*** End: JQuery 3.3.1 version. ***--->
+<!---*** Start: Bootstrap 3.3.7 version files. ***--->
+<script language="javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<!---*** End: Bootstrap 3.3.7 version files. ***--->
+
+<script language="javascript" src="https://momentjs.com/downloads/moment.js"></script>
+<script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/js/bootstrap-datetimepicker.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/css/bootstrap-datetimepicker.min.css">
     </head>
     <script type="text/javascript">
         function populatecolor(selid) {
@@ -60,6 +70,19 @@
             document.getElementById("oldv_{{vv.id}}_vet").value = {{vv.vet_id}};
             {% endif %}{% endfor %}
         }
+        $(document).ready(function() {
+          $('.datepick').datetimepicker({
+            format: 'DD/MM/YY'
+        });
+        });
+        function validateForm() {
+            var x = document.forms["c_form"]["c_registre"].value;
+            if (!x.match("^[0-9]+-[0-9]+$")) {
+                alert("Le numero de registre doit etre de la forme NUMERO-ANNEE");
+                return false;
+            }
+            true;
+        }
     </script>
 <body>
     <nav class="navbar navbar-inverse">
@@ -102,13 +125,13 @@
         {% endif %}
     </h2>
 
-    <form action="cat" id="c_form" method="POST">
+    <form action="cat" id="c_form" onsubmit="return validateForm()" method="POST">
         <input type="hidden" name="catid" value="{{cat.id}}">
         <div class="row form-group">
             <div class="col-sm-1">Registre:</div>
             <div class="col-sm-3">
                 {% if cat.registre %} <b>{{ cat.registre }}</b>
-                {% else %} <input type="text" name="c_registre" placeholder="xxx-xx"> {% endif %}
+                {% else %} <input type="text" name="c_registre" required placeholder="xxx-xx"> {% endif %}
             </div>
             <div class="col-sm-2"><select name="c_adoptable" id="c_adoptable">
                 <option value="0">Non adoptable</option>
@@ -135,8 +158,14 @@
                 <option value="2">MALE</option></select></div>
             <div class="col-sm-1">Naissance:</div>
             <div class="col-sm-2">
-                {% if cat.birthdate %} <input type="text" name="c_birthdate" value="{{ cat.birthdate.strftime("%d/%m/%y") }}">
-                {% else %} <input type="text" name="c_birthdate" placeholder="date de naissance"> {% endif %}
+                <div class="form-group">
+                    <div class="input-group datepick">
+                        <input type="text" class="form-control" name="c_birthdate" id="c_birthdate" {% if cat.birthdate %}value="{{ cat.birthdate.strftime("%d/%m/%y") }}"{% else %}placeholder="date de naissance"{% endif %}>
+                        <div class="input-group-addon">
+                            <span class="glyphicon glyphicon-calendar"></span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="row form-group">

@@ -10,10 +10,21 @@
     <script>
         function showHide(elem) {
             var x = document.getElementById(elem);
-            if (x.style.display === "none") {
+            if (x.style.display == "none") {
                 x.style.display = "block";
             } else {
                 x.style.display = "none";
+            }
+        }
+        function showHideAll() {
+            var i, descs = document.querySelectorAll('[id^="desc_"]');
+
+            for (i = 0; i < descs.length; ++i) {
+                if (descs[i].style.display == "none") {
+                    descs[i].style.display = "block";
+                } else {
+                    descs[i].style.display = "none";
+                }
             }
         }
         function readableAge(days) {
@@ -96,32 +107,37 @@
 
         {% if catlist %}
             <h2>Tableau global des chats</h2>
+            <p><a href="#" onClick="showHideAll();">Montrer/cacher toutes les descriptions</a></p>
             {% for cat in catlist %}
              <div class="row">
                  <div class="col-sm-1">
                     <form action="cat" method="POST">
                         <input type="hidden" name="catid" value="{{cat.id}}">
                         <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong>{{cat.registre}}</strong></button>
-                        <a href="#" onClick="showHide('desc{{cat.registre}}');">D</a></form>
+                    </form>
                 </div>
                 <div class="col-sm-2">{{ cat.identif }}</div>
                 <div class="col-sm-4">
-                    <b>{% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}</b> ({{ tabsex[cat.sex] }},
+                    <a href="#" onClick="showHide('desc_{{cat.registre}}');"><b>{% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}</b></a>
+                    ({{ tabsex[cat.sex] }},
                     {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}??age??{% endif %},
                     {{ tabcol[cat.color] }}{{ tabhair[cat.longhair] }})</div>
                 <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
                 <div class="col-sm-2">{{ cat.owner.FAname }}</div>
                 <div class="col-sm-2">{% if cat.adoptable %}<p class="bg-success">Adoptable</p>{% else %}<span class="bg-danger">Non adoptable</span>{% endif %}</div>
             </div>
-            <div class="row" style="display: none;" id="desc{{cat.registre}}">
+            <div class="row" style="display: none;" id="desc_{{cat.registre}}">
                 <div class="col-sm-1"></div>
                 <div class="col-sm-11"><p class="small">{{ cat.description }}</p></div>
             </div>
             {% else %}
                 Aucun chat est enregistre dans le systeme.
             {% endfor %}
+            <div class="row">
+                <a href="/listcsv">Telecharger le tableau en CSV</a>
+            </div>
         {% endif %}
-
+        <hr>
         {% if user.FAisOV %}
         <form  action="list" method="POST">
             <div class="row">

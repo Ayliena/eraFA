@@ -10,10 +10,21 @@
     <script>
         function showHide(elem) {
             var x = document.getElementById(elem);
-            if (x.style.display === "none") {
+            if (x.style.display == "none") {
                 x.style.display = "block";
             } else {
                 x.style.display = "none";
+            }
+        }
+        function showHideAll() {
+            var i, descs = document.querySelectorAll('[id^="desc_"]');
+
+            for (i = 0; i < descs.length; ++i) {
+                if (descs[i].style.display == "none") {
+                    descs[i].style.display = "block";
+                } else {
+                    descs[i].style.display = "none";
+                }
             }
         }
         function readableAge(days) {
@@ -67,7 +78,7 @@
         {% if otheruser %} <h2>Situation FA : {{ otheruser.FAname }}</h2> {% endif %}
 
         <h2>Chats detenus</h2>
-
+        {% if cats %}<p><a href="#" onClick="showHideAll();">Montrer/cacher toutes les descriptions</a></p>{% endif %}
         {% for cat in cats %}
          <div class="row">
              <div class="col-sm-1">
@@ -78,17 +89,27 @@
             </div>
             <div class="col-sm-2">{{ cat.identif }}</div>
             <div class="col-sm-4">
-                <a href="#" onClick="showHide('desc{{cat.registre}}');"><b>{% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}</b></a>
+                <a href="#" onClick="showHide('desc_{{cat.registre}}');"><b>{% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}</b></a>
                 ({{ tabsex[cat.sex] }},
                 {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}??age??{% endif %},
                 {{ tabcol[cat.color] }}{{ tabhair[cat.longhair] }})</div>
             <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
             <div class="col-sm-2">{% if cat.adoptable %}<p class="bg-success">Adoptable</p>{% else %}<span class="bg-danger">Non adoptable</span>{% endif %}</div>
         </div>
-        <div class="row" style="display: none;" id="desc{{cat.registre}}">
+        <div class="row" style="display: none;" id="desc_{{cat.registre}}">
             <div class="col-sm-1"></div>
             <div class="col-sm-11"><p class="small">{{ cat.description }}</p></div>
         </div>
+        {% if otheruser.FAisAD or otheruser.FAisDCD %}<form action="." method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
+            <div class="row">
+                <div class="col-sm-1"></div>
+                <div class="col-sm-3">
+                    {% if otheruser.FAisAD %}<button type="submit" name="action" value="adm_deletecat">Confirmer l'adoption et EFFACER LE CHAT DU LOGICIEL FA</button>{% endif %}
+                    {% if otheruser.FAisDCD %}<button type="submit" name="action" value="adm_deletecat">Confirmer le deces et EFFACER LE CHAT DU LOGICIEL FA</button>{% endif %}
+                </div>
+            </div>
+        </form>{% endif %}
+
         {% else %}
             <div class="row">Aucun</div>
         {% endfor %}
