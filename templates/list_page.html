@@ -153,8 +153,9 @@
                 <button type="submit" name="action" value="adm_newcat">Rajouter un chat</button></div>
             </form>
             <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
-                <div class="row form-group"><button name="FAid" value="{{FAidAD}}">Chats adoptes</button>
-                <button name="FAid" value="{{FAidDCD}}">Chats decedes</button></div>
+                <div class="row form-group"><button name="FAid" value="{{FAids[0]}}">Chats adoptes</button>
+                <button name="FAid" value="{{FAids[1]}}">Chats decedes</button>
+                <button name="FAid" value="{{FAids[2]}}">Historique</button></div>
             </form>
         {% endif %}
     </div><!-- /.container -->

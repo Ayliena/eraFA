@@ -100,16 +100,17 @@
             <div class="col-sm-1"></div>
             <div class="col-sm-11"><p class="small">{{ cat.description }}</p></div>
         </div>
-        {% if otheruser.FAisAD or otheruser.FAisDCD %}<form action="." method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
+        {% if otheruser and (otheruser.FAisAD or otheruser.FAisDCD or otheruser.FAisHIST) %}
+            <form action="." method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
             <div class="row">
                 <div class="col-sm-1"></div>
                 <div class="col-sm-3">
-                    {% if otheruser.FAisAD %}<button type="submit" name="action" value="adm_deletecat">Confirmer l'adoption et EFFACER LE CHAT DU LOGICIEL FA</button>{% endif %}
-                    {% if otheruser.FAisDCD %}<button type="submit" name="action" value="adm_deletecat">Confirmer le deces et EFFACER LE CHAT DU LOGICIEL FA</button>{% endif %}
+                    {% if otheruser.FAisAD %}<button type="submit" name="action" value="adm_histcat">Confirmer l'adoption et deplacer le chat dans l'historique</button>{% endif %}
+                    {% if otheruser.FAisDCD %}<button type="submit" name="action" value="adm_histcat">Confirmer le deces et deplacer le chat dans l'historique</button>{% endif %}
+                    {% if otheruser.FAisHIST %}<button type="submit" name="action" value="adm_deletecat">EFFACER LE CHAT DU SYSTEME (ATTENTION: IRREVERSIBLE)</button>{% endif %}
                 </div>
             </div>
-        </form>{% endif %}
-
+            </form>{% endif %}
         {% else %}
             <div class="row">Aucun</div>
         {% endfor %}
@@ -132,8 +133,9 @@
                 <button type="submit" name="action" value="adm_newcat">Rajouter un chat</button></div>
             </form>
             <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
-                <div class="row form-group"><button name="FAid" value="{{FAidAD}}">Chats adoptes</button>
-                <button name="FAid" value="{{FAidDCD}}">Chats decedes</button></div>
+                <div class="row form-group"><button name="FAid" value="{{FAids[0]}}">Chats adoptes</button>
+                <button name="FAid" value="{{FAids[1]}}">Chats decedes</button>
+                <button name="FAid" value="{{FAids[2]}}">Historique</button></div>
             </form>
         </div>
         {% endif %}

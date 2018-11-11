@@ -46,9 +46,8 @@ TabHair = ["", ", poil mi-long", ", poil long"]
 # static since it changes rarely, NOTE: it must also be changed in cat_page.html
 VETlist = [ [8, "Autre (commentaires)"], [ 6, "AMCB Veterinaires" ], [7, "Clinique Mont. Verte"]  ]
 
-# special FA ids (static)
-FAidAD = 2
-FAidDCD = 5
+# special FA ids (static): AD DCD HIST
+FAidSpecial = [2, 5, 10]
 
 # --------------- HELPER FUNCTIONS
 
@@ -247,7 +246,7 @@ def index():
             # special lists?
             if FAid == "special-all":
                 return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    catlist=Cat.query.all(), FAidAD=FAidAD, FAidDCD=FAidDCD)
+                    catlist=Cat.query.all(), FAids=FAidSpecial)
 
             # validate the id
             theFA = User.query.filter_by(id=FAid).first()
@@ -255,10 +254,10 @@ def index():
 
             if faexists:
                 return render_template("main_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    cats=Cat.query.filter_by(owner_id=FAid).all(), FAidAD=FAidAD, FAidDCD=FAidDCD)
+                    cats=Cat.query.filter_by(owner_id=FAid).all(), FAids=FAidSpecial)
 
         return render_template("main_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-            cats=Cat.query.filter_by(owner_id=current_user.id).all(), FAidAD=FAidAD, FAidDCD=FAidDCD)
+            cats=Cat.query.filter_by(owner_id=current_user.id).all(), FAids=FAidSpecial)
 #            cats=current_user.cats, icats=current_user.icats)
 
     # handle commands
@@ -280,6 +279,13 @@ def index():
     if theCat.owner_id != current_user.id and not current_user.FAisADM:
         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data")
         return redirect(url_for('index'))
+
+    if cmd == "adm_histcat" and current_user.FAisADM:
+        # move the cat to the historical list of cats
+        theCat.owner_id = FAidSpecial[2]
+        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: trasfere dans l'historique".format(current_user.FAname))
+        db.session.add(theEvent)
+        db.session.commit()
 
     if cmd == "adm_deletecat" and current_user.FAisADM:
         # erase the cat and all the associated information from the database
@@ -319,7 +325,7 @@ def catpage():
         theCat = Cat(registre="")
         return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist)
 
-    if (cmd == "adm_addcathere" or cmd == "adm_addcatgiveFA" or cmd == "adm_addcatputFA") and current_user.FAisADM:
+    if (cmd == "adm_addcathere" or cmd == "adm_addcatputFA") and current_user.FAisADM:
         # generate the new cat using the form information
         vetstr = vetMapToString(request.form, "visit")
 
@@ -331,6 +337,15 @@ def catpage():
         theCat = Cat(registre=request.form["c_registre"], name=request.form["c_name"], sex=request.form["c_sex"], birthdate=bdate,
                     color=request.form["c_color"], longhair=request.form["c_hlen"], identif=request.form["c_identif"],
                     description=request.form["c_description"], vetshort=vetstr, adoptable=(request.form["c_adoptable"]=="1"))
+
+        # ensure that registre is unique
+        checkCat = Cat.query.filter_by(registre=request.form["c_registre"]).first()
+
+        if checkCat:
+            # this is bad, we regenerate the page wit the current data
+            message = [3, "Le numero de registre existe deja!"]
+            theCat.registre = None
+            return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist, msg=message)
 
         # if for any reason the FA is invalid, then put it here
         if cmd != "adm_addcathere":
@@ -350,7 +365,7 @@ def catpage():
         db.session.commit()
 
         # generate the event
-        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="rajoute dans le systeme par {}".format(current_user.FAname))
+        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: rajoute dans le systeme".format(current_user.FAname))
         db.session.add(theEvent)
 
         db.session.commit()
@@ -417,7 +432,7 @@ def catpage():
 
             # if not planned, add it as event
             if not VisitPlanned:
-                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite veterinaire {} effectuee".format(current_user.FAname, VisitType))
+                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite veterinaire {} effectuee le {} chez {}".format(current_user.FAname, VisitType, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
                 db.session.add(theEvent)
 
         # iterate through all the planned visits and see if they have been updated....
@@ -474,7 +489,7 @@ def catpage():
 
                 theCat.vetshort = vetAddStrings(theCat.vetshort, VisitType)
 
-                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite veterinaire {} effectuee le {}".format(current_user.FAname, VisitType, VisitDate))
+                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite veterinaire {} effectuee le {} chez {}".format(current_user.FAname, VisitType, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
                 db.session.add(theEvent)
 
         # end for mv in modvisits
@@ -487,26 +502,11 @@ def catpage():
 
         return redirect(url_for('index'))
 
-    if cmd == "fa_givecat" and current_user.FAisFA:
-        # cat information is not updated
-        FAid = int(request.form["FAid"]);
-        # validate the id
-        faexists = db.session.query(User.id).filter_by(id=FAid).scalar() is not None;
-
-        if faexists and FAid != theCat.owner_id:
-            theCat.nextowner_id = FAid
-            # generate the event
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="donne par {} a {}".format(current_user.FAname, theCat.nextowner.FAname))
-            db.session.add(theEvent)
-            db.session.commit()
-
-        return redirect(url_for('index'))
-
     if cmd == "fa_adopted" and current_user.FAisFA:
         FAspecialAD=User.query.filter_by(FAisAD=True).first()
         theCat.owner_id = FAspecialAD.id
         # generate the event
-        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="donne aux adoptants par {}".format(current_user.FAname))
+        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: donne aux adoptants".format(current_user.FAname))
         db.session.add(theEvent)
         db.session.commit()
         return redirect(url_for('index'))
@@ -515,7 +515,7 @@ def catpage():
         FAspecialDCD=User.query.filter_by(FAisDCD=True).first()
         theCat.owner_id = FAspecialDCD.id
         # generate the event
-        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="indique decede par {}".format(current_user.FAname))
+        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: indique decede".format(current_user.FAname))
         db.session.add(theEvent)
         db.session.commit()
         return redirect(url_for('index'))
@@ -524,14 +524,14 @@ def catpage():
         # cat information is not updated
         FAid = int(request.form["FAid"])
         # validate the id
-        faexists = db.session.query(User.id).filter_by(id=FAid).scalar() is not None
+        theFA = User.query.filter_by(id=FAid).first()
 
-        if faexists and FAid != theCat.owner_id:
-            theCat.owner_id = FAid
-            theCat.nextowner_id = None
+        if theFA and FAid != theCat.owner_id:
             # generate the event
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="transfere par {} a {}".format(current_user.FAname, theCat.owner.FAname))
+            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transfere de {} a {}".format(current_user.FAname, theCat.owner.FAname, theFA.FAname))
             db.session.add(theEvent)
+            # modify the FA
+            theCat.owner_id = FAid
             db.session.commit()
 
         return redirect(url_for('index'))
@@ -553,7 +553,7 @@ def listpage():
         # normal FAs
         FAlist=User.query.filter_by(FAisFA=True).all()
 
-        return render_template("list_page.html", user=current_user, falist=FAlist, FAidAD=FAidAD, FAidDCD=FAidDCD)
+        return render_template("list_page.html", user=current_user, falist=FAlist, FAids=FAidSpecial)
 
     if cmd == "sv_globalTab" and (current_user.FAisADM or current_user.FAisOV):
         # list of all cats

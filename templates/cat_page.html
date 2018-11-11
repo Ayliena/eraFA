@@ -112,7 +112,13 @@
 
 
     <div class="container">
-
+    {% if msg %}
+        {% if msg[0] == 0 %}<div class="alert alert-success">{% endif %}
+        {% if msg[0] == 1 %}<div class="alert alert-info">{% endif %}
+        {% if msg[0] == 2 %}<div class="alert alert-warning">{% endif %}
+        {% if msg[0] == 3 %}<div class="alert alert-danger">{% endif %}
+        {{ msg[1] }}</div>
+    {% endif %}
     <h2>
         {% if cat.registre %}
             {% if cat.name %}
