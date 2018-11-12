@@ -179,6 +179,22 @@ class Cat(db.Model):
     def __repr__(self):
         return "<Cat {}>".format(self.registre)
 
+    def asText(self):
+        str = ""
+        if self.name:
+            str += self.name
+        else:
+            str += "pas de nom"
+
+        str += "(" + self.registre
+
+        if self.identif:
+            str += "/"+self.identif+")"
+        else:
+            str += ")"
+
+        return str
+
 
 # --------------- VETINFO CLASS
 
@@ -239,6 +255,13 @@ def index():
 
     # generate the page
     if request.method == "GET":
+        # handle any message
+        if "pendingmessage" in session:
+            message = session["pendingmessage"]
+            session["pendingmessage"] = None
+        else:
+            message = []
+
         # are we looking at a page from another FA?
         if "otherFA" in session and (current_user.FAisOV or current_user.FAisADM):
             FAid = session["otherFA"]
@@ -246,7 +269,7 @@ def index():
             # special lists?
             if FAid == "special-all":
                 return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    catlist=Cat.query.all(), FAids=FAidSpecial)
+                    catlist=Cat.query.all(), FAids=FAidSpecial, msg=message)
 
             # validate the id
             theFA = User.query.filter_by(id=FAid).first()
@@ -254,10 +277,10 @@ def index():
 
             if faexists:
                 return render_template("main_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    cats=Cat.query.filter_by(owner_id=FAid).all(), FAids=FAidSpecial)
+                    cats=Cat.query.filter_by(owner_id=FAid).all(), FAids=FAidSpecial, msg=message)
 
         return render_template("main_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-            cats=Cat.query.filter_by(owner_id=current_user.id).all(), FAids=FAidSpecial)
+            cats=Cat.query.filter_by(owner_id=current_user.id).all(), FAids=FAidSpecial, msg=message)
 #            cats=current_user.cats, icats=current_user.icats)
 
     # handle commands
@@ -283,6 +306,7 @@ def index():
     if cmd == "adm_histcat" and current_user.FAisADM:
         # move the cat to the historical list of cats
         theCat.owner_id = FAidSpecial[2]
+        session["pendingmessage"] = [0, "Chat {} deplace dans l'historique".format(theCat.asText())]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: trasfere dans l'historique".format(current_user.FAname))
         db.session.add(theEvent)
         db.session.commit()
@@ -290,6 +314,7 @@ def index():
     if cmd == "adm_deletecat" and current_user.FAisADM:
         # erase the cat and all the associated information from the database
         # NOTE THAT THIS IS IRREVERSIBLE AND LEAVES NO TRACE
+        session["pendingmessage"] = [0, "Chat {} efface du systeme".format(theCat.asText())]
         Event.query.filter_by(cat_id=theCat.id).delete()
         VetInfo.query.filter_by(cat_id=theCat.id).delete()
         db.session.delete(theCat)
@@ -319,6 +344,10 @@ def catpage():
 
     # prepare the list of FAs for transfers
     FAlist=User.query.filter_by(FAisFA=True).all()
+
+    # generate an empty page for the addition of a Refu dossier
+    if cmd == "adm_refucat" and current_user.FAisADM:
+        return render_template("refu_page.html", user=current_user)
 
     # generate an empty page to add a new cat
     if cmd == "adm_newcat" and current_user.FAisADM:
@@ -365,6 +394,7 @@ def catpage():
         db.session.commit()
 
         # generate the event
+        session["pendingmessage"] = [0, "Chat {} rajoute dans le systeme".format(theCat.asText())]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: rajoute dans le systeme".format(current_user.FAname))
         db.session.add(theEvent)
 
@@ -495,17 +525,20 @@ def catpage():
         # end for mv in modvisits
 
         db.session.commit()
+        message = [0, "Informations mises a jour"]
 
         # if we stay on the page, regenerate it directly
         if cmd == "fa_modcatr":
-            return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist)
+            return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist, msg=message)
 
+        session["pendingmessage"] = message
         return redirect(url_for('index'))
 
     if cmd == "fa_adopted" and current_user.FAisFA:
         FAspecialAD=User.query.filter_by(FAisAD=True).first()
         theCat.owner_id = FAspecialAD.id
         # generate the event
+        session["pendingmessage"] = [0, "Chat {} transfere dans les adoptes".format(theCat.asText())]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: donne aux adoptants".format(current_user.FAname))
         db.session.add(theEvent)
         db.session.commit()
@@ -515,6 +548,7 @@ def catpage():
         FAspecialDCD=User.query.filter_by(FAisDCD=True).first()
         theCat.owner_id = FAspecialDCD.id
         # generate the event
+        session["pendingmessage"] = [0, "Chat {} transfere dans les decedes".format(theCat.asText())]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: indique decede".format(current_user.FAname))
         db.session.add(theEvent)
         db.session.commit()
@@ -528,6 +562,7 @@ def catpage():
 
         if theFA and FAid != theCat.owner_id:
             # generate the event
+            session["pendingmessage"] = [0, "Chat {} transfere chez {}".format(theCat.asText(), theFA.FAname)]
             theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transfere de {} a {}".format(current_user.FAname, theCat.owner.FAname, theFA.FAname))
             db.session.add(theEvent)
             # modify the FA
@@ -539,6 +574,12 @@ def catpage():
     # admin cat commands
     # display info about a cat
     return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist)
+
+
+@app.route("/vet", methods=["POST"])
+@login_required
+def vetpage():
+    return render_template("vet_page.html", user=current_user)
 
 
 @app.route("/list", methods=["POST"])

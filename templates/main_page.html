@@ -75,6 +75,14 @@
 
 
     <div class="container">
+    {% if msg %}
+        {% if msg[0] == 0 %}<div class="alert alert-success">{% endif %}
+        {% if msg[0] == 1 %}<div class="alert alert-info">{% endif %}
+        {% if msg[0] == 2 %}<div class="alert alert-warning">{% endif %}
+        {% if msg[0] == 3 %}<div class="alert alert-danger">{% endif %}
+        {{ msg[1] }}</div>
+    {% endif %}
+
         {% if otheruser %} <h2>Situation FA : {{ otheruser.FAname }}</h2> {% endif %}
 
         <h2>Chats detenus</h2>
@@ -94,7 +102,7 @@
                 {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}??age??{% endif %},
                 {{ tabcol[cat.color] }}{{ tabhair[cat.longhair] }})</div>
             <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
-            <div class="col-sm-2">{% if cat.adoptable %}<p class="bg-success">Adoptable</p>{% else %}<span class="bg-danger">Non adoptable</span>{% endif %}</div>
+            <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success">Adoptable</span>{% else %}<span class="bg-danger">Non adoptable</span>{% endif %}</div>
         </div>
         <div class="row" style="display: none;" id="desc_{{cat.registre}}">
             <div class="col-sm-1"></div>
@@ -115,6 +123,10 @@
             <div class="row">Aucun</div>
         {% endfor %}
         <hr>
+        <div class="row"><form action="vet" method="POST">
+            <button type="submit" name="action" value="fa_vetreg">Registre des soins</button>
+            <button type="submit" name="action" value="fa_vetplan">Visites planifiees</button>
+        </form></div>
         {% if user.FAisOV %}
         <div class="row">
             Commandes disponibles en tant que Superviseur:
@@ -128,16 +140,19 @@
         {% endif %}
         {% if user.FAisADM %}
         <div class="row">
-            <p>Commandes disponibles en tant que Gestionnaire-Registre:</p>
-            <form action="cat" method="POST"><div class="row form-group">
-                <button type="submit" name="action" value="adm_newcat">Rajouter un chat</button></div>
-            </form>
-            <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
-                <div class="row form-group"><button name="FAid" value="{{FAids[0]}}">Chats adoptes</button>
-                <button name="FAid" value="{{FAids[1]}}">Chats decedes</button>
-                <button name="FAid" value="{{FAids[2]}}">Historique</button></div>
-            </form>
+            Commandes disponibles en tant que Gestionnaire-Registre:
         </div>
+        <div class="row">
+            <form action="cat" method="POST">
+                <button type="submit" name="action" value="adm_newcat">Rajouter un chat</button>
+                <button type="submit" name="action" value="adm_refucat">Rajouter un dossier Refugilys</button>
+            </form></div>
+        <div class="row">
+            <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+                <button name="FAid" value="{{FAids[0]}}">Chats adoptes</button>
+                <button name="FAid" value="{{FAids[1]}}">Chats decedes</button>
+                <button name="FAid" value="{{FAids[2]}}">Historique</button>
+            </form></div>
         {% endif %}
 
      </div><!-- /.container -->

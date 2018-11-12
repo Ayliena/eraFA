@@ -5,8 +5,25 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<!---*** Start: JQuery 3.3.1 version. ***--->
+<script language="javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<!---*** End: JQuery 3.3.1 version. ***--->
+<!---*** Start: Bootstrap 3.3.7 version files. ***--->
+<script language="javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<!---*** End: Bootstrap 3.3.7 version files. ***--->
+
+<script language="javascript" src="https://momentjs.com/downloads/moment.js"></script>
+<script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/js/bootstrap-datetimepicker.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/css/bootstrap-datetimepicker.min.css">
     </head>
+    <script>
+$(document).ready(function() {
+  $('.datepick').datetimepicker({
+    format: 'DD/MM/YY'
+  });
+});
+</script>
 <body>
     <nav class="navbar navbar-inverse">
     <div class="container">
@@ -17,7 +34,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="/">{{ user.FAid }} ({{ user.FAname }}) [
+            <a class="navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }}) [
                 {% if user.FAisFA %} FA {% endif %}
                 {% if user.FAisOV %} SV {% endif %}
                 {% if user.FAisADM %} GR {% endif %} ]
@@ -36,13 +53,7 @@
 
     <div class="container">
 
-        <h2>Nouveau dossier Refugilys</h2>
-
-        <p>Coller les champs du dossier:</p>
-        <form action="/refu" method="POST">
-            <div class="form-group"><textarea class="form-control" rows=15 name="r_dossier" required></textarea></div>
-            <button type="submit" name="action" value="adm_refudoss">Envoyer</button>
-        </form>
+    <p>Non disponible</p>
 
     </div><!-- /.container -->
 </body>
