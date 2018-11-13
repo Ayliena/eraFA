@@ -88,7 +88,7 @@
                     </div>
                     {% if fa.FAlastop %}
                     <div class="col-sm-3">
-                        Derniere connexion: {{ fa.FAlastop.strftime("%d/%m/%Y %H:%M") }}
+                        Derniere activité: {{ fa.FAlastop.strftime("%d/%m/%Y %H:%M") }}
                     </div>
                     {% endif %}
                 </div>
@@ -96,16 +96,16 @@
             </form>
 
             <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
-               <div class="form-group"><button class="btn btn-default" name="FAid" value="{{FAidAD}}">Chats adoptes</button></div>
+               <div class="form-group"><button class="btn btn-default" name="FAid" value="{{FAidAD}}">Chats adoptés</button></div>
                </form>
 
            <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
-              <div class="form-group"><button class="btn btn-default" name="FAid" value="{{FAidDCD}}">Chats decedes</button></div>
+              <div class="form-group"><button class="btn btn-default" name="FAid" value="{{FAidDCD}}">Chats décédés</button></div>
               </form>
         {% endif %}
 
         {% if catlist %}
-            <h2>Tableau global des chats</h2>
+            <h2>{% if adoptonly %}Chats disponibles a l'adoption{% else %}Tableau global des chats{% endif %}</h2>
             <p><a href="#" onClick="showHideAll();">Montrer/cacher toutes les descriptions</a></p>
             {% for cat in catlist %}
              <div class="row">
@@ -123,7 +123,9 @@
                     {{ tabcol[cat.color] }}{{ tabhair[cat.longhair] }})</div>
                 <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
                 <div class="col-sm-2">{{ cat.owner.FAname }}</div>
-                <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success">Adoptable</span>{% else %}<span class="bg-danger">Non adoptable</span>{% endif %}</div>
+                {% if not adoptonly %}
+                    <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success">Adoptable</span>{% else %}<span class="bg-danger">Non adoptable</span>{% endif %}</div>
+                {% endif %}
             </div>
             <div class="row" style="display: none;" id="desc_{{cat.registre}}">
                 <div class="col-sm-1"></div>
@@ -133,7 +135,7 @@
                 Aucun chat est enregistre dans le systeme.
             {% endfor %}
             <div class="row">
-                <a href="/listcsv">Telecharger le tableau en CSV</a>
+                <a href="/listcsv{% if adoptonly %}a{%endif%}">Telecharger le tableau en CSV</a>
             </div>
         {% endif %}
         <hr>
@@ -145,6 +147,7 @@
             <form  action="list" method="POST">
                 <button type="submit" name="action" value="sv_viewFA">Vision par FA</button>
                 <button type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button>
+                <button type="submit" name="action" value="sv_adoptTab">Chats a l'adoption</button>
             </form>
         </div>
         {% endif %}

@@ -4,7 +4,7 @@
 # jsonify is for debugging
 from flask import Flask, render_template, redirect, request, url_for, session, Response
 from flask_sqlalchemy import SQLAlchemy
-# from sqlalchemy import and_
+from sqlalchemy import and_
 from flask_login import login_user, LoginManager, UserMixin, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash
 from datetime import datetime
@@ -204,6 +204,7 @@ class VetInfo(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     cat_id = db.Column(db.Integer, db.ForeignKey('cats.id'), nullable=False)
+#    cat = db.relationship('Cat', foreign_keys=cat_id)
     doneby_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     doneby = db.relationship('User', foreign_keys=doneby_id)
     vet_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -262,6 +263,13 @@ def index():
         else:
             message = []
 
+        # handle planned vet list
+        if "otherMode" in session and session["otherMode"] == "special-vetplan":
+            # query all vetinfo which are planned and associated with cats you own
+            theVisits = VetInfo.query.filter(and_(VetInfo.doneby_id==current_user.id, VetInfo.planned==False)).order_by(VetInfo.vdate).all()
+
+            return render_template("vet_page.html", user=current_user, visits=theVisits)
+
         # are we looking at a page from another FA?
         if "otherFA" in session and (current_user.FAisOV or current_user.FAisADM):
             FAid = session["otherFA"]
@@ -270,6 +278,10 @@ def index():
             if FAid == "special-all":
                 return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
                     catlist=Cat.query.all(), FAids=FAidSpecial, msg=message)
+
+            if FAid == "special-adopt":
+                return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                    catlist=Cat.query.filter_by(adoptable=True).all(), FAids=FAidSpecial, msg=message, adoptonly=True)
 
             # validate the id
             theFA = User.query.filter_by(id=FAid).first()
@@ -309,6 +321,7 @@ def index():
         session["pendingmessage"] = [0, "Chat {} deplace dans l'historique".format(theCat.asText())]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: trasfere dans l'historique".format(current_user.FAname))
         db.session.add(theEvent)
+        current_user.FAlastop = datetime.now()
         db.session.commit()
 
     if cmd == "adm_deletecat" and current_user.FAisADM:
@@ -318,6 +331,7 @@ def index():
         Event.query.filter_by(cat_id=theCat.id).delete()
         VetInfo.query.filter_by(cat_id=theCat.id).delete()
         db.session.delete(theCat)
+        current_user.FAlastop = datetime.now()
         db.session.commit()
 
     return redirect(url_for('index'))
@@ -327,7 +341,8 @@ def index():
 @login_required
 def selfpage():
     # a version of the main page which brings you back to your list
-    session["otherFA"] = None
+    session.pop("otherFA", None)
+    session.pop("otherMode", None)
     return redirect(url_for('index'))
 
 
@@ -391,13 +406,13 @@ def catpage():
             theCat.owner_id = current_user.id
 
         db.session.add(theCat)
-        db.session.commit()
 
         # generate the event
         session["pendingmessage"] = [0, "Chat {} rajoute dans le systeme".format(theCat.asText())]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: rajoute dans le systeme".format(current_user.FAname))
         db.session.add(theEvent)
 
+        current_user.FAlastop = datetime.now()
         db.session.commit()
         return redirect(url_for('index'))
 
@@ -524,6 +539,7 @@ def catpage():
 
         # end for mv in modvisits
 
+        current_user.FAlastop = datetime.now()
         db.session.commit()
         message = [0, "Informations mises a jour"]
 
@@ -541,6 +557,7 @@ def catpage():
         session["pendingmessage"] = [0, "Chat {} transfere dans les adoptes".format(theCat.asText())]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: donne aux adoptants".format(current_user.FAname))
         db.session.add(theEvent)
+        current_user.FAlastop = datetime.now()
         db.session.commit()
         return redirect(url_for('index'))
 
@@ -551,6 +568,7 @@ def catpage():
         session["pendingmessage"] = [0, "Chat {} transfere dans les decedes".format(theCat.asText())]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: indique decede".format(current_user.FAname))
         db.session.add(theEvent)
+        current_user.FAlastop = datetime.now()
         db.session.commit()
         return redirect(url_for('index'))
 
@@ -567,6 +585,7 @@ def catpage():
             db.session.add(theEvent)
             # modify the FA
             theCat.owner_id = FAid
+            current_user.FAlastop = datetime.now()
             db.session.commit()
 
         return redirect(url_for('index'))
@@ -579,7 +598,19 @@ def catpage():
 @app.route("/vet", methods=["POST"])
 @login_required
 def vetpage():
-    return render_template("vet_page.html", user=current_user)
+    cmd = request.form["action"]
+
+    if cmd == "fa_vetreg":
+        # query all vetinfo which was doneby the current user
+        theVisits = VetInfo.query.filter(and_(VetInfo.doneby_id==current_user.id, VetInfo.planned==False)).order_by(VetInfo.vdate).all()
+
+        return render_template("regsoins_page.html", user=current_user, visits=theVisits, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair)
+
+    if cmd == "fa_vetplan":
+        session["otherMode"] = "special-vetplan"
+        return redirect(url_for('index'))
+
+    return redirect(url_for('index'))
 
 
 @app.route("/list", methods=["POST"])
@@ -601,8 +632,32 @@ def listpage():
         session["otherFA"] = "special-all"
         return redirect(url_for('index'))
 
+    if cmd == "sv_adoptTab" and (current_user.FAisADM or current_user.FAisOV):
+        # list of all cats with adoptable=true
+        session["otherFA"] = "special-adopt"
+        return redirect(url_for('index'))
+
     # default is return to index
     return redirect(url_for('index'))
+
+
+def exportCSV(catlist):
+    csv="FA,Registre,Puce,Nom,Sexe,Date Naissance,Couleur,Poil,Veterinaire,Adoptable,Description\n"
+
+    for cat in catlist:
+        # historical cats are ignored
+        if cat.owner.FAisHIST:
+            continue
+
+        # this is looking for trouble.....
+        cdesc = cat.description
+        cdesc.replace('"', '""')
+
+        csv += ('"'+cat.owner.FAname+'",'+cat.registre+','+cat.identif+',"'+cat.name+'",'+
+            TabSex[cat.sex]+','+(cat.birthdate.strftime("%d/%m/%y") if cat.birthdate else '')+','+TabColor[cat.color]+','+
+            TabHair[cat.longhair]+','+cat.vetshort+','+('Adoptable' if cat.adoptable else '')+',"'+cdesc+'"\n')
+
+    return csv
 
 
 @app.route("/listcsv")
@@ -612,26 +667,37 @@ def listdownload():
         # generate the global table as CSV file
         catlist=Cat.query.all()
 
-        csv="FA,Registre,Puce,Nom,Sexe,Date Naissance,Couleur,Poil,Veterinaire,Adoptable,Description\n"
+        csv = exportCSV(catlist)
 
-        for cat in catlist:
-            # historical cats are ignored
-            if cat.owner.FAisHIST:
-                continue
-
-            # this is looking for trouble.....
-            cdesc = cat.description
-            cdesc.replace('"', '""')
-
-            csv += ('"'+cat.owner.FAname+'",'+cat.registre+','+cat.identif+',"'+cat.name+'",'+
-                TabSex[cat.sex]+','+(cat.birthdate.strftime("%d/%m/%y") if cat.birthdate else '')+','+TabColor[cat.color]+','+
-                TabHair[cat.longhair]+','+cat.vetshort+','+('Adoptable' if cat.adoptable else '')+',"'+cdesc+'"\n')
+        current_user.FAlastop = datetime.now()
+        db.session.commit()
 
         return Response(
             csv,
             mimetype="text/csv",
             headers={"Content-disposition":
-                     "attachment; filename=chats.csv"})
+                     "attachment; filename=chatsFA.csv"})
+
+    # default is return to index
+    return redirect(url_for('index'))
+
+
+@app.route("/listcsva")
+@login_required
+def listadownload():
+    if current_user.FAisADM or current_user.FAisOV:
+        # generate the table as CSV file
+        catlist=Cat.query.filter_by(adoptable=True).all()
+
+        csv = exportCSV(catlist)
+        db.session.commit()
+
+        current_user.FAlastop = datetime.now()
+        return Response(
+            csv,
+            mimetype="text/csv",
+            headers={"Content-disposition":
+                     "attachment; filename=adoptables.csv"})
 
     # default is return to index
     return redirect(url_for('index'))
@@ -651,8 +717,6 @@ def login():
 
     login_user(user)
     # store last access
-    user.FAlastop = datetime.now()
-    db.session.commit()
 
     return redirect(url_for('index'))
 

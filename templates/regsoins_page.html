@@ -1,0 +1,58 @@
+<html>
+    <head>
+        <title>Familles d'accueil ERA</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <style>
+            table, th, td {
+                border: 1px solid black;
+                border-collapse: collapse;
+            }
+            th, td {
+               padding: 4px;
+            }
+        </style>
+    </head>
+<body>
+    {% if visits %}
+    <h3>Association ERA - FA {{user.FAname}}</h3>
+    <h2>Registre des soins</h2>
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Espece</th>
+            <th>Sexe</th>
+            <th>Identification</th>
+            <th>Description</th>
+            <th>Naissance</th>
+            <th>Veterinaire</th>
+            <th>Renseignements Sanitaires</th>
+        </tr>
+        {% for v in visits %}
+        <tr>
+            <td>{{v.vdate.strftime("%d/%m/%y")}}</td>
+            <td>Chat</td>
+            <td>{{ tabsex[v.cat.sex] }}</td>
+            <td>{% if v.cat.identif %}{{v.cat.identif}}{% elif v.cat.name %}{{ v.cat.name }}{% else %}{{v.cat.registre}}{% endif %}</td>
+            <td>{{ tabcol[v.cat.color] }}{{ tabhair[v.cat.longhair] }}</td>
+            <td>{% if v.cat.birthdate %}{{ v.cat.birthdate.strftime("%d/%m/%y") }}{% endif %}</td>
+            <td>{{ v.vet.FAname }}</td>
+            <td>{% if v.vtype[0] != '-' %}- Primo vaccination{% endif %}
+                {% if v.vtype[1] != '-' %}- 1er rappel{% endif %}
+                {% if v.vtype[2] != '-' %}- 2eme rappel{% endif %}
+                {% if v.vtype[3] != '-' %}- {% if v.cat.sex == 2 %}Castration{% else %}Sterilisation{% endif %}{% endif %}
+                {% if v.vtype[4] != '-' %}- Identification{% endif %}
+                {% if v.vtype[5] != '-' %}- Test FIV/FelV{% endif %}
+                {% if v.vtype[7] != '-' %}- Rappel annuel{% endif %}
+                {% if v.comments %}- {{ v.comments }}{% endif %}
+                </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+        <p>Aucune visite effectuee</p>
+    {% endif %}
+</body>
+</html>
