@@ -263,44 +263,57 @@ def index():
         else:
             message = []
 
-        # handle planned vet list
-        if "otherMode" in session and session["otherMode"] == "special-vetplan":
-            # query all vetinfo which are planned and associated with cats you own
-            theVisits = VetInfo.query.filter(and_(VetInfo.doneby_id==current_user.id, VetInfo.planned==False)).order_by(VetInfo.vdate).all()
+        # decide which type of page to display
+        mode = None
+        if "otherMode" in session:
+            mode = session["otherMode"]
 
-            return render_template("vet_page.html", user=current_user, visits=theVisits)
+            # these are only allowed for SV/ADM
+            if (mode == "special-all" or mode == "special-adopt") and not (current_user.FAisOV or current_user.FAisADM):
+                mode = None
 
-        # are we looking at a page from another FA?
+        # display current user pages or alternate user's?
+        FAid = current_user.id
         if "otherFA" in session and (current_user.FAisOV or current_user.FAisADM):
             FAid = session["otherFA"]
-
-            # special lists?
-            if FAid == "special-all":
-                return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    catlist=Cat.query.all(), FAids=FAidSpecial, msg=message)
-
-            if FAid == "special-adopt":
-                return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    catlist=Cat.query.filter_by(adoptable=True).all(), FAids=FAidSpecial, msg=message, adoptonly=True)
-
-            # validate the id
             theFA = User.query.filter_by(id=FAid).first()
             faexists = theFA is not None;
 
-            if faexists:
-                return render_template("main_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    cats=Cat.query.filter_by(owner_id=FAid).all(), FAids=FAidSpecial, msg=message)
+            if not faexists:
+                return render_template("error_page.html", user=current_user, errormessage="invalid FA id")
+
+        # handle special cases
+        if mode == "special-vetplan":
+            # query all vetinfo which are planned and associated with cats owned by the FA
+            theVisits = VetInfo.query.filter(and_(VetInfo.doneby_id==FAid, VetInfo.planned==True)).order_by(VetInfo.vdate).all()
+
+            if FAid != current_user.id:
+                return render_template("vet_page.html", user=current_user, otheruser=theFA, visits=theVisits, FAids=FAidSpecial, msg=message)
+
+            return render_template("vet_page.html", user=current_user, visits=theVisits, FAids=FAidSpecial, msg=message)
+
+        elif mode == "special-all":
+            return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                catlist=Cat.query.all(), FAids=FAidSpecial, msg=message)
+
+        elif mode == "special-adopt":
+            return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                catlist=Cat.query.filter_by(adoptable=True).all(), FAids=FAidSpecial, msg=message, adoptonly=True)
+
+        if FAid != current_user.id:
+            return render_template("main_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                cats=Cat.query.filter_by(owner_id=FAid).all(), FAids=FAidSpecial, msg=message)
 
         return render_template("main_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
             cats=Cat.query.filter_by(owner_id=current_user.id).all(), FAids=FAidSpecial, msg=message)
-#            cats=current_user.cats, icats=current_user.icats)
 
-    # handle commands
+    # handle POST commands
     cmd = request.form["action"]
 
     # alternate GET command for another FA
     if cmd == "sv_fastate" and (current_user.FAisOV or current_user.FAisADM):
         FAid = int(request.form["FAid"]);
+        session["otherMode"] = None
         session["otherFA"] = FAid
         return redirect(url_for('index'))
 
@@ -585,6 +598,13 @@ def catpage():
             db.session.add(theEvent)
             # modify the FA
             theCat.owner_id = FAid
+            # in order to make it easier to list the "planned visits", any visit which is PLANNED is transferred to the new owner
+            # the idea is than that any VetInfo with planned=True and doneby_id matching the user ALWAYS corresponds to cats he owns
+            # this doesn't affect the visits which were performed. and the events will reflect the reality of who planned the visit since they are static
+            theVisits = VetInfo.query.filter(and_(VetInfo.cat_id == theCat.id, VetInfo.Planned == True)).all()
+            for v in theVisits:
+                v.doneby_id = FAid
+
             current_user.FAlastop = datetime.now()
             db.session.commit()
 
@@ -601,8 +621,20 @@ def vetpage():
     cmd = request.form["action"]
 
     if cmd == "fa_vetreg":
-        # query all vetinfo which was doneby the current user
-        theVisits = VetInfo.query.filter(and_(VetInfo.doneby_id==current_user.id, VetInfo.planned==False)).order_by(VetInfo.vdate).all()
+        # query all vetinfo which was doneby the FA
+        FAid = current_user.id
+        if "otherFA" in session and (current_user.FAisOV or current_user.FAisADM):
+            FAid = session["otherFA"]
+            theFA = User.query.filter_by(id=FAid).first()
+            faexists = theFA is not None;
+
+            if not faexists:
+                return render_template("error_page.html", user=current_user, errormessage="invalid FA id")
+
+        theVisits = VetInfo.query.filter(and_(VetInfo.doneby_id==FAid, VetInfo.planned==False)).order_by(VetInfo.vdate).all()
+
+        if FAid != current_user.id:
+            return render_template("regsoins_page.html", user=current_user, otheruser=theFA, visits=theVisits, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair)
 
         return render_template("regsoins_page.html", user=current_user, visits=theVisits, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair)
 
@@ -629,12 +661,12 @@ def listpage():
 
     if cmd == "sv_globalTab" and (current_user.FAisADM or current_user.FAisOV):
         # list of all cats
-        session["otherFA"] = "special-all"
+        session["otherMode"] = "special-all"
         return redirect(url_for('index'))
 
     if cmd == "sv_adoptTab" and (current_user.FAisADM or current_user.FAisOV):
         # list of all cats with adoptable=true
-        session["otherFA"] = "special-adopt"
+        session["otherMode"] = "special-adopt"
         return redirect(url_for('index'))
 
     # default is return to index

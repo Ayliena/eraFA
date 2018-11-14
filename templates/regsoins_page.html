@@ -16,9 +16,9 @@
         </style>
     </head>
 <body>
-    {% if visits %}
-    <h3>Association ERA - FA {{user.FAname}}</h3>
+    <h3>Association ERA - FA {% if otheruser %}{{otheruser.FAname}}{% else %}{{user.FAname}}{% endif %}</h3>
     <h2>Registre des soins</h2>
+    {% if visits %}
     <table>
         <tr>
             <th>Date</th>
