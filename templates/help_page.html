@@ -1,0 +1,67 @@
+<html>
+    <head>
+        <title>Familles d'accueil ERA</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    </head>
+<body>
+    <nav class="navbar navbar-inverse">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }}) [
+                {% if user.FAisFA %} FA {% endif %}
+                {% if user.FAisOV %} SV {% endif %}
+                {% if user.FAisADM %} GR {% endif %} ]
+            </a>
+        </div>
+        <ul class="nav navbar-nav navbar-right">
+            <li><a href="help">Aide</a></li>
+        {% if current_user.is_authenticated %}
+            <li><a href="{{ url_for('logout') }}">Log out</a></li>
+        {% else %}
+            <li><a href="{{ url_for('login') }}">Log in</a></li>
+        {% endif %}
+        </ul>
+    </div>
+    </nav>
+
+
+    <div class="container">
+        <h2>Aide a l'utilisation</h2>
+        {% if user.FAisFA %}
+        <p>En tant que FA de l'association, vous pouvez:</p>
+        <ul>
+            <li>Visualiser la liste de ses chats (on peut toujours y revenir en cliquant sur son nom en haut)</li>
+            <li>blah blah blah</li>
+        </ul>
+        {% endif %}
+        {% if user.FAisOV %}
+        <h3>Operations possibles un superviseur</h3>
+        <ul>
+            <li>Visualiser les informations de toutes les FA (liste des chats, visites), sans pouvoir modifier les informations sur les chats</li>
+            <li>Visualiser la liste de tous les chats ou celle limitee aux chats marques "adoptable"</li>
+            <li>Visualiser les listes des chats adoptes ou decedes</li>
+        </ul>
+        {% endif %}
+        {% if user.FAisADM %}
+        <h3>Operations possibles un gestionnaire registre</h3>
+        <ul>
+            <li>Rajouter un chat au systeme</li>
+            <li>Modifier les informations relatives a n'importe quel chat</li>
+            <li>Lors de l'enregistrement d'une adoption ou deces, transferer le chat dans l'historique</li>
+            <li>Effacer definitivement du systeme un chat de l'historique</li>
+        </ul>
+        {% endif %}
+
+     </div><!-- /.container -->
+</body>
+</html>

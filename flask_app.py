@@ -440,8 +440,21 @@ def catpage():
         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data")
         return redirect(url_for('index'))
 
+    # if we're working on another user's cats, show the information on top of the page
+    FAid = current_user.id
+    if "otherFA" in session and (current_user.FAisOV or current_user.FAisADM):
+        FAid = session["otherFA"]
+        theFA = User.query.filter_by(id=FAid).first()
+        faexists = theFA is not None;
+
+        if not faexists:
+            return render_template("error_page.html", user=current_user, errormessage="invalid FA id")
+
     # handle generation of the page
     if cmd == "fa_viewcat":
+        if FAid != current_user.id:
+            return render_template("cat_page.html", user=current_user, otheruser=theFA, cat=theCat, falist=FAlist)
+
         return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist)
 
     # cat commands
@@ -484,7 +497,7 @@ def catpage():
             if not VisitPlanned:
                 theCat.vetshort = vetAddStrings(theCat.vetshort, VisitType)
 
-            theVisit = VetInfo(cat_id=theCat.id, doneby_id=current_user.id, vet_id=vetId, vtype=VisitType, vdate=VisitDate,
+            theVisit = VetInfo(cat_id=theCat.id, doneby_id=FAid, vet_id=vetId, vtype=VisitType, vdate=VisitDate,
                 planned=VisitPlanned, comments=request.form["visit_comments"])
             db.session.add(theVisit)
 
@@ -620,6 +633,11 @@ def catpage():
 def vetpage():
     cmd = request.form["action"]
 
+    if cmd == "fa_catlist":
+        # just return to the default main page
+        session["otherMode"] = None
+        return redirect(url_for('index'))
+
     if cmd == "fa_vetreg":
         # query all vetinfo which was doneby the FA
         FAid = current_user.id
@@ -733,6 +751,12 @@ def listadownload():
 
     # default is return to index
     return redirect(url_for('index'))
+
+
+@app.route("/help")
+@login_required
+def helppage():
+    return render_template("help_page.html", user=current_user)
 
 
 @app.route("/login/", methods=["GET", "POST"])

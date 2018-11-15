@@ -64,24 +64,28 @@ $(document).ready(function() {
 
         <h2>Visites veterinaires planifiees</h2>
         {% for v in visits %}
-            <div class="row">{{ v.cat.registre }}: le {{ v.vdate.strftime("%d/%m/%y") }} aller chez {{ v.vet.FAname }} pour:</div>
-            <div class="row">
-                {% if vv.vtype[0] != '-' %}- Primo vaccination{% endif %}
-                {% if vv.vtype[1] != '-' %}- 1er rappel{% endif %}
-                {% if vv.vtype[2] != '-' %}- 2eme rappel{% endif %}
-                {% if vv.vtype[3] != '-' %}- Sterilisation/Castration{% endif %}
-                {% if vv.vtype[4] != '-' %}- Identification{% endif %}
-                {% if vv.vtype[5] != '-' %}- Test FIV/FelV{% endif %}
-                {% if vv.vtype[6] != '-' %}- Soins / autre{% endif %}
-                {% if vv.vtype[7] != '-' %}- Rappel annuel{% endif %}
+            <form action="cat" method="POST"><input type="hidden" name="catid" value="{{v.cat.id}}">
+            <div class="row">{{ v.vdate.strftime("%d/%m/%y") }} visite de <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong>{{v.cat.registre}}</strong></button>
+                    ( {{ v.cat.name }} / {{ v.cat.identif }} ) chez {{ v.vet.FAname }} pour:</div>
+            <div class="row"><div class="col-sm-1"></div>
+                {% if v.vtype[0] != '-' %}- Primo vaccination{% endif %}
+                {% if v.vtype[1] != '-' %}- 1er rappel{% endif %}
+                {% if v.vtype[2] != '-' %}- 2eme rappel{% endif %}
+                {% if v.vtype[3] != '-' %}- Sterilisation/Castration{% endif %}
+                {% if v.vtype[4] != '-' %}- Identification{% endif %}
+                {% if v.vtype[5] != '-' %}- Test FIV/FelV{% endif %}
+                {% if v.vtype[6] != '-' %}- Soins / autre{% endif %}
+                {% if v.vtype[7] != '-' %}- Rappel annuel{% endif %}
             </div>
             {% if v.comments %}<div class="row">Commentaires: {{ v.comments }}</div>{% endif %}
+            </form>
         {% else %}
         <p>Aucune</p>
         {% endfor %}
 
         <hr>
         <div class="row"><form action="vet" method="POST">
+            <button type="submit" name="action" value="fa_catlist">Liste des chats</button>
             <button type="submit" name="action" value="fa_vetreg">Registre des soins</button>
             <button type="submit" name="action" value="fa_vetplan">Visites planifiees</button>
         </form></div>

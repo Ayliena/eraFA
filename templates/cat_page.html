@@ -94,7 +94,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="/">{{ user.FAid }} ({{ user.FAname }}) [
+            <a class="navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }}) [
                 {% if user.FAisFA %} FA {% endif %}
                 {% if user.FAisOV %} SV {% endif %}
                 {% if user.FAisADM %} GR {% endif %} ]
@@ -119,6 +119,8 @@
         {% if msg[0] == 3 %}<div class="alert alert-danger">{% endif %}
         {{ msg[1] }}</div>
     {% endif %}
+    {% if otheruser %} <h2>Situation FA : {{ otheruser.FAname }}</h2> {% endif %}
+
     <h2>
         {% if cat.registre %}
             {% if cat.name %}
@@ -129,7 +131,7 @@
         {% else %}
             Nouveau chat
         {% endif %}
-    </h2>
+    <small style="font-family:monospace;">({{ cat.vetshort }})</small></h2>
 
     <form action="cat" id="c_form" onsubmit="return validateForm()" method="POST">
         <input type="hidden" name="catid" value="{{cat.id}}">
@@ -194,7 +196,7 @@
             {% for vv in cat.vetvisits %}
                 {% if vv.planned %}
                 <div class="row form-group">
-                    {{ vv.doneby.FAname }}:
+                    Visite veterinaire
                     <select name="oldv_{{vv.id}}_state"><option value="0">Effectuee le</option><option value="1" selected>Planifiee pour le</option></select>
                     <input type="text" name="oldv_{{vv.id}}_date" value="{{vv.vdate.strftime("%d/%m/%y")}}">
                     chez  <select name="oldv_{{vv.id}}_vet" id="oldv_{{vv.id}}_vet"></select>
@@ -210,7 +212,8 @@
                     <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_rr"{% if vv.vtype[7] != '-' %} checked{% endif %}>Rappel annuel</label>
                 </div>
                 <div class="row form-group">
-                    <textarea class="form-control" name="oldv_{{vv.id}}_comments" placeholder="Commentaires / informations additionnelles"></textarea>
+                    {% if vv.comments %}<textarea class="form-control" name="oldv_{{vv.id}}_comments">{{ vv.comments }}</textarea>
+                    {% else %}<textarea class="form-control" name="oldv_{{vv.id}}_comments" placeholder="Commentaires / informations additionnelles"></textarea>{% endif %}
                 </div>
                 {% else %}
                 <div class="row form-group">
