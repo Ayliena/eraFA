@@ -63,6 +63,7 @@
             </a>
         </div>
         <ul class="nav navbar-nav navbar-right">
+            <li><a href="help">Aide</a></li>
         {% if current_user.is_authenticated %}
             <li><a href="{{ url_for('logout') }}">Log out</a></li>
         {% else %}
@@ -96,11 +97,11 @@
             </form>
 
             <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
-               <div class="form-group"><button class="btn btn-default" name="FAid" value="{{FAidAD}}">Chats adoptés</button></div>
+               <div class="form-group"><button class="btn btn-default" name="FAid" value="{{FAids[0]}}">Chats adoptés</button></div>
                </form>
 
            <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
-              <div class="form-group"><button class="btn btn-default" name="FAid" value="{{FAidDCD}}">Chats décédés</button></div>
+              <div class="form-group"><button class="btn btn-default" name="FAid" value="{{FAids[1]}}">Chats décédés</button></div>
               </form>
         {% endif %}
 

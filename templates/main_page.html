@@ -76,13 +76,13 @@
 
 
     <div class="container">
-    {% if msg %}
-        {% if msg[0] == 0 %}<div class="alert alert-success">{% endif %}
-        {% if msg[0] == 1 %}<div class="alert alert-info">{% endif %}
-        {% if msg[0] == 2 %}<div class="alert alert-warning">{% endif %}
-        {% if msg[0] == 3 %}<div class="alert alert-danger">{% endif %}
-        {{ msg[1] }}</div>
-    {% endif %}
+    {% for m in  msg %}
+        {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
+        {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
+        {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
+        {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
+        {{ m[1] }}</div>
+    {% endfor %}
 
         {% if otheruser %} <h2>Situation FA : {{ otheruser.FAname }}</h2> {% endif %}
 
@@ -148,7 +148,7 @@
         <div class="row">
             <form action="cat" method="POST">
                 <button type="submit" name="action" value="adm_newcat">Rajouter un chat</button>
-                <button type="submit" name="action" value="adm_refucat">Rajouter un dossier Refugilys</button>
+                <button type="submit" name="action" value="adm_refucat">Rajouter des dossiers Refugilys</button>
             </form></div>
         <div class="row">
             <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">

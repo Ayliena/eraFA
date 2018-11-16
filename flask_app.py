@@ -8,6 +8,7 @@ from sqlalchemy import and_
 from flask_login import login_user, LoginManager, UserMixin, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash
 from datetime import datetime
+import unicodedata
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
@@ -36,12 +37,22 @@ login_manager.init_app(app)
 
 # --------------- STATIC DATA
 
-# NOTE: it must also be changed in main_page.html and cat_page.html
+# this maps DB field number to the string
+# NOTE they must match the ones used in cat_page.html
+DBTabColor = ["INCONNU", "BEIGE", "BEIGE ET BLANC", "BLANC", "BLUE POINT", "CREME", "ECAILLE DE TORTUE", "GRIS", "GRIS CHARTREUX", "GRIS ET BLANC",
+             "NOIR", "NOIR ET BLANC", "NOIR ET SMOKE", "NOIR PLASTRON BLANC", "ROUX", "ROUX ET BLANC", "SEAL POINT", "TABBY BLANC", "TABBY BRUN", "TABBY GRIS",
+             "TIGRE", "TIGRE BEIGE", "TIGRE BRUN", "TIGRE CREME", "TIGRE GRIS", "TRICOLORE"]
+DBTabSex = ["INCONNU", "FEMELLE", "MALE"]
+DBTabHair = ["COURT", "MI-LONG", "LONG"]
+
+# these are the readable (html page) versions
 TabColor = ["??couleur??", "Beige", "Beige et blanc", "Blanc", "Blue point", "Creme", "Ecaille de tortue", "Gris", "Gris chartreux", "Gris et blanc",
              "Noir", "Noir et blanc", "Noir et smoke", "Noir plastron blanc", "Roux", "Roux et blanc", "Seal point", "Tabby blanc", "Tabby brun", "Tabby gris",
-             "Tigre", "Tigre beige", "Tigre brun", "Tigre creme", "Tigre gris", "Tricolore"]
+             "Tigré", "Tigré beige", "Tigré brun", "Tigré creme", "Tigré gris", "Tricolore"]
 TabSex = ["??sexe??", "Femelle", "Male"]
 TabHair = ["", ", poil mi-long", ", poil long"]
+
+
 #TabHair = ["COURT", "MI-LONG", "LONG"]
 # static since it changes rarely, NOTE: it must also be changed in cat_page.html
 VETlist = [ [8, "Autre (commentaires)"], [ 6, "AMCB Veterinaires" ], [7, "Clinique Mont. Verte"]  ]
@@ -259,7 +270,7 @@ def index():
         # handle any message
         if "pendingmessage" in session:
             message = session["pendingmessage"]
-            session["pendingmessage"] = None
+            session.pop("pendingmessage")
         else:
             message = []
 
@@ -331,7 +342,7 @@ def index():
     if cmd == "adm_histcat" and current_user.FAisADM:
         # move the cat to the historical list of cats
         theCat.owner_id = FAidSpecial[2]
-        session["pendingmessage"] = [0, "Chat {} deplace dans l'historique".format(theCat.asText())]
+        session["pendingmessage"] = [ [0, "Chat {} deplace dans l'historique".format(theCat.asText())] ]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: trasfere dans l'historique".format(current_user.FAname))
         db.session.add(theEvent)
         current_user.FAlastop = datetime.now()
@@ -340,7 +351,7 @@ def index():
     if cmd == "adm_deletecat" and current_user.FAisADM:
         # erase the cat and all the associated information from the database
         # NOTE THAT THIS IS IRREVERSIBLE AND LEAVES NO TRACE
-        session["pendingmessage"] = [0, "Chat {} efface du systeme".format(theCat.asText())]
+        session["pendingmessage"] = [ [0, "Chat {} efface du systeme".format(theCat.asText())] ]
         Event.query.filter_by(cat_id=theCat.id).delete()
         VetInfo.query.filter_by(cat_id=theCat.id).delete()
         db.session.delete(theCat)
@@ -370,9 +381,6 @@ def catpage():
     if cmd == "fa_return":
         return redirect(url_for('index'))
 
-    # prepare the list of FAs for transfers
-    FAlist=User.query.filter_by(FAisFA=True).all()
-
     # generate an empty page for the addition of a Refu dossier
     if cmd == "adm_refucat" and current_user.FAisADM:
         return render_template("refu_page.html", user=current_user)
@@ -380,7 +388,7 @@ def catpage():
     # generate an empty page to add a new cat
     if cmd == "adm_newcat" and current_user.FAisADM:
         theCat = Cat(registre="")
-        return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist)
+        return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all())
 
     if (cmd == "adm_addcathere" or cmd == "adm_addcatputFA") and current_user.FAisADM:
         # generate the new cat using the form information
@@ -400,9 +408,9 @@ def catpage():
 
         if checkCat:
             # this is bad, we regenerate the page wit the current data
-            message = [3, "Le numero de registre existe deja!"]
+            message = [ [3, "Le numero de registre existe deja!"] ]
             theCat.registre = None
-            return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist, msg=message)
+            return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all(), msg=message)
 
         # if for any reason the FA is invalid, then put it here
         if cmd != "adm_addcathere":
@@ -419,9 +427,11 @@ def catpage():
             theCat.owner_id = current_user.id
 
         db.session.add(theCat)
+        # make sure we have an id
+        db.session.commit()
 
         # generate the event
-        session["pendingmessage"] = [0, "Chat {} rajoute dans le systeme".format(theCat.asText())]
+        session["pendingmessage"] = [ [0, "Chat {} rajoute dans le systeme".format(theCat.asText())] ]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: rajoute dans le systeme".format(current_user.FAname))
         db.session.add(theEvent)
 
@@ -435,11 +445,6 @@ def catpage():
         return render_template("error_page.html", user=current_user, errormessage="invalid cat id")
         return redirect(url_for('index'))
 
-    # check if you can access this
-    if (theCat.owner_id != current_user.id or not current_user.FAisFA) and not current_user.FAisADM:
-        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data")
-        return redirect(url_for('index'))
-
     # if we're working on another user's cats, show the information on top of the page
     FAid = current_user.id
     if "otherFA" in session and (current_user.FAisOV or current_user.FAisADM):
@@ -450,12 +455,23 @@ def catpage():
         if not faexists:
             return render_template("error_page.html", user=current_user, errormessage="invalid FA id")
 
+    # check if you can access this
+    if not (current_user.FAisFA or current_user.FAisOV or current_user.FAisADM):
+        return render_template("error_page.html", user=current_user, errormessage="no privileges to access cat data")
+
+    if theCat.owner_id != current_user.id and current_user.FAisOV:
+        # read-only access to the cat data
+        return render_template("cat_page.html", user=current_user, otheruser=theFA, cat=theCat, readonly=True)
+
+    if theCat.owner_id != current_user.id and not current_user.FAisADM:
+        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data")
+
     # handle generation of the page
     if cmd == "fa_viewcat":
         if FAid != current_user.id:
-            return render_template("cat_page.html", user=current_user, otheruser=theFA, cat=theCat, falist=FAlist)
+            return render_template("cat_page.html", user=current_user, otheruser=theFA, cat=theCat, falist=User.query.filter_by(FAisFA=True).all())
 
-        return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist)
+        return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all())
 
     # cat commands
     if cmd == "fa_modcat" or cmd == "fa_modcatr":
@@ -567,31 +583,29 @@ def catpage():
 
         current_user.FAlastop = datetime.now()
         db.session.commit()
-        message = [0, "Informations mises a jour"]
+        message = [ [0, "Informations mises a jour"] ]
 
         # if we stay on the page, regenerate it directly
         if cmd == "fa_modcatr":
-            return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist, msg=message)
+            return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all(), msg=message)
 
         session["pendingmessage"] = message
         return redirect(url_for('index'))
 
-    if cmd == "fa_adopted" and current_user.FAisFA:
-        FAspecialAD=User.query.filter_by(FAisAD=True).first()
-        theCat.owner_id = FAspecialAD.id
+    if cmd == "fa_adopted" and (current_user.FAisFA or current_user.FAisADM):
+        theCat.owner_id = FAidSpecial[0]
         # generate the event
-        session["pendingmessage"] = [0, "Chat {} transfere dans les adoptes".format(theCat.asText())]
+        session["pendingmessage"] = [ [0, "Chat {} transfere dans les adoptes".format(theCat.asText())] ]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: donne aux adoptants".format(current_user.FAname))
         db.session.add(theEvent)
         current_user.FAlastop = datetime.now()
         db.session.commit()
         return redirect(url_for('index'))
 
-    if cmd == "fa_dead" and current_user.FAisFA:
-        FAspecialDCD=User.query.filter_by(FAisDCD=True).first()
-        theCat.owner_id = FAspecialDCD.id
+    if cmd == "fa_dead" and  (current_user.FAisFA or current_user.FAisADM):
+        theCat.owner_id = FAidSpecial[1]
         # generate the event
-        session["pendingmessage"] = [0, "Chat {} transfere dans les decedes".format(theCat.asText())]
+        session["pendingmessage"] = [ [0, "Chat {} transfere dans les decedes".format(theCat.asText())] ]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: indique decede".format(current_user.FAname))
         db.session.add(theEvent)
         current_user.FAlastop = datetime.now()
@@ -606,7 +620,7 @@ def catpage():
 
         if theFA and FAid != theCat.owner_id:
             # generate the event
-            session["pendingmessage"] = [0, "Chat {} transfere chez {}".format(theCat.asText(), theFA.FAname)]
+            session["pendingmessage"] = [ [0, "Chat {} transfere chez {}".format(theCat.asText(), theFA.FAname)] ]
             theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transfere de {} a {}".format(current_user.FAname, theCat.owner.FAname, theFA.FAname))
             db.session.add(theEvent)
             # modify the FA
@@ -623,9 +637,101 @@ def catpage():
 
         return redirect(url_for('index'))
 
-    # admin cat commands
+    # this should never be reached
     # display info about a cat
-    return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist)
+#    return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all())
+    return render_template("error_page.html", user=current_user, errormessage="no cat command specified")
+
+# helper function to clean up FA names
+# thank to: stackexchange, answered Jun 12 '13 at 15:48 by aseagram
+def remove_accents(s):
+    return ''.join((c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn'))
+
+
+@app.route("/refu", methods=["POST"])
+@login_required
+def addrefupage():
+    if not current_user.FAisADM:
+        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to add data")
+
+    # iterate on all the lines one by one
+    # if a registre already exists, skip it (no update)
+    msg = [ [1, "Resultats de l'import" ] ]
+
+    if "r_dossier" in request.form:
+        lines = request.form["r_dossier"].splitlines()
+
+        for l in lines:
+            v = l.split(';')
+
+            if len(v) != 10:
+                msg.append([3, "Format erroné: {} (len={})".format(l, len(v)) ])
+                continue
+
+            # check if registre exists
+            theCat = Cat.query.filter_by(registre=v[0]).first();
+            if theCat != None:
+                msg.append([3, "Numéro de registre {} déjà présent, dossier ignoré".format(v[0]) ])
+                continue
+
+            # locate the FA
+            # due to the problem with uc/lc and accents, we have to do this manually....
+            FAlist = User.query.filter_by(FAisFA=True).all()
+            theFA = None
+            for fa in FAlist:
+                if remove_accents(fa.FAname).upper() == v[1]:
+                    theFA = fa
+                    break
+
+            if not theFA:
+                msg.append([1, "{}: FA '{}' non trouvee, rajoute ici".format(v[0], v[1]) ])
+                theFA = current_user
+
+            # convert fields to DB format (sex/hairlength/color)
+            r = [index for index, value in enumerate(DBTabSex) if value == v[4]]
+            if r:
+                r_sex = r[0]
+            else:
+                r_sex = 0
+
+            r = [index for index, value in enumerate(DBTabHair) if value == v[6]]
+            if r:
+                r_hl = r[0]
+            else:
+                r_hl = 0
+
+            r = [index for index, value in enumerate(DBTabColor) if value == v[7]]
+            if r:
+                r_col = r[0]
+            else:
+                r_col = 0
+
+            # convert birthdate
+            try:
+                r_bd = datetime.strptime(v[5], "%d/%m/%y")
+            except ValueError:
+                r_bd = None
+
+            r_comm = v[9].replace("<eol>", "\n")
+
+            # create the cat
+            theCat = Cat(registre=v[0], owner_id=theFA.id, name=v[2], sex=r_sex, birthdate=r_bd, color=r_col, longhair=r_hl, identif=v[3],
+                    description=r_comm, vetshort=v[8], adoptable=False)
+            db.session.add(theCat)
+            # make sure we have an id
+            db.session.commit()
+
+            # generate the event
+            msg.append( [0, "Chat {} rajoute chez {}".format(v[0], theFA.FAname) ] )
+            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: rajoute dans le systeme".format(current_user.FAname))
+            db.session.add(theEvent)
+
+    current_user.FAlastop = datetime.now()
+    db.session.commit()
+
+    session["pendingmessage"] = msg
+
+    return redirect(url_for('index'))
 
 
 @app.route("/vet", methods=["POST"])
