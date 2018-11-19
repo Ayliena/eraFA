@@ -60,6 +60,12 @@ VETlist = [ [8, "Autre (commentaires)"], [ 6, "AMCB Veterinaires" ], [7, "Cliniq
 # special FA ids (static): AD DCD HIST
 FAidSpecial = [2, 5, 10]
 
+# constants
+ACC_NONE = 0   # no access to data
+ACC_RO = 1     # read-only (view) access
+ACC_FULL = 2   # full access and edit, but not transfer
+ACC_TOTAL = 3  # full access and transfer
+
 # --------------- HELPER FUNCTIONS
 
 def vetMapToString(vetmap, prefix):
@@ -108,9 +114,9 @@ def vetAddStrings(vetstr1, vetstr2):
 # > export FLASK_APP=flask_app.py
 # > flask shell
 # > from flask_app import db, User
-# > newuserAD = User(username="--adopted--", password_hash="nologinAD", FAname="Chats adoptes", FAid="ADOPTIONS", FAemail="invalid@invalid", FAisFA=False, FAisOV=False, FAisADM=False, FAisAD=True, FAisDCD=False, FAisVET=False, FAisHIST=False)
-# > newuserDCD = User(username="--decedes--", password_hash="nologinDCD", FAname="Chats decedes", FAid="DECES", FAemail="invalid@invalid", FAisFA=False, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=True, FAisVET=False, FAisHIST=False)
-# > newuserHIST = User(username="--historique--", password_hash="nologinHIST", FAname="Chats: historique", FAid="HISTORIQUE", FAemail="invalid@invalid", FAisFA=False, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=False, FAisHIST=True)
+# > newuserAD = User(username="--adopted--", password_hash="nologinAD", FAname="Chats adoptes", FAid="ADOPTIONS", FAemail="invalid@invalid", FAisFA=False, FAisRF=False, FAisOV=False, FAisADM=False, FAisAD=True, FAisDCD=False, FAisVET=False, FAisHIST=False)
+# > newuserDCD = User(username="--decedes--", password_hash="nologinDCD", FAname="Chats decedes", FAid="DECES", FAemail="invalid@invalid", FAisFA=False, FAisRF=False, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=True, FAisVET=False, FAisHIST=False)
+# > newuserHIST = User(username="--historique--", password_hash="nologinHIST", FAname="Chats: historique", FAid="HISTORIQUE", FAemail="invalid@invalid", FAisFA=False, FAisRF=False, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=False, FAisHIST=True)
 # > db.session.add(newuserAD)
 # > db.session.add(newuserDCD)
 # > db.session.add(newuserHIST)
@@ -123,9 +129,9 @@ def vetAddStrings(vetstr1, vetstr2):
 # > flask shell
 # > from flask_app import db, User
 # > from werkzeug.security import generate_password_hash
-# > newuser = User(username="login", password_hash=generate_password_hash("password"), FAname="FA name - ERA", FAid="FA name - public", FAemail="FA email addr", FAisFA=True, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=False, FAisHIST=False)
-# > newuserFA = User(username="login", password_hash=generate_password_hash("password"), FAname="FA name - ERA", FAid="FA name - public", FAemail="FA email addr", FAisFA=True, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=False, FAisHIST=False)
-# > newuserVET = User(username="login", password_hash=generate_password_hash("password"), FAname="VET name(long)", FAid="name(short)", FAemail="invalid@invalid", FAisFA=False, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=True, FAisHIST=False)
+# > newuser = User(username="login", password_hash=generate_password_hash("password"), FAname="FA name - ERA", FAid="FA name - public", FAemail="FA email addr", FAisFA=True, FAisRF=False, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=False, FAisHIST=False)
+# > newuserFA = User(username="login", password_hash=generate_password_hash("password"), FAname="FA name - ERA", FAid="FA name - public", FAemail="FA email addr", FAisFA=True, FAisRF=False, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=False, FAisHIST=False)
+# > newuserVET = User(username="login", password_hash=generate_password_hash("password"), FAname="VET name(long)", FAid="name(short)", FAemail="invalid@invalid", FAisFA=False, FAisRF=False, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=True, FAisHIST=False)
 # > db.session.add(newuser)
 # > db.session.commit()
 
@@ -140,7 +146,10 @@ class User(UserMixin, db.Model):
     FAid = db.Column(db.String(64))
     FAemail = db.Column(db.String(128))
     FAlastop = db.Column(db.DateTime)
+    FAresp_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    FAresp = db.relationship('User', foreign_keys=FAresp_id)
     FAisFA = db.Column(db.Boolean, nullable=False)
+    FAisRF = db.Column(db.Boolean, nullable=False)
     FAisOV = db.Column(db.Boolean, nullable=False)
     FAisADM = db.Column(db.Boolean, nullable=False)
     FAisAD = db.Column(db.Boolean, nullable=False)
@@ -284,14 +293,19 @@ def index():
                 mode = None
 
         # display current user pages or alternate user's?
+        # we can see pages of other FAs if we are OV/ADM or we are the FA's resp
         FAid = current_user.id
-        if "otherFA" in session and (current_user.FAisOV or current_user.FAisADM):
+        if "otherFA" in session:
             FAid = session["otherFA"]
             theFA = User.query.filter_by(id=FAid).first()
             faexists = theFA is not None;
 
             if not faexists:
                 return render_template("error_page.html", user=current_user, errormessage="invalid FA id")
+
+            # check if we can see it
+            if theFA.FAresp_id != current_user.id and not (current_user.FAisOV or current_user.FAisADM):
+                FAid = current_user.id
 
         # handle special cases
         if mode == "special-vetplan":
@@ -447,7 +461,9 @@ def catpage():
 
     # if we're working on another user's cats, show the information on top of the page
     FAid = current_user.id
-    if "otherFA" in session and (current_user.FAisOV or current_user.FAisADM):
+    access = ACC_NONE
+
+    if "otherFA" in session:
         FAid = session["otherFA"]
         theFA = User.query.filter_by(id=FAid).first()
         faexists = theFA is not None;
@@ -455,23 +471,40 @@ def catpage():
         if not faexists:
             return render_template("error_page.html", user=current_user, errormessage="invalid FA id")
 
-    # check if you can access this
-    if not (current_user.FAisFA or current_user.FAisOV or current_user.FAisADM):
-        return render_template("error_page.html", user=current_user, errormessage="no privileges to access cat data")
+    # upgrade access depending on our status
+    # OV can see anything in RO mode
+    if current_user.FAisOV:
+        access = ACC_RO
 
-    if theCat.owner_id != current_user.id and current_user.FAisOV:
-        # read-only access to the cat data
+    # we can always see our cats, and ADM can always see all
+    if current_user.FAisFA and theCat.owner_id == current_user.id:
+        access = ACC_FULL
+
+    # we also have full access to any cat a FA we resp
+    if theCat.owner.FAresp_id == current_user.id:
+        access = ACC_FULL
+
+    if current_user.FAisADM:
+        access = ACC_TOTAL
+
+    # if no access, no access....
+    if access == ACC_NONE:
+        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data")
+
+    if access == ACC_RO:
+        # FAid != current_user.id is implied
         return render_template("cat_page.html", user=current_user, otheruser=theFA, cat=theCat, readonly=True)
 
-    if theCat.owner_id != current_user.id and not current_user.FAisADM:
-        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data")
+    # if we reach here, we have ACC_FULL
+    # some operations may still be unavailable!
+
+    FAlist = []
+    if access == ACC_TOTAL:
+        FAlist = User.query.filter_by(FAisFA=True).all()
 
     # handle generation of the page
     if cmd == "fa_viewcat":
-        if FAid != current_user.id:
-            return render_template("cat_page.html", user=current_user, otheruser=theFA, cat=theCat, falist=User.query.filter_by(FAisFA=True).all())
-
-        return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all())
+        return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist)
 
     # cat commands
     if cmd == "fa_modcat" or cmd == "fa_modcatr":
@@ -587,12 +620,12 @@ def catpage():
 
         # if we stay on the page, regenerate it directly
         if cmd == "fa_modcatr":
-            return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all(), msg=message)
+            return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist, msg=message)
 
         session["pendingmessage"] = message
         return redirect(url_for('index'))
 
-    if cmd == "fa_adopted" and (current_user.FAisFA or current_user.FAisADM):
+    if cmd == "fa_adopted":
         theCat.owner_id = FAidSpecial[0]
         # generate the event
         session["pendingmessage"] = [ [0, "Chat {} transfere dans les adoptes".format(theCat.asText())] ]
@@ -602,7 +635,7 @@ def catpage():
         db.session.commit()
         return redirect(url_for('index'))
 
-    if cmd == "fa_dead" and  (current_user.FAisFA or current_user.FAisADM):
+    if cmd == "fa_dead":
         theCat.owner_id = FAidSpecial[1]
         # generate the event
         session["pendingmessage"] = [ [0, "Chat {} transfere dans les decedes".format(theCat.asText())] ]
@@ -612,7 +645,7 @@ def catpage():
         db.session.commit()
         return redirect(url_for('index'))
 
-    if cmd == "adm_putcat" and current_user.FAisADM:
+    if cmd == "adm_putcat" and access == ACC_TOTAL:
         # cat information is not updated
         FAid = int(request.form["FAid"])
         # validate the id
@@ -640,7 +673,7 @@ def catpage():
     # this should never be reached
     # display info about a cat
 #    return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all())
-    return render_template("error_page.html", user=current_user, errormessage="no cat command specified")
+    return render_template("error_page.html", user=current_user, errormessage="command error (/cat)")
 
 # helper function to clean up FA names
 # thank to: stackexchange, answered Jun 12 '13 at 15:48 by aseagram
@@ -766,7 +799,7 @@ def vetpage():
         session["otherMode"] = "special-vetplan"
         return redirect(url_for('index'))
 
-    return redirect(url_for('index'))
+    return render_template("error_page.html", user=current_user, errormessage="command error (/vet)")
 
 
 @app.route("/list", methods=["POST"])
@@ -776,6 +809,12 @@ def listpage():
         return redirect(url_for('login'))
 
     cmd = request.form["action"]
+
+    if cmd == "sv_viewFA" and (current_user.FAisADM or current_user.FAisOV):
+        # normal FAs
+        FAlist=User.query.filter_by(FAisFA=True).all()
+
+        return render_template("list_page.html", user=current_user, falist=FAlist, FAids=FAidSpecial)
 
     if cmd == "sv_viewFA" and (current_user.FAisADM or current_user.FAisOV):
         # normal FAs
@@ -794,7 +833,7 @@ def listpage():
         return redirect(url_for('index'))
 
     # default is return to index
-    return redirect(url_for('index'))
+    return render_template("error_page.html", user=current_user, errormessage="command error (/list)")
 
 
 def exportCSV(catlist):

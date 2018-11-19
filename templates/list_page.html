@@ -58,6 +58,7 @@
             </button>
             <a class="navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }}) [
                 {% if user.FAisFA %} FA {% endif %}
+                {% if user.FAisRF %} RF {% endif %}
                 {% if user.FAisOV %} SV {% endif %}
                 {% if user.FAisADM %} GR {% endif %} ]
             </a>
@@ -84,6 +85,7 @@
                     <div class="col-sm-2"><button class="btn btn-default" name="FAid" value="{{fa.id}}">{{ fa.FAid }}</button> :</div>
                     <div class="col-sm-4">{{ fa.FAname }} [
                     {% if fa.FAisFA %} FA {% endif %}
+                    {% if user.FAisRF %} RF {% endif %}
                     {% if fa.FAisOV %} SV {% endif %}
                     {% if fa.FAisADM %} GR {% endif %} ]
                     </div>
@@ -140,6 +142,16 @@
             </div>
         {% endif %}
         <hr>
+        {% if user.FAisRF %}
+        <div class="row">
+            Commandes disponibles en tant que responsable FA:
+        </div>
+        <div class="row">
+            <form  action="list" method="POST">
+                <button type="submit" name="action" value="sv_viewFAresp">FA sous ma responsabilite</button>
+            </form>
+        </div>
+        {% endif %}
         {% if user.FAisOV %}
         <div class="row">
             Commandes disponibles en tant que Superviseur:

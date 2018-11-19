@@ -96,6 +96,7 @@
             </button>
             <a class="navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }}) [
                 {% if user.FAisFA %} FA {% endif %}
+                {% if user.FAisRF %} RF {% endif %}
                 {% if user.FAisOV %} SV {% endif %}
                 {% if user.FAisADM %} GR {% endif %} ]
             </a>
@@ -119,19 +120,16 @@
         {% if msg[0] == 3 %}<div class="alert alert-danger">{% endif %}
         {{ msg[1] }}</div>
     {% endif %}
-    {% if otheruser %} <h2>Situation FA : {{ otheruser.FAname }}</h2> {% endif %}
 
-    <h2>
-        {% if cat.registre %}
-            {% if cat.name %}
-                {{ cat.name }}
-            {% else %}
-                aucun nom
-            {% endif %}
-        {% else %}
-            Nouveau chat
+    {% if cat.registre %}
+        {% if cat.owner_id != user.id %}
+            <h3>Chat chez {{ cat.owner.FAname }}</h3>
         {% endif %}
-    <small style="font-family:monospace;">({{ cat.vetshort }})</small></h2>
+        <h2>{% if cat.name %}{{ cat.name }}{% else %}aucun nom{% endif %}
+        <small style="font-family:monospace;">({{ cat.vetshort }})</small></h2>
+    {% else %}
+        <h2>Nouveau chat</h2>
+    {% endif %}
 
     <form action="cat" id="c_form" onsubmit="return validateForm()" method="POST">
         <input type="hidden" name="catid" value="{{cat.id}}">

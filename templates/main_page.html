@@ -60,6 +60,7 @@
             <a class="navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }}) [
                 {% if user.FAisFA %} FA {% endif %}
                 {% if user.FAisOV %} SV {% endif %}
+                {% if user.FAisRF %} RF {% endif %}
                 {% if user.FAisADM %} GR {% endif %} ]
             </a>
         </div>
@@ -129,6 +130,16 @@
             <button type="submit" name="action" value="fa_vetreg">Registre des soins</button>
             <button type="submit" name="action" value="fa_vetplan">Visites planifiees</button>
         </form></div>
+        {% if user.FAisRF %}
+        <div class="row">
+            Commandes disponibles en tant que responsable FA:
+        </div>
+        <div class="row">
+            <form  action="list" method="POST">
+                <button type="submit" name="action" value="sv_viewFAresp">FA sous ma responsabilite</button>
+            </form>
+        </div>
+        {% endif %}
         {% if user.FAisOV %}
         <div class="row">
             Commandes disponibles en tant que Superviseur:
