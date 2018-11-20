@@ -40,25 +40,46 @@
         {% if user.FAisFA %}
         <p>En tant que FA de l'association, vous pouvez:</p>
         <ul>
-            <li>Visualiser la liste de ses chats (on peut toujours y revenir en cliquant sur son nom en haut)</li>
-            <li>blah blah blah</li>
+            <li>Visualiser la liste de chats sous votre responsabilite (vous pouvez toujours revenir a cette liste en cliquant sur votre nom en haut)</li>
+            <li>Mettre a jour les informations relatives a ces chats, soit pour y rajouter des elements manquants, soit pour indiquer que le chat a ete adopte ou est decede</li>
+            <li>Planifier ou indiquer les visites veterinaires.  Cette fonctionnalite est accessible de la page du chat en question et permet d'indiquer une visite qui a eu lieu ou encore une visite
+                que vous devez effectuer dans le futur.  Toute visite planifiee peut etre transformee en effectuee simplement en changeant l'indication et en mettant a jour les informations.  Vous pouvez a tout moment effacer
+                une visite planifiee en indiquant qu'elle a ete effectuee mais en decochant toutes les cases qui indiquent les soins.  Les visites effectuees sont enregistrees definitivement et ne peuvent pas etre
+                annullees, pensez donc a bien verifier les informations avant de valider la mise a jour....</li>
+            <li>A tout moment vous pouvez acceder au calendrier de visites planifiees avec le bouton correspondant</li>
+            <li>L'historique de toutes les visites que vous avez effectuees est enregistre dans le registre des soins</li>
+            <li>Vous ne pouvez pas indiquer le transfert vers une autre FA, celui-ci doit etre effectuee par un responsable de l'association</li>
+        </ul>
+        {% endif %}
+        {% if user.FAisRF %}
+        <h3>Operations possibles pour un responsable FA</h3>
+        <ul>
+            <li>En tant que responsable FA, vous avez acces aux informations des FA sous votre responsabilite: la liste de ces FA etant accessible avec le bouton correspondant</li>
+            <li>Lorsque vous operez sur une autre FA, la premiere ligne de la page vous indique la FA dont vous voyez les donnees</li>
+            </li>Vous avez acces a leur chats comme s'il s'agissait de votres, vous pouvez donc mettre a jour les informations, planifier/indiquer des
+                visites veterinaires, etc.  Vous ne pouvez pas transferer des chats entre FA, celui-ci doit etre effectuee par un responsable de l'association</li>
+            <li>Vous pouvez visualiser le calendrier des visites de cette FA ainsi que son registre des soins</li>
+            <li>Vous avez aussi acces aux les listes des chats adoptes ou decedes</li>
         </ul>
         {% endif %}
         {% if user.FAisOV %}
-        <h3>Operations possibles un superviseur</h3>
+        <h3>Operations possibles pour un superviseur</h3>
         <ul>
-            <li>Visualiser les informations de toutes les FA (liste des chats, visites), sans pouvoir modifier les informations sur les chats</li>
+            <li>Visualiser les informations de toutes les FA (liste des chats, visites)</li>
             <li>Visualiser la liste de tous les chats ou celle limitee aux chats marques "adoptable"</li>
             <li>Visualiser les listes des chats adoptes ou decedes</li>
+            <li>Vous ne pouvez en aucun cas modifier les informations relatives aux chats, ni les deplacer</li>
         </ul>
         {% endif %}
         {% if user.FAisADM %}
         <h3>Operations possibles un gestionnaire registre</h3>
         <ul>
-            <li>Rajouter un chat au systeme</li>
-            <li>Modifier les informations relatives a n'importe quel chat</li>
-            <li>Lors de l'enregistrement d'une adoption ou deces, transferer le chat dans l'historique</li>
-            <li>Effacer definitivement du systeme un chat de l'historique</li>
+            <li>Vous pouvez rajouter un chat dans le systeme, soit manuellement soit par copier-coller d'un dossier Refugilys (il y a un format specifique a respecter!)</li>
+            <li>Vous pouvez effectuer toutes les operations des autres roles, en ayant donc acces a toutes le informations de tous les chats en FA, avec la possibilite des les modifier</li>
+            <li>Vous pouvez transferer les chats entre FA, y compris "FA speciales" (adoptes/decedes/historique), donc par exemple un chat indique decede par erreur peut etre remis dans une FA</li>
+            <li>Lors de l'enregistrement d'une adoption ou deces, vous pouvez transferer le chat dans l'historique</li>
+            <li>Vous pouvez effacer definitivement du systeme un chat de l'historique: !!! ATTENTION !!! cette operation est irreversible et efface aussi toutes les informations relatives aux visites
+                veterinaires effectuees sur ce chat, en le faisant donc disparaitre de tous les registres de soin des FA concernees!</li>
         </ul>
         {% endif %}
 

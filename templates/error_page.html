@@ -19,6 +19,7 @@
             </button>
             <a class="navbar-brand" href="/">{{ user.FAid }} ({{ user.FAname }}) [
                 {% if user.FAisFA %} FA {% endif %}
+                {% if user.FAisRF %} RF {% endif %}
                 {% if user.FAisOV %} SV {% endif %}
                 {% if user.FAisADM %} GR {% endif %} ]
             </a>

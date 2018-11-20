@@ -336,8 +336,11 @@ def index():
     cmd = request.form["action"]
 
     # alternate GET command for another FA
-    if cmd == "sv_fastate" and (current_user.FAisOV or current_user.FAisADM):
+    if cmd == "sv_fastate":
         FAid = int(request.form["FAid"]);
+        # note: we do not perform any check on the validity of FAid or on the access privileges,
+        # since they will be performed by the GET method
+
         session["otherMode"] = None
         session["otherFA"] = FAid
         return redirect(url_for('index'))
@@ -780,13 +783,16 @@ def vetpage():
     if cmd == "fa_vetreg":
         # query all vetinfo which was doneby the FA
         FAid = current_user.id
-        if "otherFA" in session and (current_user.FAisOV or current_user.FAisADM):
+        if "otherFA" in session:
             FAid = session["otherFA"]
             theFA = User.query.filter_by(id=FAid).first()
             faexists = theFA is not None;
 
             if not faexists:
                 return render_template("error_page.html", user=current_user, errormessage="invalid FA id")
+
+            if theFA.FAresp_id != current_user.id and not (current_user.FAisOV or current_user.FAisADM):
+                FAid = current_user.id
 
         theVisits = VetInfo.query.filter(and_(VetInfo.doneby_id==FAid, VetInfo.planned==False)).order_by(VetInfo.vdate).all()
 
@@ -816,9 +822,9 @@ def listpage():
 
         return render_template("list_page.html", user=current_user, falist=FAlist, FAids=FAidSpecial)
 
-    if cmd == "sv_viewFA" and (current_user.FAisADM or current_user.FAisOV):
-        # normal FAs
-        FAlist=User.query.filter_by(FAisFA=True).all()
+    if cmd == "sv_viewFAresp" and (current_user.FAisRF):
+        # all FAs we take care of (we assume they are FAs....)
+        FAlist=User.query.filter_by(FAresp_id=current_user.id).all()
 
         return render_template("list_page.html", user=current_user, falist=FAlist, FAids=FAidSpecial)
 

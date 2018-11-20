@@ -77,13 +77,13 @@
 
 
     <div class="container">
-    {% for m in  msg %}
+    {% if msg %}{% for m in  msg %}
         {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
         {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
         {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
         {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
         {{ m[1] }}</div>
-    {% endfor %}
+    {% endfor %}{% endif %}
 
         {% if otheruser %} <h2>Situation FA : {{ otheruser.FAname }}</h2> {% endif %}
 
