@@ -8,7 +8,6 @@ from sqlalchemy import and_
 from flask_login import login_user, LoginManager, UserMixin, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash
 from datetime import datetime
-import unicodedata
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
@@ -194,6 +193,7 @@ class Cat(db.Model):
     vetshort = db.Column(db.String(16))
     adoptable = db.Column(db.Boolean)
     vetvisits = db.relationship('VetInfo', backref='cat', lazy=True)
+    lastop = db.Column(db.DateTime)
     events = db.relationship('Event', backref='cat', lazy=True)
 
     def __repr__(self):
@@ -359,6 +359,7 @@ def index():
     if cmd == "adm_histcat" and current_user.FAisADM:
         # move the cat to the historical list of cats
         theCat.owner_id = FAidSpecial[2]
+        theCat.lastop = datetime.now()
         session["pendingmessage"] = [ [0, "Chat {} deplace dans l'historique".format(theCat.asText())] ]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: trasfere dans l'historique".format(current_user.FAname))
         db.session.add(theEvent)
@@ -513,18 +514,51 @@ def catpage():
     if cmd == "fa_modcat" or cmd == "fa_modcatr":
         # return jsonify(request.form.to_dict())
 
-        # update cat information
-        theCat.name = request.form["c_name"]
-        theCat.sex=request.form["c_sex"]
+        # update cat information and indicate what was changed
+        updated = ['-', '-', '-', '-', '-', '-', '-', '-']
+        if theCat.name != request.form["c_name"]:
+            theCat.name = request.form["c_name"]
+            updated[1] = 'N'
+
+        if theCat.sex != int(request.form["c_sex"]):
+            theCat.sex=request.form["c_sex"]
+            updated[3] = 'S'
+
         try:
-            theCat.birthdate = datetime.strptime(request.form["c_birthdate"], "%d/%m/%y")
+            bd = datetime.strptime(request.form["c_birthdate"], "%d/%m/%y")
         except ValueError:
-            theCat.birthdate = None
-        theCat.color=request.form["c_color"]
-        theCat.longhair=request.form["c_hlen"]
-        theCat.identif=request.form["c_identif"]
-        theCat.description=request.form["c_description"]
-        theCat.adoptable=(request.form["c_adoptable"] == "1")
+            bd = None
+
+        if theCat.birthdate != bd:
+            theCat.birthdate = bd
+            updated[4] = "B"
+
+        if theCat.color != int(request.form["c_color"]):
+            theCat.color=request.form["c_color"]
+            updated[6] = 'C'
+
+        if theCat.longhair != int(request.form["c_hlen"]):
+            theCat.longhair=request.form["c_hlen"]
+            updated[5] = 'P'
+
+        if theCat.identif != request.form["c_identif"]:
+            theCat.identif=request.form["c_identif"]
+            updated[2] = 'I'
+
+        if theCat.description != request.form["c_description"]:
+            theCat.description=request.form["c_description"]
+            updated[7] = 'D'
+
+        if theCat.adoptable != (request.form["c_adoptable"] == "1"):
+            theCat.adoptable=(request.form["c_adoptable"] == "1")
+            updated[0] = 'A'
+
+        # indicate moodification of the data
+        updated = "".join(updated)
+
+        if updated != "--------":
+            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: mise a jour des informations {}".format(current_user.FAname, updated))
+            db.session.add(theEvent)
 
         # generate the vetinfo record, if any, and the associated event
         VisitType = vetMapToString(request.form, "visit")
@@ -552,17 +586,17 @@ def catpage():
             theVisit = VetInfo(cat_id=theCat.id, doneby_id=FAid, vet_id=vetId, vtype=VisitType, vdate=VisitDate,
                 planned=VisitPlanned, comments=request.form["visit_comments"])
             db.session.add(theVisit)
+            db.session.commit()  # needed for vet.FAname
 
             # if not planned, add it as event
-            if not VisitPlanned:
-                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite veterinaire {} effectuee le {} chez {}".format(current_user.FAname, VisitType, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
-                db.session.add(theEvent)
+            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite veterinaire {} planifiee pour le {} chez {}".format(current_user.FAname, VisitType, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
+            db.session.add(theEvent)
 
         # iterate through all the planned visits and see if they have been updated....
         # extract all planned visits which are now executed
         modvisits = []
         for k in request.form.keys():
-            if k.startswith("oldv_") and k.endswith("_state") and int(request.form[k]) == 0:
+            if k.startswith("oldv_") and k.endswith("_state") and int(request.form[k]) != 1:
                 modvisits.append(k)
 
         for mv in modvisits:
@@ -580,6 +614,11 @@ def catpage():
             # generate the form name prefix
             prefix = "oldv_"+mvid
 
+            # if deleted, delete immediately
+            if int(request.form[prefix+"_state"]) == 2:
+                db.session.delete(theVisit)
+                continue
+
             # modify the visit with the new data (we'll need to get all of it....)
             # if all reasons have been removed, erase it
             VisitType = vetMapToString(request.form, prefix)
@@ -587,36 +626,37 @@ def catpage():
             if VisitType == "--------":
                 # all reasons removed, erase this
                 db.session.delete(theVisit)
+                continue
 
+            # update the record
+            theVisit.VisitType = VisitType
+
+            try:
+                VisitDate = datetime.strptime(request.form[prefix+"_date"], "%d/%m/%y")
+            except ValueError:
+                VisitDate = datetime.now()
+            theVisit.visitDate = VisitDate
+
+            theVisit.planned = False
+
+            # validate the vet
+            vetId = next((x for x in VETlist if x[0]==int(request.form[prefix+"_vet"])), None)
+
+            if not vetId:
+                return render_template("error_page.html", user=current_user, errormessage="vet id is invalid")
             else:
-                # update the record
-                theVisit.VisitType = VisitType
+                vetId = vetId[0]
 
-                try:
-                    VisitDate = datetime.strptime(request.form[prefix+"_date"], "%d/%m/%y")
-                except ValueError:
-                    VisitDate = datetime.now()
-                theVisit.visitDate = VisitDate
+            theVisit.comments = request.form[prefix+"_comments"]
 
-                theVisit.planned = False
+            theCat.vetshort = vetAddStrings(theCat.vetshort, VisitType)
 
-                # validate the vet
-                vetId = next((x for x in VETlist if x[0]==int(request.form[prefix+"_vet"])), None)
-
-                if not vetId:
-                    return render_template("error_page.html", user=current_user, errormessage="vet id is invalid")
-                else:
-                    vetId = vetId[0]
-
-                theVisit.comments = request.form[prefix+"_comments"]
-
-                theCat.vetshort = vetAddStrings(theCat.vetshort, VisitType)
-
-                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite veterinaire {} effectuee le {} chez {}".format(current_user.FAname, VisitType, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
-                db.session.add(theEvent)
+            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite veterinaire {} effectuee le {} chez {}".format(current_user.FAname, VisitType, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
+            db.session.add(theEvent)
 
         # end for mv in modvisits
 
+        theCat.lastop = datetime.now()
         current_user.FAlastop = datetime.now()
         db.session.commit()
         message = [ [0, "Informations mises a jour"] ]
@@ -630,6 +670,7 @@ def catpage():
 
     if cmd == "fa_adopted":
         theCat.owner_id = FAidSpecial[0]
+        theCat.lastop = datetime.now()
         # generate the event
         session["pendingmessage"] = [ [0, "Chat {} transfere dans les adoptes".format(theCat.asText())] ]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: donne aux adoptants".format(current_user.FAname))
@@ -640,6 +681,7 @@ def catpage():
 
     if cmd == "fa_dead":
         theCat.owner_id = FAidSpecial[1]
+        theCat.lastop = datetime.now()
         # generate the event
         session["pendingmessage"] = [ [0, "Chat {} transfere dans les decedes".format(theCat.asText())] ]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: indique decede".format(current_user.FAname))
@@ -661,10 +703,11 @@ def catpage():
             db.session.add(theEvent)
             # modify the FA
             theCat.owner_id = FAid
+            theCat.lastop = datetime.now()
             # in order to make it easier to list the "planned visits", any visit which is PLANNED is transferred to the new owner
             # the idea is than that any VetInfo with planned=True and doneby_id matching the user ALWAYS corresponds to cats he owns
             # this doesn't affect the visits which were performed. and the events will reflect the reality of who planned the visit since they are static
-            theVisits = VetInfo.query.filter(and_(VetInfo.cat_id == theCat.id, VetInfo.Planned == True)).all()
+            theVisits = VetInfo.query.filter(and_(VetInfo.cat_id == theCat.id, VetInfo.planned == True)).all()
             for v in theVisits:
                 v.doneby_id = FAid
 
@@ -677,12 +720,6 @@ def catpage():
     # display info about a cat
 #    return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all())
     return render_template("error_page.html", user=current_user, errormessage="command error (/cat)")
-
-# helper function to clean up FA names
-# thank to: stackexchange, answered Jun 12 '13 at 15:48 by aseagram
-def remove_accents(s):
-    return ''.join((c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn'))
-
 
 @app.route("/refu", methods=["POST"])
 @login_required
@@ -710,14 +747,8 @@ def addrefupage():
                 msg.append([3, "Numéro de registre {} déjà présent, dossier ignoré".format(v[0]) ])
                 continue
 
-            # locate the FA
-            # due to the problem with uc/lc and accents, we have to do this manually....
-            FAlist = User.query.filter_by(FAisFA=True).all()
-            theFA = None
-            for fa in FAlist:
-                if remove_accents(fa.FAname).upper() == v[1]:
-                    theFA = fa
-                    break
+            # locate the FA, using the username
+            theFA = User.query.filter(and_(User.username==v[1], User.FAisFA==True)).first()
 
             if not theFA:
                 msg.append([1, "{}: FA '{}' non trouvee, rajoute ici".format(v[0], v[1]) ])
@@ -923,7 +954,10 @@ def login():
         return render_template("login_page.html", error=True)
 
     login_user(user)
-    # store last access
+
+    # store last access (NOT FOR NOW)
+#    current_user.FAlastop = datetime.now()
+#    db.session.commit()
 
     return redirect(url_for('index'))
 

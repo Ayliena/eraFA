@@ -113,13 +113,13 @@
 
 
     <div class="container">
-    {% if msg %}
-        {% if msg[0] == 0 %}<div class="alert alert-success">{% endif %}
-        {% if msg[0] == 1 %}<div class="alert alert-info">{% endif %}
-        {% if msg[0] == 2 %}<div class="alert alert-warning">{% endif %}
-        {% if msg[0] == 3 %}<div class="alert alert-danger">{% endif %}
-        {{ msg[1] }}</div>
-    {% endif %}
+    {% if msg %}{% for m in  msg %}
+        {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
+        {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
+        {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
+        {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
+        {{ m[1] }}</div>
+    {% endfor %}{% endif %}
 
     {% if cat.registre %}
         {% if cat.owner_id != user.id %}
@@ -193,11 +193,24 @@
             <h3>Visites veterinaires</h3>
             {% for vv in cat.vetvisits %}
                 {% if vv.planned %}
-                <div class="row form-group">
-                    Visite veterinaire
-                    <select name="oldv_{{vv.id}}_state"><option value="0">Effectuee le</option><option value="1" selected>Planifiee pour le</option></select>
-                    <input type="text" name="oldv_{{vv.id}}_date" value="{{vv.vdate.strftime("%d/%m/%y")}}">
-                    chez  <select name="oldv_{{vv.id}}_vet" id="oldv_{{vv.id}}_vet"></select>
+               <div class="row form-group">
+                    <div class="col-sm-3">
+                        Visite veterinaire
+                        <select name="oldv_{{vv.id}}_state"><option value="0">Effectuee le</option><option value="1" selected>Planifiee pour le</option>><option value="2">ANNULLEE</option></select>
+                    </div>
+                    <div class="col-sm-2">
+                        <div class="form-group">
+                            <div class="input-group datepick">
+                                <input type="text" class="form-control" name="oldv_{{vv.id}}_date"  id="oldv_{{vv.id}}_date" value="{{vv.vdate.strftime("%d/%m/%y")}}">
+                                <div class="input-group-addon">
+                                    <span class="glyphicon glyphicon-calendar"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        chez <select name="oldv_{{vv.id}}_vet" id="oldv_{{vv.id}}_vet"></select> pour:
+                    </div>
                 </div>
                 <div class="row form-group">
                     <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_pv"{% if vv.vtype[0] != '-' %} checked{% endif %}>Primo vaccination</label>
@@ -240,10 +253,23 @@
             {% if not readonly %}
                 <hr>
                 <div class="row form-group">
-                    Nouvelle visite
+                    <div class="col-sm-3">
+                        Nouvelle visite
                         <select name="visit_state"><option value="0">Effectuee le</option><option value="1">Planifiee pour le</option></select>
-                        <input type="text" name="visit_date" placeholder="aujourd'hui"> chez
-                        <select name="visit_vet" id="visit_vet"></select>--- Sujet de la visite:
+                    </div>
+                    <div class="col-sm-2">
+                        <div class="form-group">
+                            <div class="input-group datepick">
+                                <input type="text" class="form-control" name="visit_date" id="visit_date" placeholder="aujourd'hui">
+                                <div class="input-group-addon">
+                                    <span class="glyphicon glyphicon-calendar"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        chez <select name="visit_vet" id="visit_vet"></select> pour:
+                    </div>
                 </div>
                 <div class="row form-group">
                     <label class="checkbox-inline"><input type="checkbox" name="visit_pv">Primo vaccination</label>
@@ -263,7 +289,7 @@
 
         {% if cat.registre and user.FAisADM %}
             <hr>
-            <h3>Historique du chat</h3>
+            <h3>Historique du chat{% if cat.lastop %} <small>(Derniere modification: {{ cat.lastop.strftime("%d/%m/%Y %H:%M") }})</small>{%endif %}</h3>
             {% for ev in cat.events %}
                 <div class="row">
                     <div class="col-sm-2">{{ ev.edate.strftime("%d/%m/%Y %H:%M") }}</div>

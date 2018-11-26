@@ -5,7 +5,9 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     </head>
     <script>
         function showHide(elem) {
@@ -32,7 +34,7 @@
             else if (days < 365) return Math.floor(days/30.42).toString()+"m";
             else if (days < 1095) {
                 var sm = Math.floor((days % 365) / 183) * 6;
-                return Math.floor(days/365).toString()+"a"+sm.toString()+"m";
+                return Math.floor(days/365).toString()+"a"+ ((sm==0)? "" : sm.toString()+"m");
             }
             else return Math.floor(days/365).toString()+"a";
         }
@@ -47,7 +49,7 @@
         }
     </script>
 <body>
-    <nav class="navbar navbar-inverse">
+<nav class="navbar navbar-inverse">
     <div class="container">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
@@ -56,12 +58,47 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }}) [
+            <div class="navbar-header"><a class="nav navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }}) [
                 {% if user.FAisFA %} FA {% endif %}
                 {% if user.FAisRF %} RF {% endif %}
                 {% if user.FAisOV %} SV {% endif %}
                 {% if user.FAisADM %} GR {% endif %} ]
-            </a>
+            </a></div>
+            <ul class="nav navbar-nav">
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Famille<span class="caret"></span></a>
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="vet" method="POST">
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_catlist">Chats en FA</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_vetplan">Visites planifiees</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_vetreg">Registre des Soins</button></li>
+                    </form></ul>
+                </li>
+                {% if user.FAisRF %}<li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Resp. FA<span class="caret"></span></a>
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="list" method="POST">
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_viewFAresp">FA sous ma responsabilite</button></li>
+                    </form></ul>
+                </li>{% endif %}
+                {% if user.FAisOV %}<li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Superviseur<span class="caret"></span></a>
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="list" method="POST">
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_viewFA">Vision par FA</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_adoptTab">Chats a l'adoption</button></li>
+                    </form></ul>
+                </li>{% endif %}
+                {% if user.FAisADM %}<li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Gest. Registre<span class="caret"></span></a>
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[0]}}">Chats adoptes</button></li>
+                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[1]}}">Chats decedes</button></li>
+                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[2]}}">Historique</button></li>
+                    </form><form class="form-inline" action="cat" method="POST">
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_newcat">Rajouter un chat</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_refucat">Interoperabilite Refugilys</button></li>
+                    </form></ul>
+                </li>{% endif %}
+            </ul>
         </div>
         <ul class="nav navbar-nav navbar-right">
             <li><a href="help">Aide</a></li>
@@ -74,7 +111,6 @@
     </div>
     </nav>
 
-
     <div class="container">
         {% if falist %}
             <h2>Familles d'accueil</h2>
@@ -84,16 +120,18 @@
                 <div class="row">
                     <div class="col-sm-2"><button class="btn btn-default" name="FAid" value="{{fa.id}}">{{ fa.FAid }}</button> :</div>
                     <div class="col-sm-4">{{ fa.FAname }} [
+                    ({{ fa.id }})
                     {% if fa.FAisFA %} FA {% endif %}
                     {% if fa.FAisRF %} RF {% endif %}
                     {% if fa.FAisOV %} SV {% endif %}
                     {% if fa.FAisADM %} GR {% endif %} ]
                     </div>
-                    {% if fa.FAlastop %}
                     <div class="col-sm-3">
-                        Derniere activité: {{ fa.FAlastop.strftime("%d/%m/%Y %H:%M") }}
+                        {% if fa.FAlastop %}Derniere activité: {{ fa.FAlastop.strftime("%d/%m/%Y %H:%M") }}{% endif %}
                     </div>
-                    {% endif %}
+                    <div class="col-sm-3">
+                        {% if fa.FAresp_id %}({{ fa.FAresp_id }}){% endif %}
+                    </div>
                 </div>
             {% endfor %}
             </form>
