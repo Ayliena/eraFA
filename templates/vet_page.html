@@ -25,7 +25,7 @@ $(document).ready(function() {
 });
 </script>
 <body>
-    <nav class="navbar navbar-inverse">
+<nav class="navbar navbar-inverse">
     <div class="container">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
@@ -34,11 +34,42 @@ $(document).ready(function() {
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }}) [
-                {% if user.FAisFA %} FA {% endif %}
-                {% if user.FAisOV %} SV {% endif %}
-                {% if user.FAisADM %} GR {% endif %} ]
-            </a>
+            <div class="navbar-header"><a class="nav navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }})</a></div>
+            <ul class="nav navbar-nav">
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Famille<span class="caret"></span></a>
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="vet" method="POST">
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_catlist">Chats en FA</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_vetplan">Visites planifiees</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_vetreg">Registre des Soins</button></li>
+                    </form></ul>
+                </li>
+                {% if user.FAisRF %}<li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Resp. FA<span class="caret"></span></a>
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="list" method="POST">
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_viewFAresp">FA sous ma responsabilite</button></li>
+                    </form></ul>
+                </li>{% endif %}
+                {% if user.FAisOV %}<li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Superviseur<span class="caret"></span></a>
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="list" method="POST">
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_viewFA">Vision par FA</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_adoptTab">Chats a l'adoption</button></li>
+                    </form></ul>
+                </li>{% endif %}
+                {% if user.FAisADM %}<li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Gest. Registre<span class="caret"></span></a>
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[0]}}">Chats adoptes</button></li>
+                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[1]}}">Chats decedes</button></li>
+                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[2]}}">Historique</button></li>
+                    </form><form class="form-inline" action="cat" method="POST">
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_newcat">Rajouter un chat</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_refucat">Interoperabilite Refugilys</button></li>
+                    </form></ul>
+                </li>{% endif %}
+            </ul>
         </div>
         <ul class="nav navbar-nav navbar-right">
             <li><a href="help">Aide</a></li>
@@ -49,17 +80,17 @@ $(document).ready(function() {
         {% endif %}
         </ul>
     </div>
-    </nav>
+</nav>
 
 
     <div class="container">
-    {% if msg %}
-        {% if msg[0] == 0 %}<div class="alert alert-success">{% endif %}
-        {% if msg[0] == 1 %}<div class="alert alert-info">{% endif %}
-        {% if msg[0] == 2 %}<div class="alert alert-warning">{% endif %}
-        {% if msg[0] == 3 %}<div class="alert alert-danger">{% endif %}
-        {{ msg[1] }}</div>
-    {% endif %}
+    {% if msg %}{% for m in  msg %}
+        {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
+        {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
+        {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
+        {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
+        {{ m[1] }}</div>
+    {% endfor %}{% endif %}
 
         {% if otheruser %} <h2>Situation FA : {{ otheruser.FAname }}</h2> {% endif %}
 

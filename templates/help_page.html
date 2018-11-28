@@ -40,11 +40,20 @@
         {% if user.FAisFA %}
         <p>En tant que FA de l'association, vous pouvez:</p>
         <ul>
-            <li>Visualiser la liste de chats sous votre responsabilite (vous pouvez toujours revenir a cette liste en cliquant sur votre nom en haut)</li>
+            <li>Visualiser la liste de chats sous votre responsabilite (vous pouvez toujours revenir a cette liste en cliquant sur votre nom en haut).  La liste indique:</li>
+            <ul>
+                <li>Le numero de registre (cliquer pour acceder/modifier les informations)</li>
+                <li>Le numero de puce (ou tatouage)</li>
+                <li>Le nom (cliquer pour faire apparaitre/disparaitre les commentaires)</li>
+                <li>La description du chat: sexe, age, couleur (les info manquantes sont en jaune)</li>
+                <li>une indication des visites veterinaires que le chat a eu (V=primo vaccination, 1=1er rappel, 2=2eme rappel, S=sterilisation/castration, P=identification,
+                    T=test FIV/Felv, R=rappel annuel, X=soins</li>
+                <li>l'indication de si le chat est a l'adoption ou pas</li>
+            </ul>
             <li>Mettre a jour les informations relatives a ces chats, soit pour y rajouter des elements manquants, soit pour indiquer que le chat a ete adopte ou est decede</li>
             <li>Planifier ou indiquer les visites veterinaires.  Cette fonctionnalite est accessible de la page du chat en question et permet d'indiquer une visite qui a eu lieu ou encore une visite
                 que vous devez effectuer dans le futur.  Toute visite planifiee peut etre transformee en effectuee simplement en changeant l'indication et en mettant a jour les informations.  Vous pouvez a tout moment effacer
-                une visite planifiee en indiquant qu'elle a ete effectuee mais en decochant toutes les cases qui indiquent les soins.  Les visites effectuees sont enregistrees definitivement et ne peuvent pas etre
+                une visite planifiee en indiquant "ANNULLEE" et en mettant a jour.  Les visites effectuees sont enregistrees definitivement et ne peuvent pas etre
                 annullees, pensez donc a bien verifier les informations avant de valider la mise a jour....</li>
             <li>A tout moment vous pouvez acceder au calendrier de visites planifiees avec le bouton correspondant</li>
             <li>L'historique de toutes les visites que vous avez effectuees est enregistre dans le registre des soins</li>

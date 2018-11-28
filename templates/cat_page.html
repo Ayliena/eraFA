@@ -31,7 +31,7 @@
                 option.text = cols[i];
                 sel.add(option);
             }
-         }
+        }
         function populatevets(selid) {
             var vetids = [8, 6, 7];
             var vetnames = ["Veto (commentaires)", "AMCB veterinaires", "Clinique Mont. Verte"];
@@ -44,6 +44,11 @@
                 option.text = vetnames[i];
                 sel.add(option);
             }
+        }
+        function readableRegistre(regnum) {
+            ry = Math.floor(regnum/10000);
+            rn = regnum - 10000*ry;
+            return rn.toString()+"-"+ry.toString();
         }
         window.onload=function() {
             populatecolor("c_color");
@@ -69,6 +74,9 @@
             populatevets("oldv_{{vv.id}}_vet");
             document.getElementById("oldv_{{vv.id}}_vet").value = {{vv.vet_id}};
             {% endif %}{% endfor %}
+
+            var regnum = document.getElementById("rn_cat");
+            regnum.innerHTML = readableRegistre(parseInt(regnum.innerHTML));
         }
         $(document).ready(function() {
           $('.datepick').datetimepicker({
@@ -85,7 +93,7 @@
         }
     </script>
 <body>
-    <nav class="navbar navbar-inverse">
+<nav class="navbar navbar-inverse">
     <div class="container">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
@@ -94,14 +102,45 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }}) [
-                {% if user.FAisFA %} FA {% endif %}
-                {% if user.FAisRF %} RF {% endif %}
-                {% if user.FAisOV %} SV {% endif %}
-                {% if user.FAisADM %} GR {% endif %} ]
-            </a>
+            <div class="navbar-header"><a class="nav navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }})</a></div>
+            <ul class="nav navbar-nav">
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Famille<span class="caret"></span></a>
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="vet" method="POST">
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_catlist">Chats en FA</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_vetplan">Visites planifiees</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_vetreg">Registre des Soins</button></li>
+                    </form></ul>
+                </li>
+                {% if user.FAisRF %}<li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Resp. FA<span class="caret"></span></a>
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="list" method="POST">
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_viewFAresp">FA sous ma responsabilite</button></li>
+                    </form></ul>
+                </li>{% endif %}
+                {% if user.FAisOV %}<li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Superviseur<span class="caret"></span></a>
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="list" method="POST">
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_viewFA">Vision par FA</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_adoptTab">Chats a l'adoption</button></li>
+                    </form></ul>
+                </li>{% endif %}
+                {% if user.FAisADM %}<li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Gest. Registre<span class="caret"></span></a>
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[0]}}">Chats adoptes</button></li>
+                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[1]}}">Chats decedes</button></li>
+                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[2]}}">Historique</button></li>
+                    </form><form class="form-inline" action="cat" method="POST">
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_newcat">Rajouter un chat</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_refucat">Interoperabilite Refugilys</button></li>
+                    </form></ul>
+                </li>{% endif %}
+            </ul>
         </div>
         <ul class="nav navbar-nav navbar-right">
+            <li><a href="help">Aide</a></li>
         {% if current_user.is_authenticated %}
             <li><a href="{{ url_for('logout') }}">Log out</a></li>
         {% else %}
@@ -109,7 +148,7 @@
         {% endif %}
         </ul>
     </div>
-    </nav>
+</nav>
 
 
     <div class="container">
@@ -136,7 +175,7 @@
         <div class="row form-group">
             <div class="col-sm-1">Registre:</div>
             <div class="col-sm-3">
-                {% if cat.registre %} <b>{{ cat.registre }}</b>
+                {% if cat.registre %} <b><span id="rn_cat">{{cat.regnum}}</span></b>
                 {% else %} <input type="text" name="c_registre" required placeholder="xxx-xx"> {% endif %}
             </div>
             <div class="col-sm-2"><select name="c_adoptable" id="c_adoptable" {% if readonly %}disabled{% endif %}>

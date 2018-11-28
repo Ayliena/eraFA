@@ -5,10 +5,53 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<!---*** Start: JQuery 3.3.1 version. ***--->
+<script language="javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<!---*** End: JQuery 3.3.1 version. ***--->
+<!---*** Start: Bootstrap 3.3.7 version files. ***--->
+<script language="javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<!---*** End: Bootstrap 3.3.7 version files. ***--->
+
+<script language="javascript" src="https://momentjs.com/downloads/moment.js"></script>
+<script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/js/bootstrap-datetimepicker.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/css/bootstrap-datetimepicker.min.css">
     </head>
+    <script>
+        function readableAge(days) {
+            if (days < 12*7)  return Math.floor(days/7).toString()+"s";
+            else if (days < 365) return Math.floor(days/30.42).toString()+"m";
+            else if (days < 1095) {
+                var sm = Math.floor((days % 365) / 183) * 6;
+                return Math.floor(days/365).toString()+"a"+ ((sm==0)? "" : sm.toString()+"m");
+            }
+            else return Math.floor(days/365).toString()+"a";
+        }
+        function readableRegistre(regnum) {
+            ry = Math.floor(regnum/10000);
+            rn = regnum - 10000*ry;
+            return rn.toString()+"-"+ry.toString();
+        }
+       window.onload=function() {
+            var i, dates = document.querySelectorAll('[id^="bd_"]');
+            var today = new Date().getTime() / 1000;
+
+            for (i = 0; i < dates.length; ++i) {
+                days = Math.floor((today - parseInt(dates[i].innerHTML))/86400);
+                dates[i].innerHTML = readableAge(days);
+                // Math.floor(parseInt(dates[i].innerHTML)/86400;
+            }
+
+            var regnums = document.querySelectorAll('[id^="rn_"');
+            for (i = 0; i < regnums.length; ++i) {
+                regnum = parseInt(regnums[i].innerHTML);
+                regnums[i].innerHTML = readableRegistre(regnum);
+                // Math.floor(parseInt(dates[i].innerHTML)/86400;
+            }
+       }
+    </script>
 <body>
-    <nav class="navbar navbar-inverse">
+<nav class="navbar navbar-inverse">
     <div class="container">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
@@ -17,13 +60,45 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="/">{{ user.FAid }} ({{ user.FAname }}) [
-                {% if user.FAisFA %} FA {% endif %}
-                {% if user.FAisOV %} SV {% endif %}
-                {% if user.FAisADM %} GR {% endif %} ]
-            </a>
+            <div class="navbar-header"><a class="nav navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }})</a></div>
+            <ul class="nav navbar-nav">
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Famille<span class="caret"></span></a>
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="vet" method="POST">
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_catlist">Chats en FA</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_vetplan">Visites planifiees</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_vetreg">Registre des Soins</button></li>
+                    </form></ul>
+                </li>
+                {% if user.FAisRF %}<li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Resp. FA<span class="caret"></span></a>
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="list" method="POST">
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_viewFAresp">FA sous ma responsabilite</button></li>
+                    </form></ul>
+                </li>{% endif %}
+                {% if user.FAisOV %}<li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Superviseur<span class="caret"></span></a>
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="list" method="POST">
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_viewFA">Vision par FA</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_adoptTab">Chats a l'adoption</button></li>
+                    </form></ul>
+                </li>{% endif %}
+                {% if user.FAisADM %}<li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Gest. Registre<span class="caret"></span></a>
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[0]}}">Chats adoptes</button></li>
+                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[1]}}">Chats decedes</button></li>
+                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[2]}}">Historique</button></li>
+                    </form><form class="form-inline" action="cat" method="POST">
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_newcat">Rajouter un chat</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_refucat">Interoperabilite Refugilys</button></li>
+                    </form></ul>
+                </li>{% endif %}
+            </ul>
         </div>
         <ul class="nav navbar-nav navbar-right">
+            <li><a href="help">Aide</a></li>
         {% if current_user.is_authenticated %}
             <li><a href="{{ url_for('logout') }}">Log out</a></li>
         {% else %}
@@ -31,17 +106,56 @@
         {% endif %}
         </ul>
     </div>
-    </nav>
-
+</nav>
 
     <div class="container">
+    {% if msg %}{% for m in  msg %}
+        {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
+        {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
+        {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
+        {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
+        {{ m[1] }}</div>
+    {% endfor %}{% endif %}
 
-        <h2>Nouveau dossier Refugilys</h2>
+        <h2>Interoperabilite avec Refugilys</h2>
 
-        <p>Coller les champs du dossier:</p>
+        <h3>Exporter des dossiers</h3>
         <form action="/refu" method="POST">
-            <div class="form-group"><textarea class="form-control" rows=15 name="r_dossier" required></textarea></div>
-            <button type="submit" name="action" value="adm_refudoss">Envoyer</button>
+            <div class="row form-group">
+                <div class="col-sm-2">Chats modifies depuis:</div>
+                <div class="col-sm-2"><input type="text" name="mod_date" id="mod_date" value="a remplir"></div>
+                <div class="col-sm-2"><button type="submit" name="action" value="adm_modfilter">Filtrer</button></div>
+            </div>
+            {% if modcats %}{% for cat in modcats %}
+            <div class="row">
+                <div class="col-sm-1">
+                    <strong><span id="rn_{{cat.id}}">{{cat.regnum}}</span></strong>
+                </div>
+                <div class="col-sm-2">{{ cat.identif }}</div>
+                <div class="col-sm-4">
+                    <b>{% if cat.name %}{{ cat.name }}{% else %}<span class="bg-warning">sans nom</span>{% endif %}</b>
+                    ({% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}<span class="bg-warning">??sexe??</span>{% endif %},
+                    {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??age??</span>{% endif %},
+                    {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}
+                    {{ tabhair[cat.longhair] }})</div>
+                <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
+                <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success">Adoptable</span>{% else %}Non adoptable{% endif %}</div>
+            </div>
+            {% for ev in cat.events %}
+                <div class="row">
+                    <div class="col-sm-1"></div>
+                    <div class="col-sm-2">{{ ev.edate.strftime("%d/%m/%Y %H:%M") }}</div>
+                    <div class="col-sm-9">{{ ev.etext }}</div>
+                </div>
+            {% endfor %}
+            {% endfor %}{% endif %}
+            <div class="row form-groupe"><button type="submit" name="action" value="adm_refexport">Exporter</button></div>
+        </form>
+
+        <h3>Importer des dossiers Refugilys</h3>
+        <form action="/refu" method="POST">
+            <div class="form-group"><textarea class="form-control" rows=8 name="r_dossier" required></textarea></div>
+            <button type="submit" name="action" value="adm_refuimport">Importer</button>
         </form>
 
     </div><!-- /.container -->

@@ -53,11 +53,7 @@ TabHair = ["", ", poil mi-long", ", poil long"]
 
 
 #TabHair = ["COURT", "MI-LONG", "LONG"]
-# static since it changes rarely, NOTE: it must also be changed in cat_page.html
-VETlist = [ [8, "Autre (commentaires)"], [ 6, "AMCB Veterinaires" ], [7, "Clinique Mont. Verte"]  ]
 
-# special FA ids (static): AD DCD HIST
-FAidSpecial = [2, 5, 10]
 
 # constants
 ACC_NONE = 0   # no access to data
@@ -113,13 +109,20 @@ def vetAddStrings(vetstr1, vetstr2):
 # > export FLASK_APP=flask_app.py
 # > flask shell
 # > from flask_app import db, User
-# > newuserAD = User(username="--adopted--", password_hash="nologinAD", FAname="Chats adoptes", FAid="ADOPTIONS", FAemail="invalid@invalid", FAisFA=False, FAisRF=False, FAisOV=False, FAisADM=False, FAisAD=True, FAisDCD=False, FAisVET=False, FAisHIST=False)
-# > newuserDCD = User(username="--decedes--", password_hash="nologinDCD", FAname="Chats decedes", FAid="DECES", FAemail="invalid@invalid", FAisFA=False, FAisRF=False, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=True, FAisVET=False, FAisHIST=False)
-# > newuserHIST = User(username="--historique--", password_hash="nologinHIST", FAname="Chats: historique", FAid="HISTORIQUE", FAemail="invalid@invalid", FAisFA=False, FAisRF=False, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=False, FAisHIST=True)
+# > newuserAD = User(username="--adopted--", password_hash="nologinAD", FAname="Chats adoptes", FAid="ADOPTIONS", FAemail="invalid@invalid", FAisAD=True)
+# > newuserDCD = User(username="--decedes--", password_hash="nologinDCD", FAname="Chats decedes", FAid="DECES", FAemail="invalid@invalid", FAisDCD=True)
+# > newuserHIST = User(username="--historique--", password_hash="nologinHIST", FAname="Chats: historique", FAid="HISTORIQUE", FAemail="invalid@invalid", FAisHIST=True)
+# > newuserREF = User(username="--refuge--", password_hash="nologinREF", FAname="Refuge ERA", FAid="REFUGE", FAemail="invalid@invalid", FAisREF=True)
 # > db.session.add(newuserAD)
 # > db.session.add(newuserDCD)
 # > db.session.add(newuserHIST)
+# > db.session.add(newuserREF)
 # > db.session.commit()
+#
+# IMPORTANT: the special FAs are stored statically here, so this must be set with the correct IDs
+# special FA ids (static): AD DCD HIST REF
+FAidSpecial = [2, 5, 10, 18]
+
 
 # --------------- USER CLASS
 
@@ -129,10 +132,15 @@ def vetAddStrings(vetstr1, vetstr2):
 # > from flask_app import db, User
 # > from werkzeug.security import generate_password_hash
 # > newuser = User(username="login", password_hash=generate_password_hash("password"), FAname="FA name - ERA", FAid="FA name - public", FAemail="FA email addr", FAisFA=True, FAisRF=False, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=False, FAisHIST=False)
-# > newuserFA = User(username="login", password_hash=generate_password_hash("password"), FAname="FA name - ERA", FAid="FA name - public", FAemail="FA email addr", FAisFA=True, FAisRF=False, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=False, FAisHIST=False)
-# > newuserVET = User(username="login", password_hash=generate_password_hash("password"), FAname="VET name(long)", FAid="name(short)", FAemail="invalid@invalid", FAisFA=False, FAisRF=False, FAisOV=False, FAisADM=False, FAisAD=False, FAisDCD=False, FAisVET=True, FAisHIST=False)
+# > newuserFA = User(username="login", password_hash=generate_password_hash("password"), FAname="FA name - ERA", FAid="FA name - public", FAemail="FA email addr", FAisFA=True)
+# > newuserVET = User(username="login", password_hash=generate_password_hash("password"), FAname="VET name(long)", FAid="name(short)", FAemail="invalid@invalid", FAisVET=True)
 # > db.session.add(newuser)
 # > db.session.commit()
+#
+# IMPORTANT: since VETs change rarely, there's a static table which must be updated
+# NOTE: it must also be changed in cat_page.html
+VETlist = [ [8, "Autre (commentaires)"], [ 6, "AMCB Veterinaires" ], [7, "Clinique Mont. Verte"]  ]
+
 
 class User(UserMixin, db.Model):
 
@@ -147,14 +155,15 @@ class User(UserMixin, db.Model):
     FAlastop = db.Column(db.DateTime)
     FAresp_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     FAresp = db.relationship('User', foreign_keys=FAresp_id)
-    FAisFA = db.Column(db.Boolean, nullable=False)
-    FAisRF = db.Column(db.Boolean, nullable=False)
-    FAisOV = db.Column(db.Boolean, nullable=False)
-    FAisADM = db.Column(db.Boolean, nullable=False)
-    FAisAD = db.Column(db.Boolean, nullable=False)
-    FAisDCD = db.Column(db.Boolean, nullable=False)
-    FAisVET = db.Column(db.Boolean, nullable=False)
-    FAisHIST = db.Column(db.Boolean, nullable=False)
+    FAisFA = db.Column(db.Boolean, default=False)
+    FAisRF = db.Column(db.Boolean, default=False)
+    FAisOV = db.Column(db.Boolean, default=False)
+    FAisADM = db.Column(db.Boolean, default=False)
+    FAisAD = db.Column(db.Boolean, default=False)
+    FAisDCD = db.Column(db.Boolean, default=False)
+    FAisVET = db.Column(db.Boolean, default=False)
+    FAisHIST = db.Column(db.Boolean, default=False)
+    FAisREF = db.Column(db.Boolean, default=False)
 #    cats = db.relationship('Cat', backref='owner_id', lazy='dynamic')
 #    icats = db.relationship('Cat', backref='nextowner_id', lazy='dynamic')
 
@@ -173,8 +182,6 @@ def load_user(user_id):
 
 # --------------- CAT CLASS
 
-# ORDER BY SUBSTR(registre....) e usando CHAR_LENGTH()
-
 class Cat(db.Model):
 
     __tablename__ = "cats"
@@ -188,6 +195,7 @@ class Cat(db.Model):
     longhair = db.Column(db.Integer)
     birthdate = db.Column(db.DateTime)
     registre = db.Column(db.String(8))
+    regnum = db.Column(db.Integer, unique=True, nullable=False)
     identif = db.Column(db.String(16))
     description = db.Column(db.String(1024))
     vetshort = db.Column(db.String(16))
@@ -197,7 +205,7 @@ class Cat(db.Model):
     events = db.relationship('Event', backref='cat', lazy=True)
 
     def __repr__(self):
-        return "<Cat {}>".format(self.registre)
+        return "<Cat {}>".format(self.regStr())
 
     def asText(self):
         str = ""
@@ -206,7 +214,7 @@ class Cat(db.Model):
         else:
             str += "pas de nom"
 
-        str += "(" + self.registre
+        str += "(" + self.regStr()
 
         if self.identif:
             str += "/"+self.identif+")"
@@ -214,6 +222,9 @@ class Cat(db.Model):
             str += ")"
 
         return str
+
+    def regStr(self):
+        return "{}-{}".format(self.regnum%10000, int(self.regnum/10000))
 
 
 # --------------- VETINFO CLASS
@@ -303,8 +314,10 @@ def index():
             if not faexists:
                 return render_template("error_page.html", user=current_user, errormessage="invalid FA id")
 
-            # check if we can see it
-            if theFA.FAresp_id != current_user.id and not (current_user.FAisOV or current_user.FAisADM):
+            # permissions: ADM and OV see all
+            # RF can see the ones they manage + adopt/dead/refuge
+            if not (current_user.FAisRF and theFA.FAresp_id != current_user.id) and not (current_user.FAisRF and (FAid == FAidSpecial[0] or
+                        FAid == FAidSpecial[1] or FAid == FAidSpecial[3])) and not (current_user.FAisOV or current_user.FAisADM):
                 FAid = current_user.id
 
         # handle special cases
@@ -401,12 +414,12 @@ def catpage():
 
     # generate an empty page for the addition of a Refu dossier
     if cmd == "adm_refucat" and current_user.FAisADM:
-        return render_template("refu_page.html", user=current_user)
+        return redirect(url_for('refupage'))
 
     # generate an empty page to add a new cat
     if cmd == "adm_newcat" and current_user.FAisADM:
-        theCat = Cat(registre="")
-        return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all())
+        theCat = Cat(regnum=0)
+        return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all(), FAids=FAidSpecial)
 
     if (cmd == "adm_addcathere" or cmd == "adm_addcatputFA") and current_user.FAisADM:
         # generate the new cat using the form information
@@ -417,18 +430,22 @@ def catpage():
         except ValueError:
             bdate = None
 
-        theCat = Cat(registre=request.form["c_registre"], name=request.form["c_name"], sex=request.form["c_sex"], birthdate=bdate,
+        # convert registre
+        rr = request.form["c_registre"].split('-')
+        rn = int(rr[0]) + 10000*int(rr[1])
+
+        theCat = Cat(regnum=rn, name=request.form["c_name"], sex=request.form["c_sex"], birthdate=bdate,
                     color=request.form["c_color"], longhair=request.form["c_hlen"], identif=request.form["c_identif"],
                     description=request.form["c_description"], vetshort=vetstr, adoptable=(request.form["c_adoptable"]=="1"))
 
         # ensure that registre is unique
-        checkCat = Cat.query.filter_by(registre=request.form["c_registre"]).first()
+        checkCat = Cat.query.filter_by(regnum=rn).first()
 
         if checkCat:
             # this is bad, we regenerate the page wit the current data
             message = [ [3, "Le numero de registre existe deja!"] ]
-            theCat.registre = None
-            return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all(), msg=message)
+            theCat.regnum = 0
+            return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all(), msg=message, FAids=FAidSpecial)
 
         # if for any reason the FA is invalid, then put it here
         if cmd != "adm_addcathere":
@@ -497,7 +514,7 @@ def catpage():
 
     if access == ACC_RO:
         # FAid != current_user.id is implied
-        return render_template("cat_page.html", user=current_user, otheruser=theFA, cat=theCat, readonly=True)
+        return render_template("cat_page.html", user=current_user, otheruser=theFA, cat=theCat, readonly=True, FAids=FAidSpecial)
 
     # if we reach here, we have ACC_FULL
     # some operations may still be unavailable!
@@ -508,7 +525,7 @@ def catpage():
 
     # handle generation of the page
     if cmd == "fa_viewcat":
-        return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist)
+        return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist, FAids=FAidSpecial)
 
     # cat commands
     if cmd == "fa_modcat" or cmd == "fa_modcatr":
@@ -582,14 +599,17 @@ def catpage():
             # if executed, then cumulate with the global
             if not VisitPlanned:
                 theCat.vetshort = vetAddStrings(theCat.vetshort, VisitType)
+                et = "effectuee le"
+            else:
+                et = "planifiee pour le"
 
             theVisit = VetInfo(cat_id=theCat.id, doneby_id=FAid, vet_id=vetId, vtype=VisitType, vdate=VisitDate,
                 planned=VisitPlanned, comments=request.form["visit_comments"])
             db.session.add(theVisit)
             db.session.commit()  # needed for vet.FAname
 
-            # if not planned, add it as event
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite veterinaire {} planifiee pour le {} chez {}".format(current_user.FAname, VisitType, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
+            # add it as event (planned or not)
+            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite veterinaire {} {} {} chez {}".format(current_user.FAname, VisitType, et, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
             db.session.add(theEvent)
 
         # iterate through all the planned visits and see if they have been updated....
@@ -663,7 +683,7 @@ def catpage():
 
         # if we stay on the page, regenerate it directly
         if cmd == "fa_modcatr":
-            return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist, msg=message)
+            return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist, msg=message, FAids=FAidSpecial)
 
         session["pendingmessage"] = message
         return redirect(url_for('index'))
@@ -721,84 +741,102 @@ def catpage():
 #    return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all())
     return render_template("error_page.html", user=current_user, errormessage="command error (/cat)")
 
-@app.route("/refu", methods=["POST"])
+@app.route("/refu", methods=["GET", "POST"])
 @login_required
-def addrefupage():
+def refupage():
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+
     if not current_user.FAisADM:
         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to add data")
 
-    # iterate on all the lines one by one
-    # if a registre already exists, skip it (no update)
-    msg = [ [1, "Resultats de l'import" ] ]
+    if request.method == "GET":
+        # generate the empty page with random filtering (for now)
+        tempdate = "20/11/18"
+        mdate = datetime.strptime(tempdate, "%d/%m/%y")
+        cats = Cat.query.filter(Cat.lastop>=mdate).all()
+        return render_template("refu_page.html", user=current_user, modcats=cats, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair)
 
-    if "r_dossier" in request.form:
-        lines = request.form["r_dossier"].splitlines()
+    cmd = request.form["action"]
 
-        for l in lines:
-            v = l.split(';')
+    if cmd == "adm_refuimport":
+        # iterate on all the lines one by one
+        # if a registre already exists, skip it (no update)
+        msg = [ [1, "Resultats de l'import" ] ]
 
-            if len(v) != 10:
-                msg.append([3, "Format erroné: {} (len={})".format(l, len(v)) ])
-                continue
+        if "r_dossier" in request.form:
+            lines = request.form["r_dossier"].splitlines()
 
-            # check if registre exists
-            theCat = Cat.query.filter_by(registre=v[0]).first();
-            if theCat != None:
-                msg.append([3, "Numéro de registre {} déjà présent, dossier ignoré".format(v[0]) ])
-                continue
+            for l in lines:
+                v = l.split(';')
 
-            # locate the FA, using the username
-            theFA = User.query.filter(and_(User.username==v[1], User.FAisFA==True)).first()
+                if len(v) != 10:
+                    msg.append([3, "Format erroné: {} (len={})".format(l, len(v)) ])
+                    continue
 
-            if not theFA:
-                msg.append([1, "{}: FA '{}' non trouvee, rajoute ici".format(v[0], v[1]) ])
-                theFA = current_user
+                # check if registre exists
+                rr = v[0].split('-')
+                rn = int(rr[0]) + 10000*int(rr[1])
 
-            # convert fields to DB format (sex/hairlength/color)
-            r = [index for index, value in enumerate(DBTabSex) if value == v[4]]
-            if r:
-                r_sex = r[0]
-            else:
-                r_sex = 0
+                theCat = Cat.query.filter_by(regnum=rn).first();
+                if theCat != None:
+                    msg.append([3, "Numéro de registre {} déjà présent, dossier ignoré".format(v[0]) ])
+                    continue
 
-            r = [index for index, value in enumerate(DBTabHair) if value == v[6]]
-            if r:
-                r_hl = r[0]
-            else:
-                r_hl = 0
+                # locate the FA, using the username
+                theFA = User.query.filter(and_(User.username==v[1], User.FAisFA==True)).first()
 
-            r = [index for index, value in enumerate(DBTabColor) if value == v[7]]
-            if r:
-                r_col = r[0]
-            else:
-                r_col = 0
+                if not theFA:
+                    msg.append([1, "{}: FA '{}' non trouvee, rajoute ici".format(v[0], v[1]) ])
+                    theFA = current_user
 
-            # convert birthdate
-            try:
-                r_bd = datetime.strptime(v[5], "%d/%m/%y")
-            except ValueError:
-                r_bd = None
+                # convert fields to DB format (sex/hairlength/color)
+                r = [index for index, value in enumerate(DBTabSex) if value == v[4]]
+                if r:
+                    r_sex = r[0]
+                else:
+                    r_sex = 0
 
-            r_comm = v[9].replace("<eol>", "\n")
+                r = [index for index, value in enumerate(DBTabHair) if value == v[6]]
+                if r:
+                    r_hl = r[0]
+                else:
+                    r_hl = 0
 
-            # create the cat
-            theCat = Cat(registre=v[0], owner_id=theFA.id, name=v[2], sex=r_sex, birthdate=r_bd, color=r_col, longhair=r_hl, identif=v[3],
-                    description=r_comm, vetshort=v[8], adoptable=False)
-            db.session.add(theCat)
-            # make sure we have an id
-            db.session.commit()
+                r = [index for index, value in enumerate(DBTabColor) if value == v[7]]
+                if r:
+                    r_col = r[0]
+                else:
+                    r_col = 0
 
-            # generate the event
-            msg.append( [0, "Chat {} rajoute chez {}".format(v[0], theFA.FAname) ] )
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: rajoute dans le systeme".format(current_user.FAname))
-            db.session.add(theEvent)
+                # convert birthdate
+                try:
+                    r_bd = datetime.strptime(v[5], "%d/%m/%y")
+                except ValueError:
+                    r_bd = None
 
-    current_user.FAlastop = datetime.now()
-    db.session.commit()
+                r_comm = v[9].replace("<EOL>", "\n")
 
-    session["pendingmessage"] = msg
+                # create the cat
+                theCat = Cat(regnum=rn, owner_id=theFA.id, name=v[2], sex=r_sex, birthdate=r_bd, color=r_col, longhair=r_hl, identif=v[3],
+                        description=r_comm, vetshort=v[8], adoptable=False)
+                db.session.add(theCat)
+                # make sure we have an id
+                db.session.commit()
 
-    return redirect(url_for('index'))
+                # generate the event
+                msg.append( [0, "Chat {} rajoute chez {}".format(v[0], theFA.FAname) ] )
+                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: rajoute dans le systeme".format(current_user.FAname))
+                db.session.add(theEvent)
+
+        current_user.FAlastop = datetime.now()
+        db.session.commit()
+
+        session["pendingmessage"] = msg
+        return redirect(url_for('index'))
+
+    return render_template("error_page.html", user=current_user, errormessage="command error (/refu)")
+#    return redirect(url_for('refupage'))
 
 
 @app.route("/vet", methods=["POST"])
@@ -885,7 +923,7 @@ def exportCSV(catlist):
         cdesc = cat.description
         cdesc.replace('"', '""')
 
-        csv += ('"'+cat.owner.FAname+'",'+cat.registre+','+cat.identif+',"'+cat.name+'",'+
+        csv += ('"'+cat.owner.FAname+'",'+cat.regStr()+','+cat.identif+',"'+cat.name+'",'+
             TabSex[cat.sex]+','+(cat.birthdate.strftime("%d/%m/%y") if cat.birthdate else '')+','+TabColor[cat.color]+','+
             TabHair[cat.longhair]+','+cat.vetshort+','+('Adoptable' if cat.adoptable else '')+',"'+cdesc+'"\n')
 

@@ -38,6 +38,11 @@
             }
             else return Math.floor(days/365).toString()+"a";
         }
+        function readableRegistre(regnum) {
+            ry = Math.floor(regnum/10000);
+            rn = regnum - 10000*ry;
+            return rn.toString()+"-"+ry.toString();
+        }
         window.onload=function() {
             var i, dates = document.querySelectorAll('[id^="bd_"]');
             var today = new Date().getTime() / 1000;
@@ -45,6 +50,13 @@
             for (i = 0; i < dates.length; ++i) {
                 days = Math.floor((today - parseInt(dates[i].innerHTML))/86400);
                 dates[i].innerHTML = readableAge(days);
+            }
+
+            var regnums = document.querySelectorAll('[id^="rn_"');
+            for (i = 0; i < regnums.length; ++i) {
+                regnum = parseInt(regnums[i].innerHTML);
+                regnums[i].innerHTML = readableRegistre(regnum);
+                // Math.floor(parseInt(dates[i].innerHTML)/86400;
             }
         }
     </script>
@@ -58,12 +70,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <div class="navbar-header"><a class="nav navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }}) [
-                {% if user.FAisFA %} FA {% endif %}
-                {% if user.FAisRF %} RF {% endif %}
-                {% if user.FAisOV %} SV {% endif %}
-                {% if user.FAisADM %} GR {% endif %} ]
-            </a></div>
+            <div class="navbar-header"><a class="nav navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }})</a></div>
             <ul class="nav navbar-nav">
                 <li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">Famille<span class="caret"></span></a>
@@ -153,7 +160,7 @@
                  <div class="col-sm-1">
                     <form action="cat" method="POST">
                         <input type="hidden" name="catid" value="{{cat.id}}">
-                        <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong>{{cat.registre}}</strong></button>
+                        <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{{cat.regnum}}</span></strong></button>
                     </form>
                 </div>
                 <div class="col-sm-2">{{ cat.identif }}</div>
