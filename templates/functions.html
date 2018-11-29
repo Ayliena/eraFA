@@ -1,0 +1,33 @@
+        function showHide(elem) {
+            var x = document.getElementById(elem);
+            if (x.style.display == "none") {
+                x.style.display = "block";
+            } else {
+                x.style.display = "none";
+            }
+        }
+        function showHideAllDescs() {
+            var i, descs = document.querySelectorAll('[id^="desc_"]');
+
+            for (i = 0; i < descs.length; ++i) {
+                if (descs[i].style.display == "none") {
+                    descs[i].style.display = "block";
+                } else {
+                    descs[i].style.display = "none";
+                }
+            }
+        }
+        function readableAge(days) {
+            if (days < 12*7)  return Math.floor(days/7).toString()+"s";
+            else if (days < 365) return Math.floor(days/30.42).toString()+"m";
+            else if (days < 1095) {
+                var sm = Math.floor((days % 365) / 183) * 6;
+                return Math.floor(days/365).toString()+"a"+ ((sm==0)? "" : sm.toString()+"m");
+            }
+            else return Math.floor(days/365).toString()+"a";
+        }
+        function readableRegistre(regnum) {
+            ry = Math.floor(regnum/10000);
+            rn = regnum - 10000*ry;
+            return rn.toString()+"-"+ry.toString();
+        }

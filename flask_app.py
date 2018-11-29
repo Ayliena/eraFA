@@ -139,7 +139,7 @@ FAidSpecial = [2, 5, 10, 18]
 #
 # IMPORTANT: since VETs change rarely, there's a static table which must be updated
 # NOTE: it must also be changed in cat_page.html
-VETlist = [ [8, "Autre (commentaires)"], [ 6, "AMCB Veterinaires" ], [7, "Clinique Mont. Verte"]  ]
+VETlist = [ [8, "Autre (commentaires)"], [ 6, "AMCB Veterinaires" ], [7, "Clinique Mont. Verte"], [19, 'Clinique du Moulin'] ]
 
 
 class User(UserMixin, db.Model):
@@ -179,6 +179,17 @@ class User(UserMixin, db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.filter_by(username=user_id).first()
+
+# --------------- EVENT CLASS
+
+class Event(db.Model):
+
+    __tablename__ = "events"
+
+    id = db.Column(db.Integer, primary_key=True)
+    cat_id = db.Column(db.Integer, db.ForeignKey('cats.id'), nullable=False)
+    edate = db.Column(db.DateTime, default=datetime.now)
+    etext = db.Column(db.String(1024))
 
 # --------------- CAT CLASS
 
@@ -247,17 +258,6 @@ class VetInfo(db.Model):
     validated = db.Column(db.Boolean)
     comments = db.Column(db.String(1024))
 
-# --------------- EVENT CLASS
-
-class Event(db.Model):
-
-    __tablename__ = "events"
-
-    id = db.Column(db.Integer, primary_key=True)
-    cat_id = db.Column(db.Integer, db.ForeignKey('cats.id'), nullable=False)
-    edate = db.Column(db.DateTime, default=datetime.now)
-    etext = db.Column(db.String(1024))
-
 
 
 #class Comment(db.Model):
@@ -312,7 +312,7 @@ def index():
             faexists = theFA is not None;
 
             if not faexists:
-                return render_template("error_page.html", user=current_user, errormessage="invalid FA id")
+                return render_template("error_page.html", user=current_user, errormessage="invalid FA id", FAids=FAidSpecial)
 
             # permissions: ADM and OV see all
             # RF can see the ones they manage + adopt/dead/refuge
@@ -332,7 +332,7 @@ def index():
 
         elif mode == "special-all":
             return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                catlist=Cat.query.all(), FAids=FAidSpecial, msg=message)
+                catlist=Cat.query.order_by(Cat.regnum).all(), FAids=FAidSpecial, msg=message)
 
         elif mode == "special-adopt":
             return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
@@ -361,12 +361,12 @@ def index():
     # get the cat
     theCat = Cat.query.filter_by(id=request.form["catid"]).first()
     if theCat == None:
-        return render_template("error_page.html", user=current_user, errormessage="invalid cat id")
+        return render_template("error_page.html", user=current_user, errormessage="invalid cat id", FAids=FAidSpecial)
         return redirect(url_for('index'))
 
     # check if you can access this
     if theCat.owner_id != current_user.id and not current_user.FAisADM:
-        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data")
+        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data", FAids=FAidSpecial)
         return redirect(url_for('index'))
 
     if cmd == "adm_histcat" and current_user.FAisADM:
@@ -477,7 +477,7 @@ def catpage():
     # existing cat, populate the page with the available data
     theCat = Cat.query.filter_by(id=request.form["catid"]).first();
     if theCat == None:
-        return render_template("error_page.html", user=current_user, errormessage="invalid cat id")
+        return render_template("error_page.html", user=current_user, errormessage="invalid cat id", FAids=FAidSpecial)
         return redirect(url_for('index'))
 
     # if we're working on another user's cats, show the information on top of the page
@@ -490,7 +490,7 @@ def catpage():
         faexists = theFA is not None;
 
         if not faexists:
-            return render_template("error_page.html", user=current_user, errormessage="invalid FA id")
+            return render_template("error_page.html", user=current_user, errormessage="invalid FA id", FAids=FAidSpecial)
 
     # upgrade access depending on our status
     # OV can see anything in RO mode
@@ -510,7 +510,7 @@ def catpage():
 
     # if no access, no access....
     if access == ACC_NONE:
-        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data")
+        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data", FAids=FAidSpecial)
 
     if access == ACC_RO:
         # FAid != current_user.id is implied
@@ -585,7 +585,7 @@ def catpage():
             vetId = next((x for x in VETlist if x[0]==int(request.form["visit_vet"])), None)
 
             if not vetId:
-                return render_template("error_page.html", user=current_user, errormessage="vet id is invalid")
+                return render_template("error_page.html", user=current_user, errormessage="vet id is invalid", FAids=FAidSpecial)
             else:
                 vetId = vetId[0]
 
@@ -625,11 +625,11 @@ def catpage():
 
             theVisit = VetInfo.query.filter_by(id=mvid).first();
             if not theVisit:
-                return render_template("error_page.html", user=current_user, errormessage="planned visit not found (invalid id)")
+                return render_template("error_page.html", user=current_user, errormessage="planned visit not found (invalid id)", FAids=FAidSpecial)
 
             # make sure it's related to this cat
             if theVisit.cat_id != theCat.id:
-                return render_template("error_page.html", user=current_user, errormessage="visit/cat id mismatch")
+                return render_template("error_page.html", user=current_user, errormessage="visit/cat id mismatch", FAids=FAidSpecial)
 
             # generate the form name prefix
             prefix = "oldv_"+mvid
@@ -663,7 +663,7 @@ def catpage():
             vetId = next((x for x in VETlist if x[0]==int(request.form[prefix+"_vet"])), None)
 
             if not vetId:
-                return render_template("error_page.html", user=current_user, errormessage="vet id is invalid")
+                return render_template("error_page.html", user=current_user, errormessage="vet id is invalid", FAids=FAidSpecial)
             else:
                 vetId = vetId[0]
 
@@ -739,7 +739,7 @@ def catpage():
     # this should never be reached
     # display info about a cat
 #    return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all())
-    return render_template("error_page.html", user=current_user, errormessage="command error (/cat)")
+    return render_template("error_page.html", user=current_user, errormessage="command error (/cat)", FAids=FAidSpecial)
 
 @app.route("/refu", methods=["GET", "POST"])
 @login_required
@@ -748,7 +748,7 @@ def refupage():
         return redirect(url_for('login'))
 
     if not current_user.FAisADM:
-        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to add data")
+        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to add data", FAids=FAidSpecial)
 
     if request.method == "GET":
         # generate the empty page with random filtering (for now)
@@ -770,7 +770,7 @@ def refupage():
             for l in lines:
                 v = l.split(';')
 
-                if len(v) != 10:
+                if len(v) < 9:
                     msg.append([3, "Format erroné: {} (len={})".format(l, len(v)) ])
                     continue
 
@@ -789,6 +789,9 @@ def refupage():
                 if not theFA:
                     msg.append([1, "{}: FA '{}' non trouvee, rajoute ici".format(v[0], v[1]) ])
                     theFA = current_user
+
+                r_name = v[2]
+                r_id = v[3]
 
                 # convert fields to DB format (sex/hairlength/color)
                 r = [index for index, value in enumerate(DBTabSex) if value == v[4]]
@@ -815,14 +818,62 @@ def refupage():
                 except ValueError:
                     r_bd = None
 
-                r_comm = v[9].replace("<EOL>", "\n")
+                r_comm = v[8].replace("<EOL>", "\n")
+
+                # now take care of the vetvisits
+                offs = 9
+                vvisits = []
+                formaterror = False
+                r_vetshort = '--------'
+
+                while (v[offs] and v[offs] != 'EOD'):
+                    if offs+5 > len(v):
+                        msg.append([3, "Format erroné: {} (truncated vet info at offs {})".format(l, offs) ])
+                        formaterror = True
+                        break
+
+                    v_planned = (v[offs] == 'VP')
+                    v_type = v[offs+1]
+                    # convert date
+                    try:
+                        v_date = datetime.strptime(v[offs+2], "%d/%m/%y")
+                    except ValueError:
+                        msg.append([3, "Format erroné: {} (invalid vdate at offs {})".format(l, offs) ])
+                        formaterror = True
+                        break
+
+                    v_id = int(v[offs+3])
+                    # validate vet id
+                    vet = User.query.filter(and_(User.id==v_id,User.FAisVET==True)).first()
+                    if not vet:
+                        msg.append([3, "Format erroné: {} (invalid vet_id at offs {})".format(l, offs) ])
+                        formaterror = True
+                        break
+
+                    v_doneby = theFA.id if (v[offs+4]=='FA') else FAidSpecial[3]
+
+                    # all is good, cumulate vetinfo and prepare the object, cat_id will be invalid for now
+                    if not v_planned:
+                        r_vetshort = vetAddStrings(r_vetshort, v_type)
+
+                    vvisits.append( VetInfo(doneby_id=v_doneby, vet_id=v_id, vtype=v_type, vdate=v_date, planned=v_planned) )
+                    offs += 5
+
+                # in case of format error, don't create the cat
+                if formaterror:
+                    continue
 
                 # create the cat
-                theCat = Cat(regnum=rn, owner_id=theFA.id, name=v[2], sex=r_sex, birthdate=r_bd, color=r_col, longhair=r_hl, identif=v[3],
-                        description=r_comm, vetshort=v[8], adoptable=False)
+                theCat = Cat(regnum=rn, owner_id=theFA.id, name=r_name, sex=r_sex, birthdate=r_bd, color=r_col, longhair=r_hl, identif=r_id,
+                        vetshort=r_vetshort, description=r_comm, adoptable=False)
                 db.session.add(theCat)
                 # make sure we have an id
                 db.session.commit()
+
+                # associate the vet visits
+                for vv in vvisits:
+                    vv.cat_id = theCat.id
+                    db.session.add(vv)
 
                 # generate the event
                 msg.append( [0, "Chat {} rajoute chez {}".format(v[0], theFA.FAname) ] )
@@ -835,7 +886,7 @@ def refupage():
         session["pendingmessage"] = msg
         return redirect(url_for('index'))
 
-    return render_template("error_page.html", user=current_user, errormessage="command error (/refu)")
+    return render_template("error_page.html", user=current_user, errormessage="command error (/refu)", FAids=FAidSpecial)
 #    return redirect(url_for('refupage'))
 
 
@@ -858,7 +909,7 @@ def vetpage():
             faexists = theFA is not None;
 
             if not faexists:
-                return render_template("error_page.html", user=current_user, errormessage="invalid FA id")
+                return render_template("error_page.html", user=current_user, errormessage="invalid FA id", FAids=FAidSpecial)
 
             if theFA.FAresp_id != current_user.id and not (current_user.FAisOV or current_user.FAisADM):
                 FAid = current_user.id
@@ -874,7 +925,7 @@ def vetpage():
         session["otherMode"] = "special-vetplan"
         return redirect(url_for('index'))
 
-    return render_template("error_page.html", user=current_user, errormessage="command error (/vet)")
+    return render_template("error_page.html", user=current_user, errormessage="command error (/vet)", FAids=FAidSpecial)
 
 
 @app.route("/list", methods=["POST"])
@@ -889,7 +940,14 @@ def listpage():
         # normal FAs
         FAlist=User.query.filter_by(FAisFA=True).all()
 
-        return render_template("list_page.html", user=current_user, falist=FAlist, FAids=FAidSpecial)
+        # prepare the table of the RFs
+        RFlist=User.query.filter_by(FAisRF=True).all()
+
+        RFtab = {}
+        for rf in RFlist:
+            RFtab[rf.id] = rf.FAname
+
+        return render_template("list_page.html", user=current_user, falist=FAlist, rftab=RFtab, FAids=FAidSpecial)
 
     if cmd == "sv_viewFAresp" and (current_user.FAisRF):
         # all FAs we take care of (we assume they are FAs....)
@@ -908,7 +966,7 @@ def listpage():
         return redirect(url_for('index'))
 
     # default is return to index
-    return render_template("error_page.html", user=current_user, errormessage="command error (/list)")
+    return render_template("error_page.html", user=current_user, errormessage="command error (/list)", FAids=FAidSpecial)
 
 
 def exportCSV(catlist):
@@ -976,7 +1034,7 @@ def listadownload():
 @app.route("/help")
 @login_required
 def helppage():
-    return render_template("help_page.html", user=current_user)
+    return render_template("help_page.html", user=current_user, FAids=FAidSpecial)
 
 
 @app.route("/login/", methods=["GET", "POST"])

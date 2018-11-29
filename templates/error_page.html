@@ -8,32 +8,7 @@
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
     </head>
 <body>
-    <nav class="navbar navbar-inverse">
-    <div class="container">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="/">{{ user.FAid }} ({{ user.FAname }}) [
-                {% if user.FAisFA %} FA {% endif %}
-                {% if user.FAisRF %} RF {% endif %}
-                {% if user.FAisOV %} SV {% endif %}
-                {% if user.FAisADM %} GR {% endif %} ]
-            </a>
-        </div>
-        <ul class="nav navbar-nav navbar-right">
-        {% if current_user.is_authenticated %}
-            <li><a href="{{ url_for('logout') }}">Log out</a></li>
-        {% else %}
-            <li><a href="{{ url_for('login') }}">Log in</a></li>
-        {% endif %}
-        </ul>
-    </div>
-    </nav>
-
+    {% include 'navbar.html' %}
 
     <div class="container">
 

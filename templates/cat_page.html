@@ -93,63 +93,7 @@
         }
     </script>
 <body>
-<nav class="navbar navbar-inverse">
-    <div class="container">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <div class="navbar-header"><a class="nav navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }})</a></div>
-            <ul class="nav navbar-nav">
-                <li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Famille<span class="caret"></span></a>
-                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="vet" method="POST">
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_catlist">Chats en FA</button></li>
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_vetplan">Visites planifiees</button></li>
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_vetreg">Registre des Soins</button></li>
-                    </form></ul>
-                </li>
-                {% if user.FAisRF %}<li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Resp. FA<span class="caret"></span></a>
-                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="list" method="POST">
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_viewFAresp">FA sous ma responsabilite</button></li>
-                    </form></ul>
-                </li>{% endif %}
-                {% if user.FAisOV %}<li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Superviseur<span class="caret"></span></a>
-                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="list" method="POST">
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_viewFA">Vision par FA</button></li>
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button></li>
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_adoptTab">Chats a l'adoption</button></li>
-                    </form></ul>
-                </li>{% endif %}
-                {% if user.FAisADM %}<li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Gest. Registre<span class="caret"></span></a>
-                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
-                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[0]}}">Chats adoptes</button></li>
-                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[1]}}">Chats decedes</button></li>
-                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[2]}}">Historique</button></li>
-                    </form><form class="form-inline" action="cat" method="POST">
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_newcat">Rajouter un chat</button></li>
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_refucat">Interoperabilite Refugilys</button></li>
-                    </form></ul>
-                </li>{% endif %}
-            </ul>
-        </div>
-        <ul class="nav navbar-nav navbar-right">
-            <li><a href="help">Aide</a></li>
-        {% if current_user.is_authenticated %}
-            <li><a href="{{ url_for('logout') }}">Log out</a></li>
-        {% else %}
-            <li><a href="{{ url_for('login') }}">Log in</a></li>
-        {% endif %}
-        </ul>
-    </div>
-</nav>
-
+    {% include 'navbar.html' %}
 
     <div class="container">
     {% if msg %}{% for m in  msg %}
@@ -160,7 +104,7 @@
         {{ m[1] }}</div>
     {% endfor %}{% endif %}
 
-    {% if cat.registre %}
+    {% if cat.regnum %}
         {% if cat.owner_id != user.id %}
             <h3>Chat chez {{ cat.owner.FAname }}</h3>
         {% endif %}
@@ -175,7 +119,7 @@
         <div class="row form-group">
             <div class="col-sm-1">Registre:</div>
             <div class="col-sm-3">
-                {% if cat.registre %} <b><span id="rn_cat">{{cat.regnum}}</span></b>
+                {% if cat.regnum %} <b><span id="rn_cat">{{cat.regnum}}</span></b>
                 {% else %} <input type="text" name="c_registre" required placeholder="xxx-xx"> {% endif %}
             </div>
             <div class="col-sm-2"><select name="c_adoptable" id="c_adoptable" {% if readonly %}disabled{% endif %}>
@@ -227,7 +171,7 @@
         {% if cat.description %} Description:<div class="form-group"><textarea class="form-control" name="c_description" {% if readonly %}disabled{% endif %}>{{ cat.description }}</textarea></div>
         {% else %} Description:<div class="form-group"><textarea class="form-control" name="c_description" placeholder="Description et/ou signes particuliers" {% if readonly %}disabled{% endif %}></textarea></div> {% endif %}
 
-        {% if cat.registre %}
+        {% if cat.regnum %}
             <hr>
             <h3>Visites veterinaires</h3>
             {% for vv in cat.vetvisits %}
@@ -326,7 +270,7 @@
             {% endif %}
         {% endif %}
 
-        {% if cat.registre and user.FAisADM %}
+        {% if cat.regnum and user.FAisADM %}
             <hr>
             <h3>Historique du chat{% if cat.lastop %} <small>(Derniere modification: {{ cat.lastop.strftime("%d/%m/%Y %H:%M") }})</small>{%endif %}</h3>
             {% for ev in cat.events %}
@@ -339,7 +283,7 @@
             {% endfor %}
         {% endif %}
         <hr>
-        {% if cat.registre %}
+        {% if cat.regnum %}
         <div class="row form-group">
             {% if readonly %}
             <div class="col-sm-2"><button type="submit" name="action" value="fa_return">Revenir a la liste</button></div>

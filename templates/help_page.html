@@ -5,35 +5,12 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     </head>
 <body>
-    <nav class="navbar navbar-inverse">
-    <div class="container">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }}) [
-                {% if user.FAisFA %} FA {% endif %}
-                {% if user.FAisOV %} SV {% endif %}
-                {% if user.FAisADM %} GR {% endif %} ]
-            </a>
-        </div>
-        <ul class="nav navbar-nav navbar-right">
-            <li><a href="help">Aide</a></li>
-        {% if current_user.is_authenticated %}
-            <li><a href="{{ url_for('logout') }}">Log out</a></li>
-        {% else %}
-            <li><a href="{{ url_for('login') }}">Log in</a></li>
-        {% endif %}
-        </ul>
-    </div>
-    </nav>
-
+    {% include 'navbar.html' %}
 
     <div class="container">
         <h2>Aide a l'utilisation</h2>
@@ -47,7 +24,7 @@
                 <li>Le nom (cliquer pour faire apparaitre/disparaitre les commentaires)</li>
                 <li>La description du chat: sexe, age, couleur (les info manquantes sont en jaune)</li>
                 <li>une indication des visites veterinaires que le chat a eu (V=primo vaccination, 1=1er rappel, 2=2eme rappel, S=sterilisation/castration, P=identification,
-                    T=test FIV/Felv, R=rappel annuel, X=soins</li>
+                    T=test FIV/Felv, R=rappel annuel, X=soins)</li>
                 <li>l'indication de si le chat est a l'adoption ou pas</li>
             </ul>
             <li>Mettre a jour les informations relatives a ces chats, soit pour y rajouter des elements manquants, soit pour indiquer que le chat a ete adopte ou est decede</li>
