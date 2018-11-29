@@ -62,7 +62,7 @@
         {{ m[1] }}</div>
     {% endfor %}{% endif %}
 
-        <h2>Interoperabilite avec Refugilys</h2>
+        <h2>Interoperabilité avec Refugilys</h2>
 
         <h3>Importer des dossiers</h3>
         <form action="/refu" method="POST">
@@ -73,7 +73,7 @@
         <h3>Exporter des dossiers</h3>
         <form action="/refu" method="POST">
             <div class="row form-group">
-                <div class="col-sm-2">Chats modifies depuis:</div>
+                <div class="col-sm-2">Chats modifiés depuis:</div>
                 <div class="col-sm-2"><input type="text" name="mod_date" id="mod_date" value="a remplir"></div>
                 <div class="col-sm-2"><button type="submit" name="action" value="adm_modfilter">Filtrer</button></div>
             </div>
@@ -86,7 +86,7 @@
                 <div class="col-sm-4">
                     <b>{% if cat.name %}{{ cat.name }}{% else %}<span class="bg-warning">sans nom</span>{% endif %}</b>
                     ({% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}<span class="bg-warning">??sexe??</span>{% endif %},
-                    {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??age??</span>{% endif %},
+                    {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %},
                     {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}
                     {{ tabhair[cat.longhair] }})</div>
                 <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>

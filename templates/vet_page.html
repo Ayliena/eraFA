@@ -38,7 +38,7 @@ $(document).ready(function() {
 
         {% if otheruser %} <h2>Situation FA : {{ otheruser.FAname }}</h2> {% endif %}
 
-        <h2>Visites veterinaires planifiees</h2>
+        <h2>Visites vétérinaires planifiées</h2>
         {% for v in visits %}
             <form action="cat" method="POST"><input type="hidden" name="catid" value="{{v.cat.id}}">
             <div class="row">{{ v.vdate.strftime("%d/%m/%y") }} visite de <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong>{{v.cat.registre}}</strong></button>
@@ -47,7 +47,7 @@ $(document).ready(function() {
                 {% if v.vtype[0] != '-' %}- Primo vaccination{% endif %}
                 {% if v.vtype[1] != '-' %}- 1er rappel{% endif %}
                 {% if v.vtype[2] != '-' %}- 2eme rappel{% endif %}
-                {% if v.vtype[3] != '-' %}- Sterilisation/Castration{% endif %}
+                {% if v.vtype[3] != '-' %}- Stérilisation/Castration{% endif %}
                 {% if v.vtype[4] != '-' %}- Identification{% endif %}
                 {% if v.vtype[5] != '-' %}- Test FIV/FelV{% endif %}
                 {% if v.vtype[6] != '-' %}- Soins / autre{% endif %}
@@ -63,7 +63,7 @@ $(document).ready(function() {
         <div class="row"><form action="vet" method="POST">
             <button type="submit" name="action" value="fa_catlist">Liste des chats</button>
             <button type="submit" name="action" value="fa_vetreg">Registre des soins</button>
-            <button type="submit" name="action" value="fa_vetplan">Visites planifiees</button>
+            <button type="submit" name="action" value="fa_vetplan">Visites planifiées</button>
         </form></div>
         {% if user.FAisOV %}
         <div class="row">
@@ -88,8 +88,8 @@ $(document).ready(function() {
             </form></div>
         <div class="row">
             <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
-                <button name="FAid" value="{{FAids[0]}}">Chats adoptes</button>
-                <button name="FAid" value="{{FAids[1]}}">Chats decedes</button>
+                <button name="FAid" value="{{FAids[0]}}">Chats adoptés</button>
+                <button name="FAid" value="{{FAids[1]}}">Chats décédés</button>
                 <button name="FAid" value="{{FAids[2]}}">Historique</button>
             </form></div>
         {% endif %}

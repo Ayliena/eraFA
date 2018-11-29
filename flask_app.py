@@ -45,10 +45,10 @@ DBTabSex = ["INCONNU", "FEMELLE", "MALE"]
 DBTabHair = ["COURT", "MI-LONG", "LONG"]
 
 # these are the readable (html page) versions
-TabColor = ["??couleur??", "Beige", "Beige et blanc", "Blanc", "Blue point", "Creme", "Ecaille de tortue", "Gris", "Gris chartreux", "Gris et blanc",
+TabColor = ["??couleur??", "Beige", "Beige et blanc", "Blanc", "Blue point", "Crème", "Ecaille de tortue", "Gris", "Gris chartreux", "Gris et blanc",
              "Noir", "Noir et blanc", "Noir et smoke", "Noir plastron blanc", "Roux", "Roux et blanc", "Seal point", "Tabby blanc", "Tabby brun", "Tabby gris",
-             "Tigré", "Tigré beige", "Tigré brun", "Tigré creme", "Tigré gris", "Tricolore"]
-TabSex = ["??sexe??", "Femelle", "Male"]
+             "Tigré", "Tigré beige", "Tigré brun", "Tigré crème", "Tigré gris", "Tricolore"]
+TabSex = ["??sexe??", "Femelle", "Mâle"]
 TabHair = ["", ", poil mi-long", ", poil long"]
 
 
@@ -373,8 +373,8 @@ def index():
         # move the cat to the historical list of cats
         theCat.owner_id = FAidSpecial[2]
         theCat.lastop = datetime.now()
-        session["pendingmessage"] = [ [0, "Chat {} deplace dans l'historique".format(theCat.asText())] ]
-        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: trasfere dans l'historique".format(current_user.FAname))
+        session["pendingmessage"] = [ [0, "Chat {} déplacé dans l'historique".format(theCat.asText())] ]
+        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transféré dans l'historique".format(current_user.FAname))
         db.session.add(theEvent)
         current_user.FAlastop = datetime.now()
         db.session.commit()
@@ -382,7 +382,7 @@ def index():
     if cmd == "adm_deletecat" and current_user.FAisADM:
         # erase the cat and all the associated information from the database
         # NOTE THAT THIS IS IRREVERSIBLE AND LEAVES NO TRACE
-        session["pendingmessage"] = [ [0, "Chat {} efface du systeme".format(theCat.asText())] ]
+        session["pendingmessage"] = [ [0, "Chat {} effacé du systeme".format(theCat.asText())] ]
         Event.query.filter_by(cat_id=theCat.id).delete()
         VetInfo.query.filter_by(cat_id=theCat.id).delete()
         db.session.delete(theCat)
@@ -443,7 +443,7 @@ def catpage():
 
         if checkCat:
             # this is bad, we regenerate the page wit the current data
-            message = [ [3, "Le numero de registre existe deja!"] ]
+            message = [ [3, "Le numéro de registre existe déjà!"] ]
             theCat.regnum = 0
             return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all(), msg=message, FAids=FAidSpecial)
 
@@ -466,7 +466,7 @@ def catpage():
         db.session.commit()
 
         # generate the event
-        session["pendingmessage"] = [ [0, "Chat {} rajoute dans le systeme".format(theCat.asText())] ]
+        session["pendingmessage"] = [ [0, "Chat {} rajouté dans le système".format(theCat.asText())] ]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: rajoute dans le systeme".format(current_user.FAname))
         db.session.add(theEvent)
 
@@ -574,7 +574,7 @@ def catpage():
         updated = "".join(updated)
 
         if updated != "--------":
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: mise a jour des informations {}".format(current_user.FAname, updated))
+            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: mise à jour des informations {}".format(current_user.FAname, updated))
             db.session.add(theEvent)
 
         # generate the vetinfo record, if any, and the associated event
@@ -609,7 +609,7 @@ def catpage():
             db.session.commit()  # needed for vet.FAname
 
             # add it as event (planned or not)
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite veterinaire {} {} {} chez {}".format(current_user.FAname, VisitType, et, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
+            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} {} {} chez {}".format(current_user.FAname, VisitType, et, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
             db.session.add(theEvent)
 
         # iterate through all the planned visits and see if they have been updated....
@@ -671,7 +671,7 @@ def catpage():
 
             theCat.vetshort = vetAddStrings(theCat.vetshort, VisitType)
 
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite veterinaire {} effectuee le {} chez {}".format(current_user.FAname, VisitType, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
+            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} effectuée le {} chez {}".format(current_user.FAname, VisitType, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
             db.session.add(theEvent)
 
         # end for mv in modvisits
@@ -692,8 +692,8 @@ def catpage():
         theCat.owner_id = FAidSpecial[0]
         theCat.lastop = datetime.now()
         # generate the event
-        session["pendingmessage"] = [ [0, "Chat {} transfere dans les adoptes".format(theCat.asText())] ]
-        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: donne aux adoptants".format(current_user.FAname))
+        session["pendingmessage"] = [ [0, "Chat {} transféré dans les adoptés".format(theCat.asText())] ]
+        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: donné aux adoptants".format(current_user.FAname))
         db.session.add(theEvent)
         current_user.FAlastop = datetime.now()
         db.session.commit()
@@ -703,8 +703,8 @@ def catpage():
         theCat.owner_id = FAidSpecial[1]
         theCat.lastop = datetime.now()
         # generate the event
-        session["pendingmessage"] = [ [0, "Chat {} transfere dans les decedes".format(theCat.asText())] ]
-        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: indique decede".format(current_user.FAname))
+        session["pendingmessage"] = [ [0, "Chat {} transféré dans les décédés".format(theCat.asText())] ]
+        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: indiqué décédé".format(current_user.FAname))
         db.session.add(theEvent)
         current_user.FAlastop = datetime.now()
         db.session.commit()
@@ -718,8 +718,8 @@ def catpage():
 
         if theFA and FAid != theCat.owner_id:
             # generate the event
-            session["pendingmessage"] = [ [0, "Chat {} transfere chez {}".format(theCat.asText(), theFA.FAname)] ]
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transfere de {} a {}".format(current_user.FAname, theCat.owner.FAname, theFA.FAname))
+            session["pendingmessage"] = [ [0, "Chat {} transféré chez {}".format(theCat.asText(), theFA.FAname)] ]
+            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transféré de {} a {}".format(current_user.FAname, theCat.owner.FAname, theFA.FAname))
             db.session.add(theEvent)
             # modify the FA
             theCat.owner_id = FAid
@@ -787,7 +787,7 @@ def refupage():
                 theFA = User.query.filter(and_(User.username==v[1], User.FAisFA==True)).first()
 
                 if not theFA:
-                    msg.append([1, "{}: FA '{}' non trouvee, rajoute ici".format(v[0], v[1]) ])
+                    msg.append([1, "{}: FA '{}' non trouvée, rajoute ici".format(v[0], v[1]) ])
                     theFA = current_user
 
                 r_name = v[2]
@@ -876,7 +876,7 @@ def refupage():
                     db.session.add(vv)
 
                 # generate the event
-                msg.append( [0, "Chat {} rajoute chez {}".format(v[0], theFA.FAname) ] )
+                msg.append( [0, "Chat {} rajouté chez {}".format(v[0], theFA.FAname) ] )
                 theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: rajoute dans le systeme".format(current_user.FAname))
                 db.session.add(theEvent)
 

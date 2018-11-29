@@ -173,13 +173,13 @@
 
         {% if cat.regnum %}
             <hr>
-            <h3>Visites veterinaires</h3>
+            <h3>Visites vétérinaires</h3>
             {% for vv in cat.vetvisits %}
                 {% if vv.planned %}
                <div class="row form-group">
                     <div class="col-sm-3">
-                        Visite veterinaire
-                        <select name="oldv_{{vv.id}}_state"><option value="0">Effectuee le</option><option value="1" selected>Planifiee pour le</option>><option value="2">ANNULLEE</option></select>
+                        Visite vétérinaire
+                        <select name="oldv_{{vv.id}}_state"><option value="0">Effectuée le</option><option value="1" selected>Planifiée pour le</option>><option value="2">ANNULLEE</option></select>
                     </div>
                     <div class="col-sm-2">
                         <div class="form-group">
@@ -199,7 +199,7 @@
                     <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_pv"{% if vv.vtype[0] != '-' %} checked{% endif %}>Primo vaccination</label>
                     <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_r1"{% if vv.vtype[1] != '-' %} checked{% endif %}>1er rappel</label>
                     <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_r2"{% if vv.vtype[2] != '-' %} checked{% endif %}>2eme rappel</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_sc"{% if vv.vtype[3] != '-' %} checked{% endif %}>Sterilisation/Castration</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_sc"{% if vv.vtype[3] != '-' %} checked{% endif %}>Stérilisation/Castration</label>
                     <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_id"{% if vv.vtype[4] != '-' %} checked{% endif %}>Identification</label>
                     <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_tf"{% if vv.vtype[5] != '-' %} checked{% endif %}>Test FIV/FelV</label>
                     <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_gen"{% if vv.vtype[6] != '-' %} checked{% endif %}>Soins / autre</label>
@@ -212,14 +212,14 @@
                 {% else %}
                 <div class="row">
                     {{ vv.doneby.FAname }}:
-                    effectuee le {{ vv.vdate.strftime("%d/%m/%y") }} aupres de {{ vv.vet.FAname }}
+                    effectuée le {{ vv.vdate.strftime("%d/%m/%y") }} auprès de {{ vv.vet.FAname }}
                 </div>
                 <div class="row">
                     <div class="col-sm-1"></div>
                     {% if vv.vtype[0] != '-' %}- Primo Vaccination {% endif %}
                     {% if vv.vtype[1] != '-' %}- 1er rappel {% endif %}
                     {% if vv.vtype[2] != '-' %}- 2eme rappel {% endif %}
-                    {% if vv.vtype[3] != '-' %}- Sterilisation/Castration {% endif %}
+                    {% if vv.vtype[3] != '-' %}- Stérilisation/Castration {% endif %}
                     {% if vv.vtype[4] != '-' %}- Identification {% endif %}
                     {% if vv.vtype[5] != '-' %}- Test FIV/FelV {% endif %}
                     {% if vv.vtype[6] != '-' %}- Soins / autre {% endif %}
@@ -231,14 +231,14 @@
                 </div>
                 {% endif %}
             {% else %}
-                <div class="row form-group">Aucune visite enregistree</div>
+                <div class="row form-group">Aucune visite enregistrée</div>
             {% endfor %}
             {% if not readonly %}
                 <hr>
                 <div class="row form-group">
                     <div class="col-sm-3">
                         Nouvelle visite
-                        <select name="visit_state"><option value="0">Effectuee le</option><option value="1">Planifiee pour le</option></select>
+                        <select name="visit_state"><option value="0">Effectuée le</option><option value="1">Planifiée pour le</option></select>
                     </div>
                     <div class="col-sm-2">
                         <div class="form-group">
@@ -258,7 +258,7 @@
                     <label class="checkbox-inline"><input type="checkbox" name="visit_pv">Primo vaccination</label>
                     <label class="checkbox-inline"><input type="checkbox" name="visit_r1">1er rappel</label>
                     <label class="checkbox-inline"><input type="checkbox" name="visit_r2">2eme rappel</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="visit_sc">Sterilisation/Castration</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="visit_sc">Stérilisation/Castration</label>
                     <label class="checkbox-inline"><input type="checkbox" name="visit_id">Identification</label>
                     <label class="checkbox-inline"><input type="checkbox" name="visit_tf">Test FIV/FelV</label>
                     <label class="checkbox-inline"><input type="checkbox" name="visit_gen">Soins / autre</label>
@@ -272,14 +272,14 @@
 
         {% if cat.regnum and user.FAisADM %}
             <hr>
-            <h3>Historique du chat{% if cat.lastop %} <small>(Derniere modification: {{ cat.lastop.strftime("%d/%m/%Y %H:%M") }})</small>{%endif %}</h3>
+            <h3>Historique du chat{% if cat.lastop %} <small>(Dernière modification: {{ cat.lastop.strftime("%d/%m/%Y %H:%M") }})</small>{%endif %}</h3>
             {% for ev in cat.events %}
                 <div class="row">
                     <div class="col-sm-2">{{ ev.edate.strftime("%d/%m/%Y %H:%M") }}</div>
                     <div class="col-sm-10">{{ ev.etext }}</div>
                 </div>
             {% else %}
-                <div class="row">Aucun evenement</div>
+                <div class="row">Aucun évènement</div>
             {% endfor %}
         {% endif %}
         <hr>
@@ -288,28 +288,28 @@
             {% if readonly %}
             <div class="col-sm-2"><button type="submit" name="action" value="fa_return">Revenir a la liste</button></div>
             {% else %}
-            <div class="col-sm-2"><button type="submit" name="action" value="fa_modcat">Mettre a jour les informations et revenir a la liste</button></div>
-            <div class="col-sm-2"><button type="submit" name="action" value="fa_modcatr">Mettre a jour les informations et rester sur la page</button></div>
-            <div class="col-sm-2"><button type="submit" name="action" value="fa_return">Annuler les changements et revenir a la liste</button></div>
+            <div class="col-sm-2"><button type="submit" name="action" value="fa_modcat">Mettre à jour les informations et revenir à la liste</button></div>
+            <div class="col-sm-2"><button type="submit" name="action" value="fa_modcatr">Mettre à jour les informations et rester sur la page</button></div>
+            <div class="col-sm-2"><button type="submit" name="action" value="fa_return">Annuler les changements et revenir à la liste</button></div>
             <div class="col-sm-1"></div>
-            <div class="col-sm-2"><button type="submit" name="action" value="fa_adopted">Indiquer que le chat a ete adopte</button></div>
-            <div class="col-sm-2"><button type="submit" name="action" value="fa_dead">Indiquer que le chat est decede</button></div>
+            <div class="col-sm-2"><button type="submit" name="action" value="fa_adopted">Indiquer que le chat a été adopté</button></div>
+            <div class="col-sm-2"><button type="submit" name="action" value="fa_dead">Indiquer que le chat est décédé</button></div>
             {% endif %}
         </div>
         {% if user.FAisADM %}
             <div class="row">
-                <button type="submit" name="action" value="adm_putcat">Transferer le chat chez:</button>
+                <button type="submit" name="action" value="adm_putcat">Transférer le chat chez:</button>
                 <select id="sel_FA" name="FAid"></select>
         {% endif %}</div>
         {% else %}
         <div class="row">
-            Indication rapide des visites veterinaires sans specifier des details:
+            Indication rapide des visites vétérinaires sans spécifier des détails:
         </div>
         <div class="row form-group">
             <label class="checkbox-inline"><input type="checkbox" name="visit_pv">Primo vaccination</label>
             <label class="checkbox-inline"><input type="checkbox" name="visit_r1">1er rappel</label>
             <label class="checkbox-inline"><input type="checkbox" name="visit_r2">2eme rappel</label>
-            <label class="checkbox-inline"><input type="checkbox" name="visit_sc">Sterilisation/Castration</label>
+            <label class="checkbox-inline"><input type="checkbox" name="visit_sc">Stérilisation/Castration</label>
             <label class="checkbox-inline"><input type="checkbox" name="visit_id">Identification</label>
             <label class="checkbox-inline"><input type="checkbox" name="visit_tf">Test FIV/FelV</label>
         </div>

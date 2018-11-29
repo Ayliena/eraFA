@@ -65,7 +65,7 @@
 
     <div class="container">
         {% if falist %}
-            <h2>Listes speciales</h2>
+            <h2>Listes spéciales</h2>
 
             <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
                 <div class="form-group"><button class="btn btn-default" name="FAid" value="{{FAids[3]}}">Chats au refuge</button>
@@ -85,7 +85,7 @@
                     {% if fa.FAisADM %} GR {% endif %} ]
                     </div>
                     <div class="col-sm-3">
-                        {% if fa.FAlastop %}Derniere activité: {{ fa.FAlastop.strftime("%d/%m/%Y %H:%M") }}{% endif %}
+                        {% if fa.FAlastop %}Dernière activité: {{ fa.FAlastop.strftime("%d/%m/%Y %H:%M") }}{% endif %}
                     </div>
                     <div class="col-sm-3">
                         {% if fa.FAresp_id %}(resp. {{ rftab[fa.FAresp_id] }}){% endif %}
@@ -96,7 +96,7 @@
         {% endif %}
 
         {% if catlist %}
-            <h2>{% if adoptonly %}Chats disponibles a l'adoption{% else %}Tableau global des chats{% endif %}</h2>
+            <h2>{% if adoptonly %}Chats disponibles à l'adoption{% else %}Tableau global des chats{% endif %}</h2>
             <p><a href="#" onClick="showHideAll();">Montrer/cacher toutes les descriptions</a></p>
             {% for cat in catlist %}
              <div class="row">
@@ -110,7 +110,7 @@
                 <div class="col-sm-4">
                     <a href="#" onClick="showHide('desc_{{cat.registre}}');"><b>{% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}</b></a>
                     ({{ tabsex[cat.sex] }},
-                    {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}??age??{% endif %},
+                    {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}??âge??{% endif %},
                     {{ tabcol[cat.color] }}{{ tabhair[cat.longhair] }})</div>
                 <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
                 <div class="col-sm-2">{{ cat.owner.FAname }}</div>
@@ -123,10 +123,10 @@
                 <div class="col-sm-11"><p class="small">{{ cat.description }}</p></div>
             </div>
             {% else %}
-                Aucun chat est enregistre dans le systeme.
+                Aucun chat est enregistre dans le système.
             {% endfor %}
             <div class="row">
-                <a href="/listcsv{% if adoptonly %}a{%endif%}">Telecharger le tableau en CSV</a>
+                <a href="/listcsv{% if adoptonly %}a{%endif%}">Télécharger le tableau en CSV</a>
             </div>
         {% endif %}
         <hr>
@@ -136,7 +136,7 @@
         </div>
         <div class="row">
             <form  action="list" method="POST">
-                <button type="submit" name="action" value="sv_viewFAresp">FA sous ma responsabilite</button>
+                <button type="submit" name="action" value="sv_viewFAresp">FA sous ma responsabilité</button>
             </form>
         </div>
         {% endif %}
@@ -164,7 +164,7 @@
         <div class="row">
             <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
                 <button name="FAid" value="{{FAids[0]}}">Chats adoptes</button>
-                <button name="FAid" value="{{FAids[1]}}">Chats decedes</button>
+                <button name="FAid" value="{{FAids[1]}}">Chats décédés</button>
                 <button name="FAid" value="{{FAids[2]}}">Historique</button>
             </form></div>
         {% endif %}

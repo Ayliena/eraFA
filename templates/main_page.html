@@ -53,7 +53,7 @@
                 <div class="col-sm-4">
                     <a href="#" onClick="showHide('desc_{{cat.id}}');"><b>{% if cat.name %}{{ cat.name }}{% else %}<span class="bg-warning">sans nom</span>{% endif %}</b></a>
                     ({% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}<span class="bg-warning">??sexe??</span>{% endif %},
-                    {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??age??</span>{% endif %},
+                    {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %},
                     {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})</div>
                 <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
                 <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success">Adoptable</span>{% else %}Non adoptable{% endif %}</div>
@@ -68,8 +68,8 @@
                 <div class="row">
                     <div class="col-sm-1"></div>
                     <div class="col-sm-3">
-                        {% if otheruser.FAisAD %}<button type="submit" name="action" value="adm_histcat">Confirmer l'adoption et deplacer le chat dans l'historique</button>{% endif %}
-                        {% if otheruser.FAisDCD %}<button type="submit" name="action" value="adm_histcat">Confirmer le deces et deplacer le chat dans l'historique</button>{% endif %}
+                        {% if otheruser.FAisAD %}<button type="submit" name="action" value="adm_histcat">Confirmer l'adoption et déplacer le chat dans l'historique</button>{% endif %}
+                        {% if otheruser.FAisDCD %}<button type="submit" name="action" value="adm_histcat">Confirmer le décès et déplacer le chat dans l'historique</button>{% endif %}
                         {% if otheruser.FAisHIST %}<button type="submit" name="action" value="adm_deletecat">EFFACER LE CHAT DU SYSTEME (ATTENTION: IRREVERSIBLE)</button>{% endif %}
                     </div>
                 </div>
@@ -82,7 +82,7 @@
         <div class="row"><form action="vet" method="POST">
             <button type="submit" name="action" value="fa_catlist">Liste des chats</button>
             <button type="submit" name="action" value="fa_vetreg">Registre des soins</button>
-            <button type="submit" name="action" value="fa_vetplan">Visites planifiees</button>
+            <button type="submit" name="action" value="fa_vetplan">Visites planifiées</button>
         </form></div>
         {% if user.FAisRF %}
         <div class="row">
@@ -90,7 +90,7 @@
         </div>
         <div class="row">
             <form  action="list" method="POST">
-                <button type="submit" name="action" value="sv_viewFAresp">FA sous ma responsabilite</button>
+                <button type="submit" name="action" value="sv_viewFAresp">FA sous ma responsabilité</button>
             </form>
         </div>
         {% endif %}
@@ -118,7 +118,7 @@
         <div class="row">
             <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
                 <button name="FAid" value="{{FAids[0]}}">Chats adoptes</button>
-                <button name="FAid" value="{{FAids[1]}}">Chats decedes</button>
+                <button name="FAid" value="{{FAids[1]}}">Chats décédés</button>
                 <button name="FAid" value="{{FAids[2]}}">Historique</button>
             </form></div>
         {% endif %}
