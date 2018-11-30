@@ -18,21 +18,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/css/bootstrap-datetimepicker.min.css">
     </head>
     <script>
-        function readableAge(days) {
-            if (days < 12*7)  return Math.floor(days/7).toString()+"s";
-            else if (days < 365) return Math.floor(days/30.42).toString()+"m";
-            else if (days < 1095) {
-                var sm = Math.floor((days % 365) / 183) * 6;
-                return Math.floor(days/365).toString()+"a"+ ((sm==0)? "" : sm.toString()+"m");
-            }
-            else return Math.floor(days/365).toString()+"a";
-        }
-        function readableRegistre(regnum) {
-            ry = Math.floor(regnum/10000);
-            rn = regnum - 10000*ry;
-            return rn.toString()+"-"+ry.toString();
-        }
-       window.onload=function() {
+{% include 'functions.html' %}
+        window.onload=function() {
             var i, dates = document.querySelectorAll('[id^="bd_"]');
             var today = new Date().getTime() / 1000;
 
@@ -74,33 +61,38 @@
         <form action="/refu" method="POST">
             <div class="row form-group">
                 <div class="col-sm-2">Chats modifiés depuis:</div>
-                <div class="col-sm-2"><input type="text" name="mod_date" id="mod_date" value="a remplir"></div>
+                <div class="col-sm-2"><input type="text" name="mod_date" id="mod_date" value="{{ mdate.strftime('%d/%m/%y') }}"></div>
                 <div class="col-sm-2"><button type="submit" name="action" value="adm_modfilter">Filtrer</button></div>
             </div>
             {% if modcats %}{% for cat in modcats %}
             <div class="row">
                 <div class="col-sm-1">
-                    <strong><span id="rn_{{cat.id}}">{{cat.regnum}}</span></strong>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="re_{{cat.id}}" id="re_{{cat.id}}" checked>
+                        <label class="form-check-label" for="re_{{cat.id}}">
+                            <strong><span id="rn_{{cat.id}}">{{cat.regnum}}</span></strong>
+                        </label>
+                    </div>
                 </div>
-                <div class="col-sm-2">{{ cat.identif }}</div>
+                <div class="col-sm-2"><b>{{ cat.lastop.strftime('%d/%m/%y %H:%M') }}</b></div>
                 <div class="col-sm-4">
                     <b>{% if cat.name %}{{ cat.name }}{% else %}<span class="bg-warning">sans nom</span>{% endif %}</b>
                     ({% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}<span class="bg-warning">??sexe??</span>{% endif %},
                     {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %},
-                    {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}
-                    {{ tabhair[cat.longhair] }})</div>
+                    {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})</div>
                 <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
-                <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success">Adoptable</span>{% else %}Non adoptable{% endif %}</div>
+                <div class="col-sm-2">{{ cat.identif }}</div>
             </div>
             {% for ev in cat.events %}
                 <div class="row">
                     <div class="col-sm-1"></div>
-                    <div class="col-sm-2">{{ ev.edate.strftime("%d/%m/%Y %H:%M") }}</div>
+                    <div class="col-sm-2">{{ ev.edate.strftime("%d/%m/%y %H:%M") }}</div>
                     <div class="col-sm-9">{{ ev.etext }}</div>
                 </div>
             {% endfor %}
+            <hr>
             {% endfor %}{% endif %}
-            <div class="row form-groupe"><button type="submit" name="action" value="adm_refexport">Exporter</button></div>
+            <div class="row form-groupe"><button type="submit" name="action" value="adm_refuexport">Exporter</button></div>
         </form>
 
     </div><!-- /.container -->

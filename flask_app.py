@@ -4,10 +4,10 @@
 # jsonify is for debugging
 from flask import Flask, render_template, redirect, request, url_for, session, Response
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from flask_login import login_user, LoginManager, UserMixin, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
@@ -419,7 +419,7 @@ def catpage():
     # generate an empty page to add a new cat
     if cmd == "adm_newcat" and current_user.FAisADM:
         theCat = Cat(regnum=0)
-        return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all(), FAids=FAidSpecial)
+        return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).all(), FAids=FAidSpecial)
 
     if (cmd == "adm_addcathere" or cmd == "adm_addcatputFA") and current_user.FAisADM:
         # generate the new cat using the form information
@@ -445,7 +445,7 @@ def catpage():
             # this is bad, we regenerate the page wit the current data
             message = [ [3, "Le numéro de registre existe déjà!"] ]
             theCat.regnum = 0
-            return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all(), msg=message, FAids=FAidSpecial)
+            return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).all(), msg=message, FAids=FAidSpecial)
 
         # if for any reason the FA is invalid, then put it here
         if cmd != "adm_addcathere":
@@ -521,7 +521,7 @@ def catpage():
 
     FAlist = []
     if access == ACC_TOTAL:
-        FAlist = User.query.filter_by(FAisFA=True).all()
+        FAlist = User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).all()
 
     # handle generation of the page
     if cmd == "fa_viewcat":
@@ -636,6 +636,8 @@ def catpage():
 
             # if deleted, delete immediately
             if int(request.form[prefix+"_state"]) == 2:
+                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} annullée".format(current_user.FAname, theVisit.vtype))
+                db.session.add(theEvent)
                 db.session.delete(theVisit)
                 continue
 
@@ -645,17 +647,19 @@ def catpage():
 
             if VisitType == "--------":
                 # all reasons removed, erase this
+                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} annullée".format(current_user.FAname, theVisit.vtype))
+                db.session.add(theEvent)
                 db.session.delete(theVisit)
                 continue
 
             # update the record
-            theVisit.VisitType = VisitType
+            theVisit.vtype = VisitType
 
             try:
                 VisitDate = datetime.strptime(request.form[prefix+"_date"], "%d/%m/%y")
             except ValueError:
                 VisitDate = datetime.now()
-            theVisit.visitDate = VisitDate
+            theVisit.vdate = VisitDate
 
             theVisit.planned = False
 
@@ -748,16 +752,59 @@ def refupage():
         return redirect(url_for('login'))
 
     if not current_user.FAisADM:
-        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to add data", FAids=FAidSpecial)
+        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges", FAids=FAidSpecial)
 
     if request.method == "GET":
         # generate the empty page with random filtering (for now)
-        tempdate = "20/11/18"
-        mdate = datetime.strptime(tempdate, "%d/%m/%y")
+        mdate = datetime.now() + timedelta(days=-7)
         cats = Cat.query.filter(Cat.lastop>=mdate).all()
-        return render_template("refu_page.html", user=current_user, modcats=cats, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair)
+        return render_template("refu_page.html", user=current_user, mdate=mdate, modcats=cats, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair)
 
     cmd = request.form["action"]
+
+    if cmd == "adm_modfilter":
+        try:
+            mdate = datetime.strptime(request.form["mod_date"], "%d/%m/%y")
+        except ValueError:
+            mdate = datetime.now()
+
+        cats = Cat.query.filter(Cat.lastop>=mdate).all()
+        return render_template("refu_page.html", user=current_user, mdate=mdate, modcats=cats, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair)
+
+    if cmd == "adm_refuexport":
+#        return jsonify(request.form.to_dict())
+
+        # this is potentially dangerous, if someone messes with the date, does not filter and the exports
+        # but the only consequence is missing data, so I don't care
+        try:
+            mdate = datetime.strptime(request.form["mod_date"], "%d/%m/%y")
+        except ValueError:
+            mdate = datetime.now()
+
+        cats = Cat.query.filter(Cat.lastop>=mdate).order_by(Cat.regnum).all()
+
+        datfile = []
+
+        for cat in cats:
+            if "re_{}".format(cat.id) in request.form:
+                comments = cat.description.replace("\n","<EOL>")
+
+                datline = [ cat.regStr(), cat.owner.username, cat.name, cat.identif, DBTabSex[cat.sex],
+                            ("" if not cat.birthdate else cat.birthdate.strftime('%d/%m/%y') ),
+                            DBTabHair[cat.longhair], DBTabColor[cat.color], comments]
+
+                for vv in cat.vetvisits:
+                    datline.extend([ ("VP" if vv.planned else "VE"), vv.vtype, vv.vdate.strftime('%d/%m/%y'), str(vv.vet_id), vv.doneby.username ])
+
+                datline.append("EOD")
+
+                datfile.append(";".join(datline))
+
+        return Response(
+            "\n".join(datfile),
+            mimetype="text/csv",
+            headers={"Content-disposition":
+                     "attachment; filename=exportFA.erafa"})
 
     if cmd == "adm_refuimport":
         # iterate on all the lines one by one
@@ -1018,9 +1065,10 @@ def listadownload():
         catlist=Cat.query.filter_by(adoptable=True).all()
 
         csv = exportCSV(catlist)
-        db.session.commit()
 
         current_user.FAlastop = datetime.now()
+        db.session.commit()
+
         return Response(
             csv,
             mimetype="text/csv",

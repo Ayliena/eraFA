@@ -275,7 +275,7 @@
             <h3>Historique du chat{% if cat.lastop %} <small>(Dernière modification: {{ cat.lastop.strftime("%d/%m/%Y %H:%M") }})</small>{%endif %}</h3>
             {% for ev in cat.events %}
                 <div class="row">
-                    <div class="col-sm-2">{{ ev.edate.strftime("%d/%m/%Y %H:%M") }}</div>
+                    <div class="col-sm-2">{{ ev.edate.strftime("%d/%m/%y %H:%M") }}</div>
                     <div class="col-sm-10">{{ ev.etext }}</div>
                 </div>
             {% else %}
@@ -292,8 +292,8 @@
             <div class="col-sm-2"><button type="submit" name="action" value="fa_modcatr">Mettre à jour les informations et rester sur la page</button></div>
             <div class="col-sm-2"><button type="submit" name="action" value="fa_return">Annuler les changements et revenir à la liste</button></div>
             <div class="col-sm-1"></div>
-            <div class="col-sm-2"><button type="submit" name="action" value="fa_adopted">Indiquer que le chat a été adopté</button></div>
-            <div class="col-sm-2"><button type="submit" name="action" value="fa_dead">Indiquer que le chat est décédé</button></div>
+            <div class="col-sm-2"><button type="submit" name="action" value="fa_adopted">Adoption: indiquer que le chat a été adopté</button></div>
+            <div class="col-sm-2"><button type="submit" name="action" value="fa_dead">Décès: Indiquer que le chat est décédé</button></div>
             {% endif %}
         </div>
         {% if user.FAisADM %}
