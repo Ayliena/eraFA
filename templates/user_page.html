@@ -1,0 +1,133 @@
+<html>
+    <head>
+        <title>Familles d'accueil ERA</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!---*** Start: JQuery 3.3.1 version. ***--->
+<script language="javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<!---*** End: JQuery 3.3.1 version. ***--->
+<!---*** Start: Bootstrap 3.3.7 version files. ***--->
+<script language="javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<!---*** End: Bootstrap 3.3.7 version files. ***--->
+    </head>
+    <script>
+        function validateForm() {
+            true;
+        }
+    </script>
+<body>
+    {% include 'navbar.html' %}
+
+    <div class="container">
+
+        {% if falist %}
+            <div class="row"><form action="/user" method="POST">
+            <button name="action" value="adm_newuser">Nouveau utilisateur</button>
+            </form></div>
+
+            <h2>Utilisateurs definis</h2>
+            <form action="/user" method="POST"><input type="hidden" name="action" value="adm_edituser">
+            {% for fa in falist %}
+                <div class="row">
+                    <div class="col-sm-2"><button class="btn btn-default" name="FAid" value="{{fa.id}}">{{ fa.username }}</button> :</div>
+                    <div class="col-sm-4">{{ fa.FAid }} ({{ fa.FAname }}) <b>[
+                    {% if fa.FAisFA %} FA {% endif %}
+                    {% if fa.FAisRF %} RF {% endif %}
+                    {% if fa.FAisOV %} SV {% endif %}
+                    {% if fa.FAisADM %} GR {% endif %}
+
+                    {% if fa.FAisREF %} Refuge {% endif %}
+                    {% if fa.FAisAD %} S:Adopt {% endif %}
+                    {% if fa.FAisDCD %} S:Dec {% endif %}
+                    {% if fa.FAisHIST %} S:Hist {% endif %}
+                    {% if fa.FAisVET %} S:Vet {% endif %} ]</b>
+                    </div>
+                    <div class="col-sm-3">
+                        {% if fa.FAlastop %}Dernière activité: {{ fa.FAlastop.strftime("%d/%m/%Y %H:%M") }}{% endif %}
+                    </div>
+                    <div class="col-sm-3">
+                        {% if rftab and fa.FAresp_id %}(resp. {{ rftab[fa.FAresp_id] }}){% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+            </form>
+        {% endif %}
+
+        {% if fauser %}
+        <form action="user" id="u_form" onsubmit="return validateForm()" method="POST">
+        <input type="hidden" name="FAid" value="{{fauser.id}}">
+        <div class="row form-group">
+            <div class="col-sm-1">Utilisateur:</div>
+            <div class="col-sm-3">
+                {% if fauser.username %} <b>{{fauser.username}}</b>
+                {% else %} <input type="text" name="u_username" required placeholder="nom utilisateur"> {% endif %}
+            </div>
+        </div>
+        <div class="row form-group">
+            <div class="col-sm-2">Nom publique:</div>
+            <div class="col-sm-2">
+                {% if fauser.FAid %} <input type="text" name="u_pname" oninput="this.value = this.value.toUpperCase()" value="{{ fauser.FAid }}">
+                {% else %} <input type="text" name="u_pname" oninput="this.value = this.value.toUpperCase()" placeholder="Nom FA"> {% endif %}
+            </div>
+        </div>
+        <div class="row form-group">
+            <div class="col-sm-2">Nom interne:</div>
+            <div class="col-sm-2">
+                {% if fauser.FAname %}<input type="text" name="u_iname" value="{{ fauser.FAname }}">
+                {% else %}<input type="text" name="u_iname" value="" placeholder="Nom complet"> {% endif %}
+            </div>
+        </div>
+        <div class="row form-group">
+            <div class="col-sm-2">Adresse e-mail:</div>
+            <div class="col-sm-2">
+                {% if fauser.FAemail %} <input type="text" name="u_iname" value="{{ fauser.FAemail }}">
+                {% else %} <input type="text" name="u_iname" placeholder="E-mail"> {% endif %}
+            </div>
+        </div>
+        <div class="row form-group">
+            <div class="col-sm-2">Sous la responsabilite de:</div>
+            <div class="col-sm-2">
+                <select name="u_resp" id="u_resp"{% if fauser.FAisRF or fauser.FAisADM %} disabled{% endif %}>
+                <option value="0">Personne</option>
+                {% for k,v in rftab.items() %}
+                <option value="{{k}}" {% if k == fauser.FAresp_id %} selected{% endif %}>{{v}}</option>{% endfor %}
+                </select>
+            </div>
+        </div>
+        <hr>
+        <div class="row form-group">
+            <div class="col-sm-4"><b>Caracteristiques et acces:</b></div>
+        </div>
+        <div class="row form-group">
+            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isFA"{% if fauser.FAisFA %} checked{% endif %}>Famille d'accueil (= detient des chats)</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isRF"{% if fauser.FAisRF %} checked{% endif %}>Responsable d'autres Familles d'accueil</label></div>
+        </div>
+        <div class="row form-group">
+            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isOV"{% if fauser.FAisOV %} checked{% endif %}>Superviseur (= vision de toutes les FA)</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isADM"{% if fauser.FAisADM %} checked{% endif %} disabled>Administrateur/Gestion Registre</label></div>
+        </div>
+        <div class="row form-group">
+            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isVET"{% if fauser.FAisVET %} checked{% endif %}>Veterinaire</label></div>
+        </div>
+        <div class="row form-group">
+            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isAD"{% if fauser.FAisAD %} checked{% endif %} disabled>Special: chats adoptes</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isREF"{% if fauser.FAisREF %} checked{% endif %} disabled>Special: refuge</label></div>
+        </div>
+        <div class="row form-group">
+            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isDCD"{% if fauser.FAisDCD %} checked{% endif %} disabled>Special: chats decedes</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isHIST"{% if fauser.FAisHIST %} checked{% endif %} disabled>Special: historique</label></div>
+        </div>
+        <hr>
+        <div class="row form-group">
+            <div class="col-sm-2"><button type="submit" name="action" {% if fauser.username %}value="adm_moduser"{% else %}value="adm_adduser"{% endif %}>Enregistrer</button></div>
+            <div class="col-sm-2">{% if fauser.username %}<button type="submit" name="action" value="adm_pwduser">Regenerer MDP</button>{% endif %}</div>
+            <div class="col-sm-2"><button type="submit" name="action" value="adm_listusers">Annuler</button></div>
+        </div>
+
+        {% endif %}
+    </div><!-- /.container -->
+</body>
+</html>

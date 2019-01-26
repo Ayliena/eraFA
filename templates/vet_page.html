@@ -18,6 +18,16 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/css/bootstrap-datetimepicker.min.css">
     </head>
     <script>
+{% include 'functions.html' %}
+        window.onload=function() {
+            var i;
+
+            var regnums = document.querySelectorAll('[id^="rn_"]');
+            for (i = 0; i < regnums.length; ++i) {
+                regnum = parseInt(regnums[i].innerHTML);
+                regnums[i].innerHTML = readableRegistre(regnum);
+            }
+        }
 $(document).ready(function() {
   $('.datepick').datetimepicker({
     format: 'DD/MM/YY'
@@ -41,7 +51,7 @@ $(document).ready(function() {
         <h2>Visites vétérinaires planifiées</h2>
         {% for v in visits %}
             <form action="cat" method="POST"><input type="hidden" name="catid" value="{{v.cat.id}}">
-            <div class="row">{{ v.vdate.strftime("%d/%m/%y") }} visite de <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong>{{v.cat.registre}}</strong></button>
+            <div class="row">{{ v.vdate.strftime("%d/%m/%y") }} visite de <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{v.cat.id}}">{{v.cat.regnum}}</span></strong></button>
                     ( {{ v.cat.name }} / {{ v.cat.identif }} ) chez {{ v.vet.FAname }} pour:</div>
             <div class="row"><div class="col-sm-1"></div>
                 {% if v.vtype[0] != '-' %}- Primo vaccination{% endif %}

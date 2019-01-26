@@ -15,6 +15,18 @@
             }
         </style>
     </head>
+    <script>
+{% include 'functions.html' %}
+        window.onload=function() {
+            var i;
+
+            var regnums = document.querySelectorAll('[id^="rn_"]');
+            for (i = 0; i < regnums.length; ++i) {
+                regnum = parseInt(regnums[i].innerHTML);
+                regnums[i].innerHTML = readableRegistre(regnum);
+            }
+        }
+    </script>
 <body>
     <h3>Association ERA - FA {% if otheruser %}{{otheruser.FAname}}{% else %}{{user.FAname}}{% endif %}</h3>
     <h2>Registre des soins</h2>
@@ -35,7 +47,7 @@
             <td>{{v.vdate.strftime("%d/%m/%y")}}</td>
             <td>Chat</td>
             <td>{{ tabsex[v.cat.sex] }}</td>
-            <td>{% if v.cat.identif %}{{v.cat.identif}}{% elif v.cat.name %}{{ v.cat.name }}{% else %}{{v.cat.registre}}{% endif %}</td>
+            <td>{% if v.cat.identif %}{{v.cat.identif}}{% elif v.cat.name %}{{ v.cat.name }}{% else %}<span id="rn_{{v.cat.id}}">{{v.cat.regnum}}</span>{% endif %}</td>
             <td>{{ tabcol[v.cat.color] }}{{ tabhair[v.cat.longhair] }}</td>
             <td>{% if v.cat.birthdate %}{{ v.cat.birthdate.strftime("%d/%m/%y") }}{% endif %}</td>
             <td>{{ v.vet.FAname }}</td>

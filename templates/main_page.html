@@ -63,7 +63,7 @@
                 <div class="col-sm-11"><p class="small">{{ cat.description }}</p></div>
             </div>
             </form>
-            {% if otheruser and (otheruser.FAisAD or otheruser.FAisDCD or otheruser.FAisHIST) %}
+            {% if otheruser and (otheruser.FAisAD or otheruser.FAisDCD or otheruser.FAisHIST) and user.FAisADM %}
                 <form action="." method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
                 <div class="row">
                     <div class="col-sm-1"></div>

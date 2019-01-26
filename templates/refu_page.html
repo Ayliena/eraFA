@@ -92,7 +92,10 @@
             {% endfor %}
             <hr>
             {% endfor %}{% endif %}
-            <div class="row form-groupe"><button type="submit" name="action" value="adm_refuexport">Exporter</button></div>
+            <div class="row form-group">
+                <div class="col-sm-3"><button type="submit" name="action" value="adm_refuexport">Exporter les chats selectionnes</button></div>
+                <div class="col-sm-3"><button type="submit" name="action" value="adm_refuexpall">Exporter tous les chats</button></div>
+            </div>
         </form>
 
     </div><!-- /.container -->

@@ -88,7 +88,7 @@
                         {% if fa.FAlastop %}Dernière activité: {{ fa.FAlastop.strftime("%d/%m/%Y %H:%M") }}{% endif %}
                     </div>
                     <div class="col-sm-3">
-                        {% if fa.FAresp_id %}(resp. {{ rftab[fa.FAresp_id] }}){% endif %}
+                        {% if rftab and fa.FAresp_id %}(resp. {{ rftab[fa.FAresp_id] }}){% endif %}
                     </div>
                 </div>
             {% endfor %}

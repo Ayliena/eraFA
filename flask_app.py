@@ -29,6 +29,10 @@ db = SQLAlchemy(app)
 # > > from flask_app import db
 # > > db.create_all()
 
+# database backup/restore
+# > mysqldump -u ishark -h ishark.mysql.pythonanywhere-services.com 'ishark$comments'  > db-backup.sql
+# RESTORE: DANGEROUS! > mysql -u ishark -h ishark.mysql.pythonanywhere-services.com 'ishark$comments'  < db-backup.sql
+
 app.secret_key = "tpCff4LR9ldTlZBUUmQO"
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -139,7 +143,7 @@ FAidSpecial = [2, 5, 10, 18]
 #
 # IMPORTANT: since VETs change rarely, there's a static table which must be updated
 # NOTE: it must also be changed in cat_page.html
-VETlist = [ [8, "Autre (commentaires)"], [ 6, "AMCB Veterinaires" ], [7, "Clinique Mont. Verte"], [19, 'Clinique du Moulin'] ]
+VETlist = [ [8, "Veto (commentaires)"], [ 6, "AMCB Veterinaires" ], [7, "Clinique Mont. Verte"], [19, 'Clinique du Moulin'], [27, "L'Arche de Mittel"] ]
 
 
 class User(UserMixin, db.Model):
@@ -205,7 +209,6 @@ class Cat(db.Model):
     color = db.Column(db.Integer)
     longhair = db.Column(db.Integer)
     birthdate = db.Column(db.DateTime)
-    registre = db.Column(db.String(8))
     regnum = db.Column(db.Integer, unique=True, nullable=False)
     identif = db.Column(db.String(16))
     description = db.Column(db.String(1024))
@@ -367,7 +370,7 @@ def index():
     # check if you can access this
     if theCat.owner_id != current_user.id and not current_user.FAisADM:
         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data", FAids=FAidSpecial)
-        return redirect(url_for('index'))
+#        return redirect(url_for('index'))
 
     if cmd == "adm_histcat" and current_user.FAisADM:
         # move the cat to the historical list of cats
@@ -576,6 +579,9 @@ def catpage():
         if updated != "--------":
             theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: mise à jour des informations {}".format(current_user.FAname, updated))
             db.session.add(theEvent)
+            updated = True
+        else:
+            updated = False
 
         # generate the vetinfo record, if any, and the associated event
         VisitType = vetMapToString(request.form, "visit")
@@ -600,6 +606,7 @@ def catpage():
             if not VisitPlanned:
                 theCat.vetshort = vetAddStrings(theCat.vetshort, VisitType)
                 et = "effectuee le"
+                updated = True
             else:
                 et = "planifiee pour le"
 
@@ -662,6 +669,7 @@ def catpage():
             theVisit.vdate = VisitDate
 
             theVisit.planned = False
+            updated = True
 
             # validate the vet
             vetId = next((x for x in VETlist if x[0]==int(request.form[prefix+"_vet"])), None)
@@ -680,7 +688,8 @@ def catpage():
 
         # end for mv in modvisits
 
-        theCat.lastop = datetime.now()
+        if updated:
+            theCat.lastop = datetime.now()
         current_user.FAlastop = datetime.now()
         db.session.commit()
         message = [ [0, "Informations mises a jour"] ]
@@ -804,7 +813,7 @@ def refupage():
             "\n".join(datfile),
             mimetype="text/csv",
             headers={"Content-disposition":
-                     "attachment; filename=exportFA.erafa"})
+                     "attachment; filename=faweb-export.dat"})
 
     if cmd == "adm_refuimport":
         # iterate on all the lines one by one
@@ -825,18 +834,7 @@ def refupage():
                 rr = v[0].split('-')
                 rn = int(rr[0]) + 10000*int(rr[1])
 
-                theCat = Cat.query.filter_by(regnum=rn).first();
-                if theCat != None:
-                    msg.append([3, "Numéro de registre {} déjà présent, dossier ignoré".format(v[0]) ])
-                    continue
-
-                # locate the FA, using the username
-                theFA = User.query.filter(and_(User.username==v[1], User.FAisFA==True)).first()
-
-                if not theFA:
-                    msg.append([1, "{}: FA '{}' non trouvée, rajoute ici".format(v[0], v[1]) ])
-                    theFA = current_user
-
+                # extract all the non-vet info so that we can update empty fields
                 r_name = v[2]
                 r_id = v[3]
 
@@ -866,6 +864,29 @@ def refupage():
                     r_bd = None
 
                 r_comm = v[8].replace("<EOL>", "\n")
+
+                # see if we already have this
+                theCat = Cat.query.filter_by(regnum=rn).first();
+
+                # locate the FA, using the username
+                theFA = User.query.filter(and_(User.username==v[1], User.FAisFA==True)).first()
+
+                if theCat != None:
+                    # compare and update non-empty info
+                    # TODO
+
+                    if not theFA:
+                        msg.append([3, "Numéro de registre {} déjà présent et FA '{}' non trouvee!".format(v[0], v[1]) ])
+                    else:
+                        if theCat.owner_id != theFA.id:
+                            msg.append([3, "Numéro de registre {} déjà présent mais dans une autre FA (il est chez {}, on veut le rajouter chez {})!".format(v[0], theCat.owner.FAname, theFA.FAname) ])
+                        else:
+                            msg.append([2, "Numéro de registre {} déjà présent, dossier ignoré".format(v[0]) ])
+                    continue
+
+                if not theFA:
+                    msg.append([2, "{}: FA '{}' non trouvée, rajoute ici".format(v[0], v[1]) ])
+                    theFA = current_user
 
                 # now take care of the vetvisits
                 offs = 9
@@ -1012,8 +1033,54 @@ def listpage():
         session["otherMode"] = "special-adopt"
         return redirect(url_for('index'))
 
-    # default is return to index
+    # default is indicate error
     return render_template("error_page.html", user=current_user, errormessage="command error (/list)", FAids=FAidSpecial)
+
+
+@app.route("/user", methods=["POST"])
+@login_required
+def userpage():
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+
+    if not current_user.FAisADM:
+        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access user data", FAids=FAidSpecial)
+
+    cmd = request.form["action"]
+
+    # prepare the table of the RFs
+    RFlist=User.query.filter_by(FAisRF=True).all()
+
+    RFtab = {}
+    for rf in RFlist:
+        RFtab[rf.id] = rf.FAname
+
+    if cmd == "adm_listusers":
+        # normal users
+        FAlist=User.query.all()
+
+        return render_template("user_page.html", user=current_user, falist=FAlist, rftab=RFtab, FAids=FAidSpecial)
+
+    if cmd == "adm_newuser":
+        theFA = User()
+        return render_template("user_page.html", user=current_user, fauser=theFA, rftab=RFtab, FAids=FAidSpecial)
+
+    if cmd == "adm_edituser":
+        theFA = User.query.filter_by(id=request.form["FAid"]).first()
+
+        if not theFA:
+            return render_template("error_page.html", user=current_user, errormessage="edituser: invalid used id", FAids=FAidSpecial)
+
+        return render_template("user_page.html", user=current_user, fauser=theFA, rftab=RFtab, FAids=FAidSpecial)
+
+    if cmd == "adm_adduser":
+        return render_template("error_page.html", user=current_user, errormessage="command error (/user:adduser)", FAids=FAidSpecial)
+
+    if cmd == "adm_moduser":
+        return render_template("error_page.html", user=current_user, errormessage="command error (/user:moduser)", FAids=FAidSpecial)
+
+    # default is indicate error
+    return render_template("error_page.html", user=current_user, errormessage="command error (/user)", FAids=FAidSpecial)
 
 
 def exportCSV(catlist):
