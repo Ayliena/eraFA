@@ -42,7 +42,7 @@
         {% if otheruser %} <h2>Situation FA : {{ otheruser.FAname }}</h2> {% endif %}
 
         <h2>Chats detenus</h2>
-        {% if cats %}<p><a href="#" onClick="showHideAllDescs();">Montrer/cacher toutes les descriptions</a></p>{% endif %}
+        {% if cats %}<p><a href="#" onClick="showHideAllDescs();">Montrer/cacher toutes les commentaires</a></p>{% endif %}
         {% for cat in cats %}
             <form action="cat" method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
             <div class="row">
@@ -60,7 +60,7 @@
             </div>
             <div class="row" style="display: none;" id="desc_{{cat.id}}">
                 <div class="col-sm-1"></div>
-                <div class="col-sm-11"><p class="small">{{ cat.description }}</p></div>
+                <div class="col-sm-11"><p class="small">{{ cat.comments }}</p></div>
             </div>
             </form>
             {% if otheruser and (otheruser.FAisAD or otheruser.FAisDCD or otheruser.FAisHIST) and user.FAisADM %}

@@ -7,10 +7,17 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import and_, or_
 from flask_login import login_user, LoginManager, UserMixin, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash
+from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
+import os
+from PIL import Image
+
+UPLOAD_FOLDER = '/home/ishark/eraFA/static'
+ALLOWED_EXTENSIONS = set(['jpg'])
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
     username="ishark",
@@ -211,7 +218,8 @@ class Cat(db.Model):
     birthdate = db.Column(db.DateTime)
     regnum = db.Column(db.Integer, unique=True, nullable=False)
     identif = db.Column(db.String(16))
-    description = db.Column(db.String(1024))
+    description = db.Column(db.String(2048))
+    comments = db.Column(db.String(1024))
     vetshort = db.Column(db.String(16))
     adoptable = db.Column(db.Boolean)
     vetvisits = db.relationship('VetInfo', backref='cat', lazy=True)
@@ -273,12 +281,21 @@ class VetInfo(db.Model):
 #    commenter_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
 #    commenter = db.relationship('User', foreign_keys=commenter_id)
 
+# kill caching
+@app.after_request
+def set_response_headers(response):
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+
 # test page
 
 @app.route('/misc')
 @login_required
 def miscpage():
-    return render_template("misc_page.html", user=current_user)
+    return render_template("misc_page.html", user=current_user, FAids=FAidSpecial, msg="hello!")
 
 # --------------- WEB PAGES
 
@@ -439,7 +456,8 @@ def catpage():
 
         theCat = Cat(regnum=rn, name=request.form["c_name"], sex=request.form["c_sex"], birthdate=bdate,
                     color=request.form["c_color"], longhair=request.form["c_hlen"], identif=request.form["c_identif"],
-                    description=request.form["c_description"], vetshort=vetstr, adoptable=(request.form["c_adoptable"]=="1"))
+                    description=request.form["c_description"], comments=request.form["c_comments"], vetshort=vetstr,
+                    adoptable=(request.form["c_adoptable"]=="1"))
 
         # ensure that registre is unique
         checkCat = Cat.query.filter_by(regnum=rn).first()
@@ -535,7 +553,7 @@ def catpage():
         # return jsonify(request.form.to_dict())
 
         # update cat information and indicate what was changed
-        updated = ['-', '-', '-', '-', '-', '-', '-', '-']
+        updated = ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-']
         if theCat.name != request.form["c_name"]:
             theCat.name = request.form["c_name"]
             updated[1] = 'N'
@@ -565,18 +583,41 @@ def catpage():
             theCat.identif=request.form["c_identif"]
             updated[2] = 'I'
 
+        if theCat.comments != request.form["c_comments"]:
+            theCat.comments=request.form["c_comments"]
+            updated[7] = 'c'
+
         if theCat.description != request.form["c_description"]:
             theCat.description=request.form["c_description"]
-            updated[7] = 'D'
+            updated[8] = 'D'
 
         if theCat.adoptable != (request.form["c_adoptable"] == "1"):
             theCat.adoptable=(request.form["c_adoptable"] == "1")
             updated[0] = 'A'
 
+        if 'img_erase' in request.form:
+            # delete the file (existing or not....)
+            if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], "{}.jpg".format(theCat.regnum))):
+                os.remove(os.path.join(app.config['UPLOAD_FOLDER'], "{}.jpg".format(theCat.regnum)))
+                updated[9] = 'P'
+        else:
+           if 'img_file' in request.files:
+                img_file = request.files['img_file']
+
+                if img_file:
+                    filename = secure_filename(img_file.filename)
+                    img_file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+                    # now rename the file and strip metadata (resize also???)
+                    theImage = Image.open(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    theImage.save(os.path.join(app.config['UPLOAD_FOLDER'], "{}.jpg".format(theCat.regnum)))
+                    os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    updated[9] = 'P'
+
         # indicate moodification of the data
         updated = "".join(updated)
 
-        if updated != "--------":
+        if updated != "----------":
             theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: mise à jour des informations {}".format(current_user.FAname, updated))
             db.session.add(theEvent)
             updated = True
@@ -796,7 +837,7 @@ def refupage():
 
         for cat in cats:
             if "re_{}".format(cat.id) in request.form:
-                comments = cat.description.replace("\n","<EOL>")
+                comments = cat.comments.replace("\n","<EOL>")
 
                 datline = [ cat.regStr(), cat.owner.username, cat.name, cat.identif, DBTabSex[cat.sex],
                             ("" if not cat.birthdate else cat.birthdate.strftime('%d/%m/%y') ),
@@ -933,7 +974,7 @@ def refupage():
 
                 # create the cat
                 theCat = Cat(regnum=rn, owner_id=theFA.id, name=r_name, sex=r_sex, birthdate=r_bd, color=r_col, longhair=r_hl, identif=r_id,
-                        vetshort=r_vetshort, description=r_comm, adoptable=False)
+                        vetshort=r_vetshort, comments=r_comm, adoptable=False)
                 db.session.add(theCat)
                 # make sure we have an id
                 db.session.commit()
@@ -1084,7 +1125,7 @@ def userpage():
 
 
 def exportCSV(catlist):
-    csv="FA,Registre,Puce,Nom,Sexe,Date Naissance,Couleur,Poil,Veterinaire,Adoptable,Description\n"
+    csv="FA,Registre,Puce,Nom,Sexe,Date Naissance,Couleur,Poil,Veterinaire,Adoptable,Commentaires\n"
 
     for cat in catlist:
         # historical cats are ignored
@@ -1092,7 +1133,7 @@ def exportCSV(catlist):
             continue
 
         # this is looking for trouble.....
-        cdesc = cat.description
+        cdesc = cat.comments
         cdesc.replace('"', '""')
 
         csv += ('"'+cat.owner.FAname+'",'+cat.regStr()+','+cat.identif+',"'+cat.name+'",'+
