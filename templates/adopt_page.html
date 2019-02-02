@@ -1,0 +1,82 @@
+<html>
+    <head>
+        <title>ERA: chats a l'adoption</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!---*** Start: JQuery 3.3.1 version. ***--->
+<script language="javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<!---*** End: JQuery 3.3.1 version. ***--->
+<!---*** Start: Bootstrap 3.3.7 version files. ***--->
+<script language="javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<!---*** End: Bootstrap 3.3.7 version files. ***--->
+    </head>
+    <script>
+        function readableAge(days) {
+            if (days < 12*7)  return Math.floor(days/7).toString()+"s";
+            else if (days < 365) return Math.floor(days/30.42).toString()+"m";
+            else if (days < 1095) {
+                var sm = Math.floor((days % 365) / 183) * 6;
+                return Math.floor(days/365).toString()+"a"+ ((sm==0)? "" : sm.toString()+"m");
+            }
+            else return Math.floor(days/365).toString()+"a";
+        }
+        window.onload=function() {
+            var i, dates = document.querySelectorAll('[id^="bd_"]');
+            var today = new Date().getTime() / 1000;
+
+            for (i = 0; i < dates.length; ++i) {
+                days = Math.floor((today - parseInt(dates[i].innerHTML))/86400);
+                dates[i].innerHTML = readableAge(days);
+            }
+        }
+        $(function() {
+            $('.pop').on('click', function() {
+                $('.imagepreview').attr('src', $(this).find('img').attr('src'));
+                $('#imagemodal').modal('show');
+            });
+        });
+    </script>
+<body>
+    <div class="container">
+
+    <div class="row"><a href="/fa">C'est ici l'Acces Familles d'Accueil!</a></div>
+
+    <h2>Chats a l'adoption</h2>
+
+    {% for cat in catlist %}
+    <div class="row">
+        <a id="{{ cat.regnum }}"></a>
+        <div class="col-sm-3">
+            <a href="#{{ cat.regnum }}" class="pop">
+                <img src="{{ url_for('static', filename='{}.jpg'.format(cat.regnum))}}" style="height:12em; margin-left:20px; margin-right:20px;" onError="this.onerror=null;this.src='{{ url_for('static', filename='logo-ERA.png')}}';" class="img-responsive">
+            </a>
+        </div>
+        <div class="col-sm-9">
+            <b>{% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}</b>:
+            {{ tabsex[cat.sex] }} {{ tabcol[cat.color] }}{{ tabhair[cat.longhair] }},
+            {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% endif %}<br>
+            {% if cat.description %} {{cat.description}} {% endif %}
+        </div>
+    </div>
+    <hr>
+    {% else %}
+        Aucun chat est disponible en ce moment...
+    {% endfor %}
+
+    <div class="modal fade" id="imagemodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog" data-dismiss="modal">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <img src="" class="imagepreview" style="width: 100%;" >
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div><!-- /.container -->
+</body>
+</html>

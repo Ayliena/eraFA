@@ -13,7 +13,7 @@
              <ul class="nav navbar-nav">
                 <li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">Famille<span class="caret"></span></a>
-                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="vet" method="POST">
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/vet" method="POST">
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_catlist">Chats en FA</button></li>
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_vetplan">Visites planifiées</button></li>
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_vetreg">Registre des Soins</button></li>
@@ -21,9 +21,9 @@
                 </li>
                 {% if user.FAisRF %}<li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">Resp. FA<span class="caret"></span></a>
-                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="list" method="POST">
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/list" method="POST">
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_viewFAresp">FA sous ma responsabilité</button></li>
-                    </form><form class="form-inline" action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+                    </form><form class="form-inline" action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
                         <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[3]}}">Chats au refuge</button></li>
                         <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[0]}}">Chats adoptes</button></li>
                         <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[1]}}">Chats décédés</button></li>
@@ -31,7 +31,7 @@
                 </li>{% endif %}
                 {% if user.FAisOV %}<li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">Superviseur<span class="caret"></span></a>
-                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="list" method="POST">
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/list" method="POST">
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_viewFA">Vision par FA</button></li>
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button></li>
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_adoptTab">Chats a l'adoption</button></li>
@@ -39,15 +39,15 @@
                 </li>{% endif %}
                 {% if user.FAisADM %}<li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">Gest. Registre<span class="caret"></span></a>
-                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
                         <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[3]}}">Chats au refuge</button></li>
                         <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[0]}}">Chats adoptés</button></li>
                         <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[1]}}">Chats décédés</button></li>
                         <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[2]}}">Historique</button></li>
-                    </form><form class="form-inline" action="cat" method="POST">
+                    </form><form class="form-inline" action="/cat" method="POST">
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_newcat">Rajouter un chat</button></li>
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_refucat">Interoperabilité Refugilys</button></li>
-                    </form><form class="form-inline" action="user" method="POST">
+                    </form><form class="form-inline" action="/user" method="POST">
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_listusers">Gestion utilisateurs</button></li>
                     </form></ul>
                 </li>{% endif %}

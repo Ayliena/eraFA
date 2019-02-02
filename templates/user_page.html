@@ -57,7 +57,7 @@
         {% endif %}
 
         {% if fauser %}
-        <form action="user" id="u_form" onsubmit="return validateForm()" method="POST">
+        <form action="/user" id="u_form" onsubmit="return validateForm()" method="POST">
         <input type="hidden" name="FAid" value="{{fauser.id}}">
         <div class="row form-group">
             <div class="col-sm-1">Utilisateur:</div>

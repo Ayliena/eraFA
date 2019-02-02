@@ -50,7 +50,7 @@ $(document).ready(function() {
 
         <h2>Visites vétérinaires planifiées</h2>
         {% for v in visits %}
-            <form action="cat" method="POST"><input type="hidden" name="catid" value="{{v.cat.id}}">
+            <form action="/cat" method="POST"><input type="hidden" name="catid" value="{{v.cat.id}}">
             <div class="row">{{ v.vdate.strftime("%d/%m/%y") }} visite de <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{v.cat.id}}">{{v.cat.regnum}}</span></strong></button>
                     ( {{ v.cat.name }} / {{ v.cat.identif }} ) chez {{ v.vet.FAname }} pour:</div>
             <div class="row"><div class="col-sm-1"></div>
@@ -70,7 +70,7 @@ $(document).ready(function() {
         {% endfor %}
 
         <hr>
-        <div class="row"><form action="vet" method="POST">
+        <div class="row"><form action="/vet" method="POST">
             <button type="submit" name="action" value="fa_catlist">Liste des chats</button>
             <button type="submit" name="action" value="fa_vetreg">Registre des soins</button>
             <button type="submit" name="action" value="fa_vetplan">Visites planifiées</button>
@@ -80,7 +80,7 @@ $(document).ready(function() {
             Commandes disponibles en tant que Superviseur:
         </div>
         <div class="row">
-            <form  action="list" method="POST">
+            <form  action="/list" method="POST">
                 <button type="submit" name="action" value="sv_viewFA">Vision par FA</button>
                 <button type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button>
                 <button type="submit" name="action" value="sv_adoptTab">Chats a l'adoption</button>
@@ -92,12 +92,12 @@ $(document).ready(function() {
             Commandes disponibles en tant que Gestionnaire-Registre:
         </div>
         <div class="row">
-            <form action="cat" method="POST">
+            <form action="/cat" method="POST">
                 <button type="submit" name="action" value="adm_newcat">Rajouter un chat</button>
                 <button type="submit" name="action" value="adm_refucat">Rajouter un dossier Refugilys</button>
             </form></div>
         <div class="row">
-            <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+            <form action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
                 <button name="FAid" value="{{FAids[0]}}">Chats adoptés</button>
                 <button name="FAid" value="{{FAids[1]}}">Chats décédés</button>
                 <button name="FAid" value="{{FAids[2]}}">Historique</button>

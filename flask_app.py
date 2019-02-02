@@ -302,6 +302,14 @@ def miscpage():
 @app.route('/', methods=["GET", "POST"])
 @app.route('/index', methods=["GET", "POST"])
 def index():
+    cats = Cat.query.filter_by(adoptable=True).all();
+
+    # TODO split in pages of 10 or something....
+    return render_template("adopt_page.html", tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, catlist=cats)
+
+
+@app.route('/fa', methods=["GET", "POST"])
+def fapage():
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
 
@@ -376,18 +384,18 @@ def index():
 
         session["otherMode"] = None
         session["otherFA"] = FAid
-        return redirect(url_for('index'))
+        return redirect(url_for('fapage'))
 
     # get the cat
     theCat = Cat.query.filter_by(id=request.form["catid"]).first()
     if theCat == None:
         return render_template("error_page.html", user=current_user, errormessage="invalid cat id", FAids=FAidSpecial)
-        return redirect(url_for('index'))
+        return redirect(url_for('fapage'))
 
     # check if you can access this
     if theCat.owner_id != current_user.id and not current_user.FAisADM:
         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data", FAids=FAidSpecial)
-#        return redirect(url_for('index'))
+#        return redirect(url_for('fapage'))
 
     if cmd == "adm_histcat" and current_user.FAisADM:
         # move the cat to the historical list of cats
@@ -409,7 +417,7 @@ def index():
         current_user.FAlastop = datetime.now()
         db.session.commit()
 
-    return redirect(url_for('index'))
+    return redirect(url_for('fapage'))
 
 
 @app.route("/self")
@@ -418,7 +426,7 @@ def selfpage():
     # a version of the main page which brings you back to your list
     session.pop("otherFA", None)
     session.pop("otherMode", None)
-    return redirect(url_for('index'))
+    return redirect(url_for('fapage'))
 
 
 @app.route("/cat", methods=["POST"])
@@ -430,7 +438,7 @@ def catpage():
     cmd = request.form["action"]
 
     if cmd == "fa_return":
-        return redirect(url_for('index'))
+        return redirect(url_for('fapage'))
 
     # generate an empty page for the addition of a Refu dossier
     if cmd == "adm_refucat" and current_user.FAisADM:
@@ -493,13 +501,13 @@ def catpage():
 
         current_user.FAlastop = datetime.now()
         db.session.commit()
-        return redirect(url_for('index'))
+        return redirect(url_for('fapage'))
 
     # existing cat, populate the page with the available data
     theCat = Cat.query.filter_by(id=request.form["catid"]).first();
     if theCat == None:
         return render_template("error_page.html", user=current_user, errormessage="invalid cat id", FAids=FAidSpecial)
-        return redirect(url_for('index'))
+#        return redirect(url_for('fapage'))
 
     # if we're working on another user's cats, show the information on top of the page
     FAid = current_user.id
@@ -740,7 +748,7 @@ def catpage():
             return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist, msg=message, FAids=FAidSpecial)
 
         session["pendingmessage"] = message
-        return redirect(url_for('index'))
+        return redirect(url_for('fapage'))
 
     if cmd == "fa_adopted":
         theCat.owner_id = FAidSpecial[0]
@@ -751,7 +759,7 @@ def catpage():
         db.session.add(theEvent)
         current_user.FAlastop = datetime.now()
         db.session.commit()
-        return redirect(url_for('index'))
+        return redirect(url_for('fapage'))
 
     if cmd == "fa_dead":
         theCat.owner_id = FAidSpecial[1]
@@ -762,7 +770,7 @@ def catpage():
         db.session.add(theEvent)
         current_user.FAlastop = datetime.now()
         db.session.commit()
-        return redirect(url_for('index'))
+        return redirect(url_for('fapage'))
 
     if cmd == "adm_putcat" and access == ACC_TOTAL:
         # cat information is not updated
@@ -788,7 +796,7 @@ def catpage():
             current_user.FAlastop = datetime.now()
             db.session.commit()
 
-        return redirect(url_for('index'))
+        return redirect(url_for('fapage'))
 
     # this should never be reached
     # display info about a cat
@@ -798,9 +806,6 @@ def catpage():
 @app.route("/refu", methods=["GET", "POST"])
 @login_required
 def refupage():
-    if not current_user.is_authenticated:
-        return redirect(url_for('login'))
-
     if not current_user.FAisADM:
         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges", FAids=FAidSpecial)
 
@@ -993,7 +998,7 @@ def refupage():
         db.session.commit()
 
         session["pendingmessage"] = msg
-        return redirect(url_for('index'))
+        return redirect(url_for('fapage'))
 
     return render_template("error_page.html", user=current_user, errormessage="command error (/refu)", FAids=FAidSpecial)
 #    return redirect(url_for('refupage'))
@@ -1007,7 +1012,7 @@ def vetpage():
     if cmd == "fa_catlist":
         # just return to the default main page
         session["otherMode"] = None
-        return redirect(url_for('index'))
+        return redirect(url_for('fapage'))
 
     if cmd == "fa_vetreg":
         # query all vetinfo which was doneby the FA
@@ -1032,7 +1037,7 @@ def vetpage():
 
     if cmd == "fa_vetplan":
         session["otherMode"] = "special-vetplan"
-        return redirect(url_for('index'))
+        return redirect(url_for('fapage'))
 
     return render_template("error_page.html", user=current_user, errormessage="command error (/vet)", FAids=FAidSpecial)
 
@@ -1040,9 +1045,6 @@ def vetpage():
 @app.route("/list", methods=["POST"])
 @login_required
 def listpage():
-    if not current_user.is_authenticated:
-        return redirect(url_for('login'))
-
     cmd = request.form["action"]
 
     if cmd == "sv_viewFA" and (current_user.FAisADM or current_user.FAisOV):
@@ -1067,12 +1069,12 @@ def listpage():
     if cmd == "sv_globalTab" and (current_user.FAisADM or current_user.FAisOV):
         # list of all cats
         session["otherMode"] = "special-all"
-        return redirect(url_for('index'))
+        return redirect(url_for('fapage'))
 
     if cmd == "sv_adoptTab" and (current_user.FAisADM or current_user.FAisOV):
         # list of all cats with adoptable=true
         session["otherMode"] = "special-adopt"
-        return redirect(url_for('index'))
+        return redirect(url_for('fapage'))
 
     # default is indicate error
     return render_template("error_page.html", user=current_user, errormessage="command error (/list)", FAids=FAidSpecial)
@@ -1081,9 +1083,6 @@ def listpage():
 @app.route("/user", methods=["POST"])
 @login_required
 def userpage():
-    if not current_user.is_authenticated:
-        return redirect(url_for('login'))
-
     if not current_user.FAisADM:
         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access user data", FAids=FAidSpecial)
 
@@ -1162,7 +1161,7 @@ def listdownload():
                      "attachment; filename=chatsFA.csv"})
 
     # default is return to index
-    return redirect(url_for('index'))
+    return redirect(url_for('fapage'))
 
 
 @app.route("/listcsva")
@@ -1184,7 +1183,7 @@ def listadownload():
                      "attachment; filename=adoptables.csv"})
 
     # default is return to index
-    return redirect(url_for('index'))
+    return redirect(url_for('fapage'))
 
 
 @app.route("/help")
@@ -1211,10 +1210,10 @@ def login():
 #    current_user.FAlastop = datetime.now()
 #    db.session.commit()
 
-    return redirect(url_for('index'))
+    return redirect(url_for('fapage'))
 
 @app.route("/logout/")
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('index'))
+    return redirect(url_for('fapage'))
