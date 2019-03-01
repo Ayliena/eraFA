@@ -33,15 +33,14 @@
             }
         }
         function populatevets(selid) {
-            var vetids = [8, 6, 7, 19, 27];
-            var vetnames = ["Veto (commentaires)", "AMCB veterinaires", "Clinique Mont. Verte", "Clinique du Moulin", "L'Arche de Mittel"];
+            var vettab = [ {% for v in VETids %} [{{v.id}}, "{{v.FAname|safe}}"], {% endfor %}]
             var sel, i, option;
             sel = document.getElementById(selid);
 
-            for (i = 0; i < vetids.length; ++i) {
+            for (i = 0; i < vettab.length; ++i) {
                 option = document.createElement('option');
-                option.value = vetids[i];
-                option.text = vetnames[i];
+                option.value = vettab[i][0];
+                option.text = vettab[i][1];
                 sel.add(option);
             }
         }
@@ -206,12 +205,10 @@
                         <select name="oldv_{{vv.id}}_state"><option value="0">Effectuée le</option><option value="1" selected>Planifiée pour le</option>><option value="2">ANNULLEE</option></select>
                     </div>
                     <div class="col-sm-2">
-                        <div class="form-group">
-                            <div class="input-group datepick">
-                                <input type="text" class="form-control" name="oldv_{{vv.id}}_date"  id="oldv_{{vv.id}}_date" value="{{vv.vdate.strftime("%d/%m/%y")}}">
-                                <div class="input-group-addon">
-                                    <span class="glyphicon glyphicon-calendar"></span>
-                                </div>
+                        <div class="input-group datepick">
+                            <input type="text" class="form-control" name="oldv_{{vv.id}}_date"  id="oldv_{{vv.id}}_date" value="{{vv.vdate.strftime("%d/%m/%y")}}">
+                            <div class="input-group-addon">
+                                <span class="glyphicon glyphicon-calendar"></span>
                             </div>
                         </div>
                     </div>
@@ -267,12 +264,10 @@
                         <select name="visit_state"><option value="0">Effectuée le</option><option value="1">Planifiée pour le</option></select>
                     </div>
                     <div class="col-sm-2">
-                        <div class="form-group">
-                            <div class="input-group datepick">
-                                <input type="text" class="form-control" name="visit_date" id="visit_date" placeholder="aujourd'hui">
-                                <div class="input-group-addon">
-                                    <span class="glyphicon glyphicon-calendar"></span>
-                                </div>
+                        <div class="input-group datepick">
+                            <input type="text" class="form-control" name="visit_date" id="visit_date" placeholder="aujourd'hui">
+                            <div class="input-group-addon">
+                                <span class="glyphicon glyphicon-calendar"></span>
                             </div>
                         </div>
                     </div>

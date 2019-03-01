@@ -78,11 +78,14 @@
             {% for fa in falist %}
                 <div class="row">
                     <div class="col-sm-2"><button class="btn btn-default" name="FAid" value="{{fa.id}}">{{ fa.FAid }}</button> :</div>
-                    <div class="col-sm-4">{{ fa.FAname }} [
+                    <div class="col-sm-3">{{ fa.FAname }} [
                     {% if fa.FAisFA %} FA {% endif %}
                     {% if fa.FAisRF %} RF {% endif %}
                     {% if fa.FAisOV %} SV {% endif %}
                     {% if fa.FAisADM %} GR {% endif %} ]
+                    </div>
+                    <div class="col-sm-1">
+                        {{ fa.numcats }} chat{% if fa.numcats != 1 %}s{% endif %}
                     </div>
                     <div class="col-sm-3">
                         {% if fa.FAlastop %}Dernière activité: {{ fa.FAlastop.strftime("%d/%m/%Y %H:%M") }}{% endif %}

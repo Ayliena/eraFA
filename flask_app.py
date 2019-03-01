@@ -148,10 +148,6 @@ FAidSpecial = [2, 5, 10, 18]
 # > db.session.add(newuser)
 # > db.session.commit()
 #
-# IMPORTANT: since VETs change rarely, there's a static table which must be updated
-# NOTE: it must also be changed in cat_page.html
-VETlist = [ [8, "Veto (commentaires)"], [ 6, "AMCB Veterinaires" ], [7, "Clinique Mont. Verte"], [19, 'Clinique du Moulin'], [27, "L'Arche de Mittel"] ]
-
 
 class User(UserMixin, db.Model):
 
@@ -165,6 +161,7 @@ class User(UserMixin, db.Model):
     FAemail = db.Column(db.String(128))
     FAlastop = db.Column(db.DateTime)
     FAresp_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    numcats = db.Column(db.Integer)
     FAresp = db.relationship('User', foreign_keys=FAresp_id)
     FAisFA = db.Column(db.Boolean, default=False)
     FAisRF = db.Column(db.Boolean, default=False)
@@ -399,7 +396,10 @@ def fapage():
 
     if cmd == "adm_histcat" and current_user.FAisADM:
         # move the cat to the historical list of cats
-        theCat.owner_id = FAidSpecial[2]
+        newFA = User.query.filter_by(id=FAidSpecial[2]).first()
+        theCat.owner.numcats -= 1
+        newFA.numcats += 1
+        theCat.owner_id = newFA.id
         theCat.lastop = datetime.now()
         session["pendingmessage"] = [ [0, "Chat {} déplacé dans l'historique".format(theCat.asText())] ]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transféré dans l'historique".format(current_user.FAname))
@@ -411,6 +411,12 @@ def fapage():
         # erase the cat and all the associated information from the database
         # NOTE THAT THIS IS IRREVERSIBLE AND LEAVES NO TRACE
         session["pendingmessage"] = [ [0, "Chat {} effacé du systeme".format(theCat.asText())] ]
+
+        # start by erasing the image (if any)
+        if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], "{}.jpg".format(theCat.regnum))):
+            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], "{}.jpg".format(theCat.regnum)))
+
+        theCat.owner.numcats -= 1
         Event.query.filter_by(cat_id=theCat.id).delete()
         VetInfo.query.filter_by(cat_id=theCat.id).delete()
         db.session.delete(theCat)
@@ -429,11 +435,11 @@ def selfpage():
     return redirect(url_for('fapage'))
 
 
-@app.route("/cat", methods=["POST"])
+@app.route("/cat", methods=["GET", "POST"])
 @login_required
 def catpage():
-    if not current_user.is_authenticated:
-        return redirect(url_for('login'))
+    if request.method == "GET":
+        return redirect(url_for('fapage'))
 
     cmd = request.form["action"]
 
@@ -480,14 +486,18 @@ def catpage():
         if cmd != "adm_addcathere":
             FAid = int(request.form["FAid"]);
             # validate the id
-            faexists = db.session.query(User.id).filter_by(id=FAid).scalar() is not None;
+            newFA = User.query.filter_by(id=FAid).first()
+            faexists = newFA is not None;
 
             if cmd == "adm_addcatputFA" and faexists:
+                newFA.numcats += 1
                 theCat.owner_id = FAid
             else:
+                current_user.numcats += 1
                 theCat.owner_id = current_user.id
 
         else: # cmd == "addcathere"
+            current_user.numcats += 1
             theCat.owner_id = current_user.id
 
         db.session.add(theCat)
@@ -541,11 +551,14 @@ def catpage():
     if access == ACC_NONE:
         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data", FAids=FAidSpecial)
 
+    # vet list will be needed
+    VETlist = User.query.filter_by(FAisVET=True).all()
+
     if access == ACC_RO:
         # FAid != current_user.id is implied
-        return render_template("cat_page.html", user=current_user, otheruser=theFA, cat=theCat, readonly=True, FAids=FAidSpecial)
+        return render_template("cat_page.html", user=current_user, otheruser=theFA, cat=theCat, readonly=True, VETids=VETlist, FAids=FAidSpecial)
 
-    # if we reach here, we have ACC_FULL
+    # if we reach here, we have at least ACC_FULL
     # some operations may still be unavailable!
 
     FAlist = []
@@ -554,13 +567,14 @@ def catpage():
 
     # handle generation of the page
     if cmd == "fa_viewcat":
-        return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist, FAids=FAidSpecial)
+        return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist, VETids=VETlist, FAids=FAidSpecial)
 
     # cat commands
     if cmd == "fa_modcat" or cmd == "fa_modcatr":
         # return jsonify(request.form.to_dict())
 
         # update cat information and indicate what was changed
+        # info is Adoppt Name Ident Sex Birthdate L(hairlen) Color (c)omments Description Picture
         updated = ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-']
         if theCat.name != request.form["c_name"]:
             theCat.name = request.form["c_name"]
@@ -585,7 +599,7 @@ def catpage():
 
         if theCat.longhair != int(request.form["c_hlen"]):
             theCat.longhair=request.form["c_hlen"]
-            updated[5] = 'P'
+            updated[5] = 'L'
 
         if theCat.identif != request.form["c_identif"]:
             theCat.identif=request.form["c_identif"]
@@ -620,7 +634,7 @@ def catpage():
                     theImage = Image.open(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                     theImage.save(os.path.join(app.config['UPLOAD_FOLDER'], "{}.jpg".format(theCat.regnum)))
                     os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                    updated[9] = 'P'
+                    updated[9] = 'I'
 
         # indicate moodification of the data
         updated = "".join(updated)
@@ -637,12 +651,12 @@ def catpage():
 
         if VisitType != "--------":
             # validate the vet
-            vetId = next((x for x in VETlist if x[0]==int(request.form["visit_vet"])), None)
+            vet = next((x for x in VETlist if x.id==int(request.form["visit_vet"])), None)
 
-            if not vetId:
+            if not vet:
                 return render_template("error_page.html", user=current_user, errormessage="vet id is invalid", FAids=FAidSpecial)
             else:
-                vetId = vetId[0]
+                vetId = vet.id
 
             try:
                 VisitDate = datetime.strptime(request.form["visit_date"], "%d/%m/%y")
@@ -721,12 +735,12 @@ def catpage():
             updated = True
 
             # validate the vet
-            vetId = next((x for x in VETlist if x[0]==int(request.form[prefix+"_vet"])), None)
+            vet = next((x for x in VETlist if x.id==int(request.form[prefix+"_vet"])), None)
 
-            if not vetId:
+            if not vet:
                 return render_template("error_page.html", user=current_user, errormessage="vet id is invalid", FAids=FAidSpecial)
             else:
-                vetId = vetId[0]
+                vetId = vet.id
 
             theVisit.comments = request.form[prefix+"_comments"]
 
@@ -745,13 +759,16 @@ def catpage():
 
         # if we stay on the page, regenerate it directly
         if cmd == "fa_modcatr":
-            return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist, msg=message, FAids=FAidSpecial)
+            return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist, msg=message, VETids=VETlist, FAids=FAidSpecial)
 
         session["pendingmessage"] = message
         return redirect(url_for('fapage'))
 
     if cmd == "fa_adopted":
-        theCat.owner_id = FAidSpecial[0]
+        newFA = User.query.filter_by(id=FAidSpecial[0]).first()
+        newFA.numcats += 1
+        theCat.owner.numcats -= 1
+        theCat.owner_id = newFA.id
         theCat.lastop = datetime.now()
         # generate the event
         session["pendingmessage"] = [ [0, "Chat {} transféré dans les adoptés".format(theCat.asText())] ]
@@ -762,7 +779,10 @@ def catpage():
         return redirect(url_for('fapage'))
 
     if cmd == "fa_dead":
-        theCat.owner_id = FAidSpecial[1]
+        newFA = User.query.filter_by(id=FAidSpecial[1]).first()
+        newFA.numcats += 1
+        theCat.owner.numcats -= 1
+        theCat.owner_id = newFA.id
         theCat.lastop = datetime.now()
         # generate the event
         session["pendingmessage"] = [ [0, "Chat {} transféré dans les décédés".format(theCat.asText())] ]
@@ -784,6 +804,8 @@ def catpage():
             theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transféré de {} a {}".format(current_user.FAname, theCat.owner.FAname, theFA.FAname))
             db.session.add(theEvent)
             # modify the FA
+            theFA.numcats += 1
+            theCat.owner.numcats -= 1
             theCat.owner_id = FAid
             theCat.lastop = datetime.now()
             # in order to make it easier to list the "planned visits", any visit which is PLANNED is transferred to the new owner
@@ -829,7 +851,7 @@ def refupage():
     if cmd == "adm_refuexport":
 #        return jsonify(request.form.to_dict())
 
-        # this is potentially dangerous, if someone messes with the date, does not filter and the exports
+        # this is potentially dangerous, if someone messes with the date, does not filter and then exports
         # but the only consequence is missing data, so I don't care
         try:
             mdate = datetime.strptime(request.form["mod_date"], "%d/%m/%y")
@@ -842,7 +864,7 @@ def refupage():
 
         for cat in cats:
             if "re_{}".format(cat.id) in request.form:
-                comments = cat.comments.replace("\n","<EOL>")
+                comments = cat.comments.replace("\r\n","<EOL>")
 
                 datline = [ cat.regStr(), cat.owner.username, cat.name, cat.identif, DBTabSex[cat.sex],
                             ("" if not cat.birthdate else cat.birthdate.strftime('%d/%m/%y') ),
@@ -860,6 +882,31 @@ def refupage():
             mimetype="text/csv",
             headers={"Content-disposition":
                      "attachment; filename=faweb-export.dat"})
+
+    if cmd == "adm_refuexpall":
+        cats = Cat.query.order_by(Cat.regnum).all()
+
+        datfile = []
+
+        for cat in cats:
+            comments = cat.comments.replace("\r\n","<EOL>")
+
+            datline = [ cat.regStr(), cat.owner.username, cat.name, cat.identif, DBTabSex[cat.sex],
+                        ("" if not cat.birthdate else cat.birthdate.strftime('%d/%m/%y') ),
+                        DBTabHair[cat.longhair], DBTabColor[cat.color], comments]
+
+            for vv in cat.vetvisits:
+                datline.extend([ ("VP" if vv.planned else "VE"), vv.vtype, vv.vdate.strftime('%d/%m/%y'), str(vv.vet_id), vv.doneby.username ])
+
+            datline.append("EOD")
+
+            datfile.append(";".join(datline))
+
+        return Response(
+            "\n".join(datfile),
+            mimetype="text/csv",
+            headers={"Content-disposition":
+                     "attachment; filename=faweb-dbase.dat"})
 
     if cmd == "adm_refuimport":
         # iterate on all the lines one by one
@@ -909,7 +956,7 @@ def refupage():
                 except ValueError:
                     r_bd = None
 
-                r_comm = v[8].replace("<EOL>", "\n")
+                r_comm = v[8].replace("<EOL>", "\r\n")
 
                 # see if we already have this
                 theCat = Cat.query.filter_by(regnum=rn).first();
@@ -919,15 +966,52 @@ def refupage():
 
                 if theCat != None:
                     # compare and update non-empty info
-                    # TODO
+                    # info is Adoppt Name Ident Sex Birthdate L(hairlen) Color (c)omments Description Picture
+                    updated = ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-']
+
+                    # note that only some data can be updated (adopt/desc/vetinfo can't, for example)
+                    if not theCat.name and r_name:
+                        theCat.name = r_name
+                        updated[1] = 'N'
+
+                    if not theCat.identif and r_id:
+                        theCat.identif = r_id
+                        updated[2] ='I'
+
+                    if not theCat.sex and r_sex:
+                        theCat.sex = r_sex
+                        updated[3] = 'S'
+
+                    if not theCat.birthdate and r_bd:
+                        theCat.birthdate = r_bd
+                        updated[4] = 'B'
+
+                    if not theCat.longhair and r_hl:
+                        theCat.longhair = r_hl
+                        updated[5] = 'L'
+
+                    if not theCat.color and r_col:
+                        theCat.color = r_col
+                        updated[6] = 'C'
+
+                    if not theCat.comments and r_comm:
+                        theCat.comments = r_comm
+                        updated[7] = 'c'
+
+                    # indicate moodification of the data
+                    updated = "".join(updated)
+
+                    if updated != "----------":
+                        msg.append([2, "Numéro de registre {} déjà présent, informations mises a jour: {}".format(v[0], updated)])
+                        db.session.commit()
+                    else:
+                        msg.append([2, "Numéro de registre {} déjà présent, aucune nouvelle information, dossier ignoré".format(v[0]) ])
 
                     if not theFA:
                         msg.append([3, "Numéro de registre {} déjà présent et FA '{}' non trouvee!".format(v[0], v[1]) ])
                     else:
                         if theCat.owner_id != theFA.id:
                             msg.append([3, "Numéro de registre {} déjà présent mais dans une autre FA (il est chez {}, on veut le rajouter chez {})!".format(v[0], theCat.owner.FAname, theFA.FAname) ])
-                        else:
-                            msg.append([2, "Numéro de registre {} déjà présent, dossier ignoré".format(v[0]) ])
                     continue
 
                 if not theFA:
@@ -1004,9 +1088,12 @@ def refupage():
 #    return redirect(url_for('refupage'))
 
 
-@app.route("/vet", methods=["POST"])
+@app.route("/vet", methods=["GET", "POST"])
 @login_required
 def vetpage():
+    if request.method == "GET":
+        return redirect(url_for('fapage'))
+
     cmd = request.form["action"]
 
     if cmd == "fa_catlist":
@@ -1042,9 +1129,12 @@ def vetpage():
     return render_template("error_page.html", user=current_user, errormessage="command error (/vet)", FAids=FAidSpecial)
 
 
-@app.route("/list", methods=["POST"])
+@app.route("/list", methods=["GET", "POST"])
 @login_required
 def listpage():
+    if request.method == "GET":
+        return redirect(url_for('fapage'))
+
     cmd = request.form["action"]
 
     if cmd == "sv_viewFA" and (current_user.FAisADM or current_user.FAisOV):
@@ -1080,9 +1170,12 @@ def listpage():
     return render_template("error_page.html", user=current_user, errormessage="command error (/list)", FAids=FAidSpecial)
 
 
-@app.route("/user", methods=["POST"])
+@app.route("/user", methods=["GET", "POST"])
 @login_required
 def userpage():
+    if request.method == "GET":
+        return redirect(url_for('fapage'))
+
     if not current_user.FAisADM:
         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access user data", FAids=FAidSpecial)
 
@@ -1206,9 +1299,13 @@ def login():
 
     login_user(user)
 
-    # store last access (NOT FOR NOW)
-#    current_user.FAlastop = datetime.now()
-#    db.session.commit()
+    # store last access and fix number of cats (just in case...)
+    ncats = Cat.query.filter_by(owner_id=current_user.id).count()
+    if ncats != current_user.numcats:
+        current_user.numcats = ncats
+
+    current_user.FAlastop = datetime.now()
+    db.session.commit()
 
     return redirect(url_for('fapage'))
 
