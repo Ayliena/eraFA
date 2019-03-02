@@ -132,45 +132,8 @@
                 <a href="/listcsv{% if adoptonly %}a{%endif%}">Télécharger le tableau en CSV</a>
             </div>
         {% endif %}
-        <hr>
-        {% if user.FAisRF %}
-        <div class="row">
-            Commandes disponibles en tant que responsable FA:
-        </div>
-        <div class="row">
-            <form  action="/list" method="POST">
-                <button type="submit" name="action" value="sv_viewFAresp">FA sous ma responsabilité</button>
-            </form>
-        </div>
-        {% endif %}
-        {% if user.FAisOV %}
-        <div class="row">
-            Commandes disponibles en tant que Superviseur:
-        </div>
-        <div class="row">
-            <form  action="/list" method="POST">
-                <button type="submit" name="action" value="sv_viewFA">Vision par FA</button>
-                <button type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button>
-                <button type="submit" name="action" value="sv_adoptTab">Chats a l'adoption</button>
-            </form>
-        </div>
-        {% endif %}
-        {% if user.FAisADM %}
-        <div class="row">
-            Commandes disponibles en tant que Gestionnaire-Registre:
-        </div>
-        <div class="row">
-            <form action="/cat" method="POST">
-                <button type="submit" name="action" value="adm_newcat">Rajouter un chat</button>
-                <button type="submit" name="action" value="adm_refucat">Rajouter un dossier Refugilys</button>
-            </form></div>
-        <div class="row">
-            <form action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
-                <button name="FAid" value="{{FAids[0]}}">Chats adoptes</button>
-                <button name="FAid" value="{{FAids[1]}}">Chats décédés</button>
-                <button name="FAid" value="{{FAids[2]}}">Historique</button>
-            </form></div>
-        {% endif %}
+
+        {% include 'bottom.html' %}
     </div><!-- /.container -->
 </body>
 </html>

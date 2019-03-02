@@ -91,6 +91,13 @@
             true;
         }
     </script>
+    <style>
+   hr {
+       border-top: 2px solid #000000 !important;
+       margin-bottom:8px !important;
+       margin-top:10px !important;
+   }
+    </style
 <body>
     {% include 'navbar.html' %}
 
@@ -217,6 +224,7 @@
                     </div>
                 </div>
                 <div class="row form-group">
+                    <div class="col-sm-12">
                     <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_pv"{% if vv.vtype[0] != '-' %} checked{% endif %}>Primo vaccination</label>
                     <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_r1"{% if vv.vtype[1] != '-' %} checked{% endif %}>1er rappel</label>
                     <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_r2"{% if vv.vtype[2] != '-' %} checked{% endif %}>2eme rappel</label>
@@ -225,10 +233,13 @@
                     <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_tf"{% if vv.vtype[5] != '-' %} checked{% endif %}>Test FIV/FelV</label>
                     <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_gen"{% if vv.vtype[6] != '-' %} checked{% endif %}>Soins / autre</label>
                     <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_rr"{% if vv.vtype[7] != '-' %} checked{% endif %}>Rappel annuel</label>
+                    </div>
                 </div>
                 <div class="row form-group">
+                    <div class="col-sm-12">
                     {% if vv.comments %}<textarea class="form-control" name="oldv_{{vv.id}}_comments">{{ vv.comments }}</textarea>
                     {% else %}<textarea class="form-control" name="oldv_{{vv.id}}_comments" placeholder="Commentaires / informations additionnelles"></textarea>{% endif %}
+                    </div>
                 </div>
                 {% else %}
                 <div class="row">
@@ -254,7 +265,7 @@
                 </div>
                 {% endif %}
             {% else %}
-                <div class="row form-group">Aucune visite enregistrée</div>
+                <div class="row form-group"><div class="col-sm-12">Aucune visite enregistrée</div></div>
             {% endfor %}
             {% if not readonly %}
                 <hr>
@@ -288,7 +299,9 @@
                     </div>
                 </div>
                 <div class="row form-group">
+                    <div class="col-sm-12">
                     <textarea class="form-control" name="visit_comments" placeholder="Commentaires / informations additionnelles"></textarea>
+                    </div>
                 </div>
             {% endif %}
         {% endif %}

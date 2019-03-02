@@ -14,7 +14,12 @@
 <!---*** End: Bootstrap 3.3.7 version files. ***--->
     </head>
     <script>
-        function validateForm() {
+        function submitForm() {
+            var x = document.forms["u_form"]["u_username"].value;
+            if (!Boolean(x.trim())) {
+                alert("Le nom d'utilisateur doit etre rempli");
+                return false;
+            }
             true;
         }
     </script>
@@ -24,16 +29,24 @@
     <div class="container">
 
         {% if falist %}
-            <div class="row"><form action="/user" method="POST">
-            <button name="action" value="adm_newuser">Nouveau utilisateur</button>
-            </form></div>
+            {% if msg %}{% for m in  msg %}
+                {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
+                {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
+                {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
+                {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
+                {{ m[1] }}</div>
+            {% endfor %}{% endif %}
+
+            <form action="/user" method="POST"><div class="row">
+                <div class="col-sm-12"><button name="action" value="adm_newuser">Nouveau utilisateur</button></div>
+            </div></form>
 
             <h2>Utilisateurs definis</h2>
-            <form action="/user" method="POST"><input type="hidden" name="action" value="adm_edituser">
+            <form action="/user" method="POST"><input type=hidden name="action" value="adm_edituser">
             {% for fa in falist %}
                 <div class="row">
                     <div class="col-sm-2"><button class="btn btn-default" name="FAid" value="{{fa.id}}">{{ fa.username }}</button> :</div>
-                    <div class="col-sm-4">{{ fa.FAid }} ({{ fa.FAname }}) <b>[
+                    <div class="col-sm-4">{% if fa.password_hash == 'nologin' %}<i>{{ fa.FAid }} ({{ fa.FAname }})</i>{% else %}{{ fa.FAid }} ({{ fa.FAname }}){% endif %} <b>[
                     {% if fa.FAisFA %} FA {% endif %}
                     {% if fa.FAisRF %} RF {% endif %}
                     {% if fa.FAisOV %} SV {% endif %}
@@ -57,13 +70,13 @@
         {% endif %}
 
         {% if fauser %}
-        <form action="/user" id="u_form" onsubmit="return validateForm()" method="POST">
+        <form action="/user" id="u_form" method="POST">
         <input type="hidden" name="FAid" value="{{fauser.id}}">
         <div class="row form-group">
             <div class="col-sm-1">Utilisateur:</div>
             <div class="col-sm-3">
                 {% if fauser.username %} <b>{{fauser.username}}</b>
-                {% else %} <input type="text" name="u_username" required placeholder="nom utilisateur"> {% endif %}
+                {% else %} <input type="text" name="u_username" placeholder="nom utilisateur"> {% endif %}
             </div>
         </div>
         <div class="row form-group">
@@ -83,8 +96,8 @@
         <div class="row form-group">
             <div class="col-sm-2">Adresse e-mail:</div>
             <div class="col-sm-2">
-                {% if fauser.FAemail %} <input type="text" name="u_iname" value="{{ fauser.FAemail }}">
-                {% else %} <input type="text" name="u_iname" placeholder="E-mail"> {% endif %}
+                {% if fauser.FAemail %} <input type="text" name="u_email" value="{{ fauser.FAemail }}">
+                {% else %} <input type="text" name="u_email" placeholder="E-mail"> {% endif %}
             </div>
         </div>
         <div class="row form-group">
