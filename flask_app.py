@@ -221,9 +221,9 @@ class Cat(db.Model):
     comments = db.Column(db.String(1024))
     vetshort = db.Column(db.String(16))
     adoptable = db.Column(db.Boolean)
-    vetvisits = db.relationship('VetInfo', backref='cat', lazy=True)
+    vetvisits = db.relationship('VetInfo', backref='cat', order_by='VetInfo.vdate', lazy=True)
     lastop = db.Column(db.DateTime)
-    events = db.relationship('Event', backref='cat', lazy=True)
+    events = db.relationship('Event', backref='cat', order_by="Event.edate.desc()", lazy=True)
 
     def __repr__(self):
         return "<Cat {}>".format(self.regStr())
@@ -363,14 +363,14 @@ def fapage():
 
         elif mode == "special-adopt":
             return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                catlist=Cat.query.filter_by(adoptable=True).all(), FAids=FAidSpecial, msg=message, adoptonly=True)
+                catlist=Cat.query.filter_by(adoptable=True).order_by(Cat.regnum).all(), FAids=FAidSpecial, msg=message, adoptonly=True)
 
         if FAid != current_user.id:
             return render_template("main_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                cats=Cat.query.filter_by(owner_id=FAid).all(), FAids=FAidSpecial, msg=message)
+                cats=Cat.query.filter_by(owner_id=FAid).order_by(Cat.regnum).all(), FAids=FAidSpecial, msg=message)
 
         return render_template("main_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-            cats=Cat.query.filter_by(owner_id=current_user.id).all(), FAids=FAidSpecial, msg=message)
+            cats=Cat.query.filter_by(owner_id=current_user.id).order_by(Cat.regnum).all(), FAids=FAidSpecial, msg=message)
 
     # handle POST commands
     cmd = request.form["action"]
@@ -402,6 +402,7 @@ def fapage():
         theCat.owner.numcats -= 1
         newFA.numcats += 1
         theCat.owner_id = newFA.id
+        theCat.adoptable = False
         theCat.lastop = datetime.now()
         session["pendingmessage"] = [ [0, "Chat {} déplacé dans l'historique".format(theCat.asText())] ]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transféré dans l'historique".format(current_user.FAname))
@@ -636,7 +637,7 @@ def catpage():
                     theImage = Image.open(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                     theImage.save(os.path.join(app.config['UPLOAD_FOLDER'], "{}.jpg".format(theCat.regnum)))
                     os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                    updated[9] = 'I'
+                    updated[9] = 'P'
 
         # indicate moodification of the data
         updated = "".join(updated)
@@ -771,6 +772,7 @@ def catpage():
         newFA.numcats += 1
         theCat.owner.numcats -= 1
         theCat.owner_id = newFA.id
+        theCat.adoptable = False
         theCat.lastop = datetime.now()
         # generate the event
         session["pendingmessage"] = [ [0, "Chat {} transféré dans les adoptés".format(theCat.asText())] ]
@@ -785,6 +787,7 @@ def catpage():
         newFA.numcats += 1
         theCat.owner.numcats -= 1
         theCat.owner_id = newFA.id
+        theCat.adoptable = False
         theCat.lastop = datetime.now()
         # generate the event
         session["pendingmessage"] = [ [0, "Chat {} transféré dans les décédés".format(theCat.asText())] ]
@@ -866,7 +869,8 @@ def refupage():
 
         for cat in cats:
             if "re_{}".format(cat.id) in request.form:
-                comments = cat.comments.replace("\r\n","<EOL>")
+                comments = cat.comments.replace("\r",'')
+                comments = comments.replace("\n","<EOL>")
 
                 datline = [ cat.regStr(), cat.owner.username, cat.name, cat.identif, DBTabSex[cat.sex],
                             ("" if not cat.birthdate else cat.birthdate.strftime('%d/%m/%y') ),
@@ -886,12 +890,14 @@ def refupage():
                      "attachment; filename=faweb-export.dat"})
 
     if cmd == "adm_refuexpall":
+        # filter out --historique--???
         cats = Cat.query.order_by(Cat.regnum).all()
 
         datfile = []
 
         for cat in cats:
-            comments = cat.comments.replace("\r\n","<EOL>")
+            comments = cat.comments.replace("\r",'')
+            comments = comments.replace("\n","<EOL>")
 
             datline = [ cat.regStr(), cat.owner.username, cat.name, cat.identif, DBTabSex[cat.sex],
                         ("" if not cat.birthdate else cat.birthdate.strftime('%d/%m/%y') ),
@@ -925,8 +931,17 @@ def refupage():
                     msg.append([3, "Format erroné: {} (len={})".format(l, len(v)) ])
                     continue
 
+                # if the regnum starts with * then it means we are editing an existing cat
+                # in this case information is not completed, it's overwritten and vet visits
+                # are edited as well
+                editmode = False
+                registre = v[0]
+                if registre[0] == '*':
+                    editmode = True
+                    registre = registre[1:]
+
                 # check if registre exists
-                rr = v[0].split('-')
+                rr = registre.split('-')
                 rn = int(rr[0]) + 10000*int(rr[1])
 
                 # extract all the non-vet info so that we can update empty fields
@@ -958,7 +973,7 @@ def refupage():
                 except ValueError:
                     r_bd = None
 
-                r_comm = v[8].replace("<EOL>", "\r\n")
+                r_comm = v[8].replace("<EOL>", "\n")
 
                 # see if we already have this
                 theCat = Cat.query.filter_by(regnum=rn).first();
@@ -966,8 +981,23 @@ def refupage():
                 # locate the FA, using the username
                 theFA = User.query.filter(and_(User.username==v[1], User.FAisFA==True)).first()
 
+                # we now operate in two completely different ways depending if the cat is already in the
+                # database or not and we are in edit mode or not
+
+                if theCat == None and editmode:
+                    msg.append([3, "Tentatif de mise a jour du {}, qui N'EST PAS dans la base de donnees!".format(registre) ])
+                    continue
+
+                if theCat != None and editmode:
+                    # ok, we update the info here
+                    msg.append([3, "NOT YET IMPLEMENTED: update of {} (which is found)".format(registre) ])
+                    continue
+
+                # if we reach here then editmode == False
                 if theCat != None:
-                    # compare and update non-empty info
+                    # this is update mode, vet data is ignored but any missing information which is available
+                    # in the input is used to update the database
+
                     # info is Adoppt Name Ident Sex Birthdate L(hairlen) Color (c)omments Description Picture
                     updated = ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-']
 
@@ -1004,20 +1034,20 @@ def refupage():
                     updated = "".join(updated)
 
                     if updated != "----------":
-                        msg.append([2, "Numéro de registre {} déjà présent, informations mises a jour: {}".format(v[0], updated)])
+                        msg.append([2, "Numéro de registre {} déjà présent, informations rajoutees: {}".format(registre, updated)])
                         db.session.commit()
                     else:
-                        msg.append([2, "Numéro de registre {} déjà présent, aucune nouvelle information, dossier ignoré".format(v[0]) ])
+                        msg.append([2, "Numéro de registre {} déjà présent, aucune nouvelle information, dossier ignoré".format(registre) ])
 
                     if not theFA:
-                        msg.append([3, "Numéro de registre {} déjà présent et FA '{}' non trouvee!".format(v[0], v[1]) ])
+                        msg.append([3, "Numéro de registre {} déjà présent et FA '{}' non trouvee!".format(registre, v[1]) ])
                     else:
                         if theCat.owner_id != theFA.id:
-                            msg.append([3, "Numéro de registre {} déjà présent mais dans une autre FA (il est chez {}, on veut le rajouter chez {})!".format(v[0], theCat.owner.FAname, theFA.FAname) ])
+                            msg.append([3, "Numéro de registre {} déjà présent mais dans une autre FA (il est chez {}, on veut le rajouter chez {})!".format(registre, theCat.owner.FAname, theFA.FAname) ])
                     continue
 
                 if not theFA:
-                    msg.append([2, "{}: FA '{}' non trouvée, rajoute ici".format(v[0], v[1]) ])
+                    msg.append([2, "{}: FA '{}' non trouvée, rajoute ici".format(registre, v[1]) ])
                     theFA = current_user
 
                 # now take care of the vetvisits
@@ -1067,6 +1097,8 @@ def refupage():
                 theCat = Cat(regnum=rn, owner_id=theFA.id, name=r_name, sex=r_sex, birthdate=r_bd, color=r_col, longhair=r_hl, identif=r_id,
                         vetshort=r_vetshort, comments=r_comm, adoptable=False)
                 db.session.add(theCat)
+                theFA.numcats += 1
+
                 # make sure we have an id
                 db.session.commit()
 
@@ -1076,7 +1108,7 @@ def refupage():
                     db.session.add(vv)
 
                 # generate the event
-                msg.append( [0, "Chat {} rajouté chez {}".format(v[0], theFA.FAname) ] )
+                msg.append( [0, "Chat {} rajouté chez {}".format(registre, theFA.FAname) ] )
                 theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: rajoute dans le systeme".format(current_user.FAname))
                 db.session.add(theEvent)
 
@@ -1220,23 +1252,19 @@ def userpage():
             session["pendingmessage"] = [ [3, "Nom d'utilisateur '{}' déjà utilisé!".format(uname) ] ]
             return redirect(url_for('userpage'))
 
-        theFA = User(username=uname, FAname=request.form["u_iname"], FAid=request.form["u_pname"], FAemail=request.form["u_email"],
-                     FAresp_id=request.form["u_resp"], FAisFA=("u_isFA" in request.form), FAisRF=("u_isRF" in request.form),
+        theFA = User(username=uname, password_hash="nologin", FAname=request.form["u_iname"], FAid=request.form["u_pname"], FAemail=request.form["u_email"],
+                     numcats=0, FAisFA=("u_isFA" in request.form), FAisRF=("u_isRF" in request.form),
                      FAisOV=("u_isOV" in request.form), FAisVET=("u_isVET" in request.form) )
 
+        theFA.FAresp_id = int(request.form["u_resp"])
         # sanity check
-        if theFA.FAisRF:
-            theFA.FAresp_id = 0
+        if not theFA.FAresp_id or theFA.FAisRF or theFA.FAisADM:
+            theFA.FAresp_id = None
 
-        # generate a random password
-        alphabet = string.ascii_letters + string.digits
-        password = ''.join(secrets.choice(alphabet) for i in range(8))
-
-        theFA.password_hash = generate_password_hash(password)
         db.session.add(theFA)
         db.session.commit()
 
-        session["pendingmessage"] = [ [0, "Nouveau utilisateur '{}' creé avec mot de passe : {}".format(theFA.username, password) ] ]
+        session["pendingmessage"] = [ [0, "Nouveau utilisateur '{}' creé sans mot de passe".format(theFA.username) ] ]
         return redirect(url_for('userpage'))
 
     # edit existing user
@@ -1252,15 +1280,15 @@ def userpage():
         theFA.FAid = request.form["u_pname"]
         theFA.FAname = request.form["u_iname"]
         theFA.FAemail = request.form["u_email"]
-        theFA.FAresp_id = request.form["u_resp"]
+        theFA.FAresp_id = int(request.form["u_resp"])
         theFA.FAisFA = "u_isFA" in request.form;
         theFA.FAisRF = "u_isRF" in request.form;
         theFA.FAisOV = "u_isOV" in request.form;
         theFA.FAisVET = "u_isVET" in request.form;
 
         # sanity check
-        if theFA.FAisRF or theFA.FAisADM:
-            theFA.FAresp_id = 0
+        if not theFA.FAresp_id or theFA.FAisRF or theFA.FAisADM:
+            theFA.FAresp_id = None
 
         db.session.commit()
         session["pendingmessage"] = [ [0, "Utilisateur {} : informations mises à jour".format(theFA.username) ] ]

@@ -27,12 +27,26 @@
                     T=test FIV/Felv, R=rappel annuel, X=soins)</li>
                 <li>l'indication de si le chat est a l'adoption ou pas</li>
             </ul>
-            <li>Mettre à jour les informations relatives à ces chats, soit pour y rajouter des éléments manquants, soit pour indiquer que le chat a été adopté ou est décédé</li>
+            <li>Modifier pratiquement toutes les informations relatives a vos chats, particulierement utile pour l'association
+                est de rajouter le numero de puce lors de l'identification du chat.  Pour ce qui en est des commentaires et des descriptions,
+                les commentaires sont internes a ERA et sont utilises pour indiquer des situations particulieres; comme certaines sont recurrentes, nous avons des habitudes
+                qu'il serait utile de suivre:</li>
+                <ul>
+                    <li>pour un chat qui arrive deja sterilise, indiquer "Deja castre" ou "Deja sterilisee"</li>
+                    <li>si le test FIV est positif, indiquer "FIV+", si le test est negatif, ne rien indiquer</li>
+                    <li>si le test FeLV est positif, indiquer "Positif LEUCOSE", si le test est negatif, ne rien indiquer</li>
+                    <li>si lors de l'adoption les adoptants ont deja un nouveau nom a lui donner, indiquer "Nouveau nom : LE NOM EN MAJUSCULES"</li>
+                    <li>indiquer les problemes chroniques/malformations/ou necessites particulieres, exemples: "Diabetique", "Problemes renaux", "Ampute patte arriere gauche".
+                        "Allergie: necessite croquettes speciales", etc.</li>
+                </ul>
+            <li>Rajouter des elements utiles pour passer les annonces d'adoption, considerez dans ce cas que le texte "Description" et la photo risquent d'etre diffusees
+                publiquement.  Pensez donc a ne pas y mettre des informations personnelles</li>
             <li>Planifier ou indiquer les visites vétérinaires.  Cette fonctionnalité est accessible de la page du chat en question et permet d'indiquer une visite qui a eu lieu ou encore une visite
                 que vous devez effectuer dans le futur.  Toute visite planifiée peut être transformée en effectuée simplement en changeant l'indication et en mettant à jour les informations.  Vous pouvez à tout moment effacer
                 une visite planifiée en indiquant "ANNULLEE" et en mettant à jour.  Les visites effectuées sont enregistrées définitivement et ne peuvent pas être
-                annulées, pensez donc à bien vérifier les informations avant de valider la mise à jour....</li>
-            <li>A tout moment vous pouvez accéder au calendrier de visites planifiées avec le bouton correspondant</li>
+                annulées, pensez donc à bien vérifier les informations avant de valider la mise à jour....<br>Les visites sont accompagnees de commentaires libres qui
+                sont utiles pour detailler les soins ou les traitements.  Pour les visites planifiees, ils peuvent servir d'aire-memoire</li>
+            <li>A tout moment vous pouvez accéder au calendrier de visites planifiées avec le menu Famille->Visites planifiees</li>
             <li>L'historique de toutes les visites que vous avez effectuées est enregistre dans le registre des soins</li>
             <li>Vous ne pouvez pas indiquer le transfert vers une autre FA, celui-ci doit être effectuée par un responsable de l'association</li>
         </ul>
@@ -60,12 +74,18 @@
         {% if user.FAisADM %}
         <h3>Opérations possibles un gestionnaire registre</h3>
         <ul>
-            <li>Vous pouvez rajouter un chat dans le système, soit manuellement soit par copier-coller d'un dossier Refugilys (il y a un format spécifique à respecter!)</li>
-            <li>Vous pouvez effectuer toutes les opérations des autres rôles, en ayant donc accès à toutes le informations de tous les chats en FA, avec la possibilité des les modifier</li>
-            <li>Vous pouvez transférer les chats entre FA, y compris "FA spéciales" (adoptés/décédés/historique), donc par exemple un chat indique décédé par erreur peut être remis dans une FA</li>
+            <li>Rajouter un chat dans le système, soit manuellement soit par copier-coller d'un dossier Refugilys (il y a un format spécifique à respecter!)</li>
+            <li>Effectuer toutes les opérations des autres rôles, en ayant donc accès à toutes le informations de tous les chats en FA, avec la possibilité des les modifier</li>
+            <li>Transférer les chats entre FA, y compris "FA spéciales" (adoptés/décédés/historique), donc par exemple un chat indique décédé par erreur peut être remis dans une FA</li>
             <li>Lors de l'enregistrement d'une adoption ou décès, vous pouvez transférer le chat dans l'historique</li>
-            <li>Vous pouvez effacer définitivement du système un chat de l'historique: !!! ATTENTION !!! cette opération est irréversible et efface aussi toutes les informations relatives aux visites
+            <li>Effacer définitivement du système un chat de l'historique: !!! ATTENTION !!! cette opération est irréversible et efface aussi toutes les informations relatives aux visites
                 vétérinaires effectuées sur ce chat, en le faisant donc disparaître de tous les registres de soin des FA concernées!</li>
+            <li>Vous pouvez exporter les dernieres modification des informations sur les chats ou exporter l'integralite de la base de donnees.  Le format utilise est le meme
+                que dans le cas d'importation des dossiers Refugilys (et il n'est pas tres lisible, vu qu'il est concu pour l'echange de donnees et non pas pour la lecture;
+                si vous voulez un tableau lisible, l'export CSV des listes accessible en tant que superviseur est un meilleur choix)</li>
+            <li>Rajouter ou modifier les informations relatives a un utisateur: seulement certains types d'utilisateurs peuvent etre rajoutes (ou modifies) par l'interface,
+                les utilisateurs speciaux (adoptions, deces, refuge, historique, GR) ne peuvent pas etre modifies.  Cette meme interface permet de rajouter une clinique
+                veterinaire dans la liste, de facon a qu'elle apparaisse dans les choix possibles pour les visites veterinaires.</li>
         </ul>
         {% endif %}
 
