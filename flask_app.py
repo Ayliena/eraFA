@@ -830,6 +830,7 @@ def catpage():
 #    return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all())
     return render_template("error_page.html", user=current_user, errormessage="command error (/cat)", FAids=FAidSpecial)
 
+
 @app.route("/refu", methods=["GET", "POST"])
 @login_required
 def refupage():
@@ -979,7 +980,67 @@ def refupage():
                 theCat = Cat.query.filter_by(regnum=rn).first();
 
                 # locate the FA, using the username
-                theFA = User.query.filter(and_(User.username==v[1], User.FAisFA==True)).first()
+                # note that editmode can work with special FAs
+                if editmode:
+                    theFA = User.query.filter_by(username=v[1]).first()
+                else:
+                    theFA = User.query.filter(and_(User.username==v[1], User.FAisFA==True)).first()
+
+                # make sure that we have the FA
+                if not theFA:
+                    if editmode:
+                        # assume it's the old one, in any case it's not like we can edit anything....
+                        theFA = theCat.owner
+
+                    else:
+                        # we need to define a FA, so we use the current user
+                        msg.append([2, "{}: FA '{}' non trouvée, rajoute ici".format(registre, v[1]) ])
+                        theFA = current_user
+
+                # decode the table of vet visits
+                offs = 9
+                vvisits = []
+                formaterror = False
+                r_vetshort = '--------'
+
+                while (v[offs] and v[offs] != 'EOD'):
+                    if offs+5 > len(v):
+                        msg.append([3, "Format erroné: {} (truncated vet info at offs {})".format(l, offs) ])
+                        formaterror = True
+                        break
+
+                    v_planned = (v[offs] == 'VP')
+                    v_type = v[offs+1]
+                    # convert date
+                    try:
+                        v_date = datetime.strptime(v[offs+2], "%d/%m/%y")
+                    except ValueError:
+                        msg.append([3, "Format erroné: {} (invalid vdate at offs {})".format(l, offs) ])
+                        formaterror = True
+                        break
+
+                    v_id = int(v[offs+3])
+                    # validate vet id
+                    vet = User.query.filter(and_(User.id==v_id,User.FAisVET==True)).first()
+                    if not vet:
+                        msg.append([3, "Format erroné: {} (invalid vet_id at offs {})".format(l, offs) ])
+                        formaterror = True
+                        break
+
+                    # this is a complete mess, since there's no way to know WHICH FA has done the visit
+                    # the code here assumes that it's the new one.... which may mean that some special FAs end up having done visits
+                    v_doneby = theFA.id if (v[offs+4]=='FA') else FAidSpecial[3]
+
+                    # all is good, cumulate vetinfo and prepare the object, cat_id will be invalid for now
+                    if not v_planned:
+                        r_vetshort = vetAddStrings(r_vetshort, v_type)
+
+                    vvisits.append( VetInfo(doneby_id=v_doneby, vet_id=v_id, vtype=v_type, vdate=v_date, planned=v_planned) )
+                    offs += 5
+
+                # in case of format error, do nothing except spitting out the error message
+                if formaterror:
+                    continue
 
                 # we now operate in two completely different ways depending if the cat is already in the
                 # database or not and we are in edit mode or not
@@ -990,7 +1051,80 @@ def refupage():
 
                 if theCat != None and editmode:
                     # ok, we update the info here
-                    msg.append([3, "NOT YET IMPLEMENTED: update of {} (which is found)".format(registre) ])
+
+                    # NOTE: in edit mode an empty fields means "leave data alone" and does not mean "erase data"
+                    # info is Adoppt Name Ident Sex Birthdate L(hairlen) Color (c)omments Description Picture
+                    updated = ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-']
+
+                    if r_name:
+                        theCat.name = r_name
+                        updated[1] = 'N'
+
+                    if r_id:
+                        theCat.identif = r_id
+                        updated[2] ='I'
+
+                    if r_sex:
+                        theCat.sex = r_sex
+                        updated[3] = 'S'
+
+                    if r_bd:
+                        theCat.birthdate = r_bd
+                        updated[4] = 'B'
+
+                    if r_hl:
+                        theCat.longhair = r_hl
+                        updated[5] = 'L'
+
+                    if r_col:
+                        theCat.color = r_col
+                        updated[6] = 'C'
+
+                    if r_comm:
+                        theCat.comments = r_comm
+                        updated[7] = 'c'
+
+                    # indicate moodification of the data
+                    updated = "".join(updated)
+
+                    if updated != "----------":
+                        msg.append([1, "Numéro de registre {} mis a jour: {}".format(registre, updated)])
+
+                        # generate an event
+                        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: informations mises a jour (Refugilys): {}".format(current_user.FAname, updated))
+                        db.session.add(theEvent)
+
+                    # update the FA if modified
+                    if v[1]:
+                        if theFA:
+                            msg.append([0, "Numéro de registre {} deplace de {} vers {}".format(registre, theCat.owner.FAname, theFA.FAname) ])
+
+                            # generate an event
+                            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: FA mise a jour (Refugilys): {} -> {}".format(current_user.FAname, theCat.owner.FAname, theFA.FAname))
+                            db.session.add(theEvent)
+
+                            # update the FA by moving the cat
+                            theCat.owner.numcats -= 1
+                            theCat.owner_id = theFA.id
+                            theFA.numcats += 1
+
+                        else:
+                            msg.append([3, "Mise a jour de la FA du {} impossible: FA '{}' non trouvee!".format(registre, v[1]) ])
+
+                    # associate the vet visits
+                    for vv in vvisits:
+                        vv.cat_id = theCat.id
+                        db.session.add(vv)
+
+                    if r_vetshort != '--------':
+                        msg.append([0, "Numéro de registre {} mis a jour: visites {}".format(registre, r_vetshort)])
+                        # generate an event
+                        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: Visites mises a jour (Refugilys): {}".format(current_user.FAname, r_vetshort))
+                        db.session.add(theEvent)
+
+
+                    # should be done only if we updated something?
+                    db.session.commit()
                     continue
 
                 # if we reach here then editmode == False
@@ -1046,56 +1180,11 @@ def refupage():
                             msg.append([3, "Numéro de registre {} déjà présent mais dans une autre FA (il est chez {}, on veut le rajouter chez {})!".format(registre, theCat.owner.FAname, theFA.FAname) ])
                     continue
 
-                if not theFA:
-                    msg.append([2, "{}: FA '{}' non trouvée, rajoute ici".format(registre, v[1]) ])
-                    theFA = current_user
-
                 # now take care of the vetvisits
-                offs = 9
-                vvisits = []
-                formaterror = False
-                r_vetshort = '--------'
-
-                while (v[offs] and v[offs] != 'EOD'):
-                    if offs+5 > len(v):
-                        msg.append([3, "Format erroné: {} (truncated vet info at offs {})".format(l, offs) ])
-                        formaterror = True
-                        break
-
-                    v_planned = (v[offs] == 'VP')
-                    v_type = v[offs+1]
-                    # convert date
-                    try:
-                        v_date = datetime.strptime(v[offs+2], "%d/%m/%y")
-                    except ValueError:
-                        msg.append([3, "Format erroné: {} (invalid vdate at offs {})".format(l, offs) ])
-                        formaterror = True
-                        break
-
-                    v_id = int(v[offs+3])
-                    # validate vet id
-                    vet = User.query.filter(and_(User.id==v_id,User.FAisVET==True)).first()
-                    if not vet:
-                        msg.append([3, "Format erroné: {} (invalid vet_id at offs {})".format(l, offs) ])
-                        formaterror = True
-                        break
-
-                    v_doneby = theFA.id if (v[offs+4]=='FA') else FAidSpecial[3]
-
-                    # all is good, cumulate vetinfo and prepare the object, cat_id will be invalid for now
-                    if not v_planned:
-                        r_vetshort = vetAddStrings(r_vetshort, v_type)
-
-                    vvisits.append( VetInfo(doneby_id=v_doneby, vet_id=v_id, vtype=v_type, vdate=v_date, planned=v_planned) )
-                    offs += 5
-
-                # in case of format error, don't create the cat
-                if formaterror:
-                    continue
-
                 # create the cat
                 theCat = Cat(regnum=rn, owner_id=theFA.id, name=r_name, sex=r_sex, birthdate=r_bd, color=r_col, longhair=r_hl, identif=r_id,
                         vetshort=r_vetshort, comments=r_comm, adoptable=False)
+
                 db.session.add(theCat)
                 theFA.numcats += 1
 
@@ -1108,8 +1197,8 @@ def refupage():
                     db.session.add(vv)
 
                 # generate the event
-                msg.append( [0, "Chat {} rajouté chez {}".format(registre, theFA.FAname) ] )
-                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: rajoute dans le systeme".format(current_user.FAname))
+                msg.append( [0, "Chat {} importé de Refugilys chez {}".format(registre, theFA.FAname) ] )
+                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: importé de Refugilys".format(current_user.FAname))
                 db.session.add(theEvent)
 
         current_user.FAlastop = datetime.now()
