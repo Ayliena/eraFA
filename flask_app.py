@@ -984,7 +984,7 @@ def refupage():
                 if editmode:
                     theFA = User.query.filter_by(username=v[1]).first()
                 else:
-                    theFA = User.query.filter(and_(User.username==v[1], User.FAisFA==True)).first()
+                    theFA = User.query.filter(and_(User.username==v[1], or_(User.FAisFA==True,User.FAisREF==True))).first()
 
                 # make sure that we have the FA
                 if not theFA:
@@ -1264,6 +1264,9 @@ def listpage():
         # normal FAs
         FAlist=User.query.filter_by(FAisFA=True).all()
 
+        # special FA we want some data from
+        REFfa=User.query.filter_by(FAisREF=True).first()
+
         # prepare the table of the RFs
         RFlist=User.query.filter_by(FAisRF=True).all()
 
@@ -1271,7 +1274,7 @@ def listpage():
         for rf in RFlist:
             RFtab[rf.id] = rf.FAname
 
-        return render_template("list_page.html", user=current_user, falist=FAlist, rftab=RFtab, FAids=FAidSpecial)
+        return render_template("list_page.html", user=current_user, falist=FAlist, rftab=RFtab, refugfa=REFfa, FAids=FAidSpecial)
 
     if cmd == "sv_viewFAresp" and (current_user.FAisRF):
         # all FAs we take care of (we assume they are FAs....)

@@ -68,9 +68,15 @@
             <h2>Listes spéciales</h2>
 
             <form action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
-                <div class="form-group"><button class="btn btn-default" name="FAid" value="{{FAids[3]}}">Chats au refuge</button>
-                    <button class="btn btn-default" name="FAid" value="{{FAids[0]}}">Chats adoptés</button>
+                <div class="form-group"><button class="btn btn-default" name="FAid" value="{{FAids[0]}}">Chats adoptés</button>
                     <button class="btn btn-default" name="FAid" value="{{FAids[1]}}">Chats décédés</button></div>
+                <div class="row">
+                    <div class="col-sm-2"><button class="btn btn-default" name="FAid" value="{{FAids[3]}}">{{ refugfa.FAid }}</button> :</div>
+                    <div class="col-sm-3">{{ refugfa.FAname }}</div>
+                    <div class="col-sm-1">
+                        {{ refugfa.numcats }} chat{% if refugfa.numcats != 1 %}s{% endif %}
+                    </div>
+                </div>
             </form>
 
             <h2>Familles d'accueil</h2>
