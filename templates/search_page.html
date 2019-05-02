@@ -1,0 +1,56 @@
+<html>
+    <head>
+        <title>Familles d'accueil ERA</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    </head>
+    <style>
+   hr {
+       border-top: 1px dotted #000000 !important;
+       margin-bottom:10px !important;
+       margin-top:5px !important;
+   }
+    </style><body>
+{% include 'navbar.html' %}
+
+    <div class="container">
+    {% if msg %}{% for m in  msg %}
+        {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
+        {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
+        {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
+        {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
+        {{ m[1] }}</div>
+    {% endfor %}{% endif %}
+
+        <h2>Recherche d'un chat</h2>
+
+        <p>Le resultat est la liste de tous les chats qui verifient au moins un des criteres.</p>
+        <p>Pour le registre "nnn-yy" cherche un chat precis, "nnn" cherche le numero independemment de l'annee.</p>
+
+        <form action="/search" method="POST"><input type="hidden" name="action" value="adm_search">
+            <div class="row">
+                <div class="col-sm-2">Registre:</div>
+                <div class="col-sm-3"><input type="text" name="src_regnum"></div>
+            </div>
+            <div class="row">
+                <div class="col-sm-2">Nom:</div>
+                <div class="col-sm-3"><input type="text" name="src_name"></div>
+            </div>
+            <div class="row">
+                <div class="col-sm-2">Identification:</div>
+                <div class="col-sm-4"><input type="text" name="src_id"></div>
+            </div>
+            <div class="row">
+                <div class="col-sm-2"><button type="submit" name="action" value="adm_search">Rechercher</button></div>
+            </div>
+        </form>
+
+        {% include 'bottom.html' %}
+     </div><!-- /.container -->
+</body>
+</html>

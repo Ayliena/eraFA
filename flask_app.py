@@ -327,7 +327,7 @@ def fapage():
             mode = session["otherMode"]
 
             # these are only allowed for SV/ADM
-            if (mode == "special-all" or mode == "special-adopt") and not (current_user.FAisOV or current_user.FAisADM):
+            if (mode == "special-all" or mode == "special-adopt" or mode == "special-search") and not (current_user.FAisOV or current_user.FAisADM):
                 mode = None
 
         # display current user pages or alternate user's?
@@ -359,11 +359,44 @@ def fapage():
 
         elif mode == "special-all":
             return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                catlist=Cat.query.order_by(Cat.regnum).all(), FAids=FAidSpecial, msg=message)
+                listtitle="Tableau global des chats", catlist=Cat.query.order_by(Cat.regnum).all(), FAids=FAidSpecial, msg=message)
 
         elif mode == "special-adopt":
             return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                catlist=Cat.query.filter_by(adoptable=True).order_by(Cat.regnum).all(), FAids=FAidSpecial, msg=message, adoptonly=True)
+                listtitle="Chats disponibles à l'adoption", catlist=Cat.query.filter_by(adoptable=True).order_by(Cat.regnum).all(), FAids=FAidSpecial, msg=message, adoptonly=True)
+
+        elif mode == "special-search":
+            searchfilter = session["searchFilter"]
+
+            (src_name, src_regnum, src_id) = searchfilter.split(';')
+
+            # rules for search: OR mode always
+            # name and id: substring searches
+            # regnum: if nnn-yy then exact match, if nnn then startswith match
+            cats = []
+
+            if src_name:
+                cats = cats + Cat.query.filter(Cat.name.contains(src_name)).all()
+
+            if src_regnum:
+                if src_regnum.find('-') != -1:
+                    # exact match
+                    rr = src_regnum.split('-')
+                    rn = int(rr[0]) + 10000*int(rr[1])
+
+                    cats = cats + Cat.query.filter_by(regnum=rn).all()
+
+                elif src_regnum.isdigit():
+                    # fix number, all years
+                    clause = "NOT MOD (regnum-"+src_regnum+",10000)"
+                    cats = cats + Cat.query.filter(clause).all()
+
+            if src_id:
+                cats = cats + Cat.query.filter(Cat.identif.contains(src_id)).all()
+
+            # we then use the /list page to display the cat list
+            return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                listtitle="Résultat de la recherche", catlist=cats, FAids=FAidSpecial)
 
         if FAid != current_user.id:
             return render_template("main_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
@@ -435,6 +468,7 @@ def selfpage():
     # a version of the main page which brings you back to your list
     session.pop("otherFA", None)
     session.pop("otherMode", None)
+    session.pop("searchFilter", None)
     return redirect(url_for('fapage'))
 
 
@@ -831,6 +865,35 @@ def catpage():
     return render_template("error_page.html", user=current_user, errormessage="command error (/cat)", FAids=FAidSpecial)
 
 
+@app.route("/search", methods=["GET", "POST"])
+@login_required
+def searchpage():
+    if not current_user.FAisADM and not current_user.FAisOV:
+        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges", FAids=FAidSpecial)
+
+    if request.method == "GET":
+        # generate the search page
+        return render_template("search_page.html", user=current_user, FAids=FAidSpecial)
+
+    cmd = request.form["action"]
+
+    if cmd == "adm_search":
+        src_name = request.form["src_name"]
+        src_regnum = request.form["src_regnum"]
+        src_id = request.form["src_id"]
+
+        # if they are all empty => complain
+        if not src_name and not src_regnum and not src_id:
+            message = [ [3, "Il faut indiquer au moins un critere de recherche!" ] ]
+            return render_template("search_page.html", user=current_user, FAids=FAidSpecial, msg=message)
+
+        session["otherMode"] = "special-search"
+        session["searchFilter"] = src_name+";"+src_regnum+";"+src_id
+        return redirect(url_for('fapage'))
+
+    return render_template("error_page.html", user=current_user, errormessage="command error (/search)", FAids=FAidSpecial)
+
+
 @app.route("/refu", methods=["GET", "POST"])
 @login_required
 def refupage():
@@ -1108,6 +1171,10 @@ def refupage():
                             theCat.owner_id = theFA.id
                             theFA.numcats += 1
 
+                            # if the destination FA is any of dead/adopted/historical then clear the adopted flag
+                            if theFA.id == FAidSpecial[0] or theFA.id == FAidSpecial[1] or theFA.id == FAidSpecial[2]:
+                                theCat.adoptable = False
+
                         else:
                             msg.append([3, "Mise a jour de la FA du {} impossible: FA '{}' non trouvee!".format(registre, v[1]) ])
 
@@ -1262,7 +1329,7 @@ def listpage():
 
     if cmd == "sv_viewFA" and (current_user.FAisADM or current_user.FAisOV):
         # normal FAs
-        FAlist=User.query.filter_by(FAisFA=True).all()
+        FAlist=User.query.filter_by(FAisFA=True).order_by(User.FAid).all()
 
         # special FA we want some data from
         REFfa=User.query.filter_by(FAisREF=True).first()
@@ -1311,7 +1378,7 @@ def userpage():
 
     if request.method == "GET" or (request.method == "POST" and request.form["action"] == "adm_listusers"):
         # normal users
-        FAlist=User.query.all()
+        FAlist=User.query.order_by(User.FAid).all()
 
         # handle any message
         if "pendingmessage" in session:

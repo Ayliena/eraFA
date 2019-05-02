@@ -64,6 +64,14 @@
     {% include 'navbar.html' %}
 
     <div class="container">
+    {% if msg %}{% for m in  msg %}
+        {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
+        {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
+        {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
+        {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
+        {{ m[1] }}</div>
+    {% endfor %}{% endif %}
+
         {% if falist %}
             <h2>Listes spéciales</h2>
 
@@ -102,10 +110,8 @@
                 </div>
             {% endfor %}
             </form>
-        {% endif %}
-
-        {% if catlist %}
-            <h2>{% if adoptonly %}Chats disponibles à l'adoption{% else %}Tableau global des chats{% endif %}</h2>
+        {% else %}
+            <h2>{{ listtitle }}</h2>
             <p><a href="#" onClick="showHideAll();">Montrer/cacher toutes les commentaires</a></p>
             {% for cat in catlist %}
              <div class="row">
@@ -132,11 +138,11 @@
                 <div class="col-sm-11"><p class="small">{{ cat.comments }}</p></div>
             </div>
             {% else %}
-                Aucun chat est enregistre dans le système.
+                Aucun chat trouvé.
             {% endfor %}
-            <div class="row">
+            {% if catlist %}<div class="row">
                 <a href="/listcsv{% if adoptonly %}a{%endif%}">Télécharger le tableau en CSV</a>
-            </div>
+            </div>{% endif %}
         {% endif %}
 
         {% include 'bottom.html' %}
