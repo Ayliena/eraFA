@@ -110,7 +110,7 @@ def vetStringToMap(vetstr, prefix):
 
 def vetAddStrings(vetstr1, vetstr2):
     str = list(vetstr1)
-    for i in range(0,7):
+    for i in range(0,8):
         if str[i] == '-':
             str[i] = vetstr2[i]
 
@@ -126,15 +126,17 @@ def vetAddStrings(vetstr1, vetstr2):
 # > newuserDCD = User(username="--decedes--", password_hash="nologinDCD", FAname="Chats decedes", FAid="DECES", FAemail="invalid@invalid", FAisDCD=True)
 # > newuserHIST = User(username="--historique--", password_hash="nologinHIST", FAname="Chats: historique", FAid="HISTORIQUE", FAemail="invalid@invalid", FAisHIST=True)
 # > newuserREF = User(username="--refuge--", password_hash="nologinREF", FAname="Refuge ERA", FAid="REFUGE", FAemail="invalid@invalid", FAisREF=True)
+# > newuserTEMP = User(username="--fatemp--", password_hash="nologinTEMP", FAname="FA temporaires", FAid="FA_TEMP", FAemail="invalid@invalid", FAisTEMP=True)
 # > db.session.add(newuserAD)
 # > db.session.add(newuserDCD)
 # > db.session.add(newuserHIST)
 # > db.session.add(newuserREF)
+# > db.session.add(newuserTEMP)
 # > db.session.commit()
 #
 # IMPORTANT: the special FAs are stored statically here, so this must be set with the correct IDs
-# special FA ids (static): AD DCD HIST REF
-FAidSpecial = [2, 5, 10, 18]
+# special FA ids (static): AD DCD HIST REF TEMP
+FAidSpecial = [2, 5, 10, 18, 90]
 
 
 # --------------- USER CLASS
@@ -174,6 +176,7 @@ class User(UserMixin, db.Model):
     FAisVET = db.Column(db.Boolean, default=False)
     FAisHIST = db.Column(db.Boolean, default=False)
     FAisREF = db.Column(db.Boolean, default=False)
+    FAisTEMP = db.Column(db.Boolean, default=False)
 #    cats = db.relationship('Cat', backref='owner_id', lazy='dynamic')
 #    icats = db.relationship('Cat', backref='nextowner_id', lazy='dynamic')
 
@@ -210,6 +213,7 @@ class Cat(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     owner = db.relationship('User', foreign_keys=owner_id)
+    temp_owner = db.Column(db.String(64))
     name = db.Column(db.String(32))
     sex = db.Column(db.Integer)
     color = db.Column(db.Integer)
@@ -505,7 +509,7 @@ def catpage():
         rr = request.form["c_registre"].split('-')
         rn = int(rr[0]) + 10000*int(rr[1])
 
-        theCat = Cat(regnum=rn, name=request.form["c_name"], sex=request.form["c_sex"], birthdate=bdate,
+        theCat = Cat(regnum=rn, temp_owner=request.form["c_fatemp"], name=request.form["c_name"], sex=request.form["c_sex"], birthdate=bdate,
                     color=request.form["c_color"], longhair=request.form["c_hlen"], identif=request.form["c_identif"],
                     description=request.form["c_description"], comments=request.form["c_comments"], vetshort=vetstr,
                     adoptable=(request.form["c_adoptable"]=="1"))
@@ -600,7 +604,7 @@ def catpage():
 
     FAlist = []
     if access == ACC_TOTAL:
-        FAlist = User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).all()
+        FAlist = User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).order_by(User.FAid).all()
 
     # handle generation of the page
     if cmd == "fa_viewcat":
@@ -616,6 +620,14 @@ def catpage():
         if theCat.name != request.form["c_name"]:
             theCat.name = request.form["c_name"]
             updated[1] = 'N'
+
+        # only deal with this for FATEMP cats
+        if theCat.owner_id == FAidSpecial[4]:
+            if theCat.temp_owner != request.form["c_fatemp"]:
+                # we indicate this as a transfer
+                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transféré de [{}] a [{}]".format(current_user.FAname, theCat.temp_owner, request.form["c_fatemp"]))
+                db.session.add(theEvent)
+                theCat.temp_owner = request.form["c_fatemp"]
 
         if theCat.sex != int(request.form["c_sex"]):
             theCat.sex=request.form["c_sex"]
@@ -807,6 +819,8 @@ def catpage():
         theCat.owner.numcats -= 1
         theCat.owner_id = newFA.id
         theCat.adoptable = False
+        # erase any planned visit
+        VetInfo.query.filter_by(cat_id=theCat.id, planned=True).delete()
         theCat.lastop = datetime.now()
         # generate the event
         session["pendingmessage"] = [ [0, "Chat {} transféré dans les adoptés".format(theCat.asText())] ]
@@ -822,6 +836,8 @@ def catpage():
         theCat.owner.numcats -= 1
         theCat.owner_id = newFA.id
         theCat.adoptable = False
+        # erase any planned visit
+        VetInfo.query.filter_by(cat_id=theCat.id, planned=True).delete()
         theCat.lastop = datetime.now()
         # generate the event
         session["pendingmessage"] = [ [0, "Chat {} transféré dans les décédés".format(theCat.asText())] ]
@@ -936,7 +952,9 @@ def refupage():
                 comments = cat.comments.replace("\r",'')
                 comments = comments.replace("\n","<EOL>")
 
-                datline = [ cat.regStr(), cat.owner.username, cat.name, cat.identif, DBTabSex[cat.sex],
+                faname = cat.owner.username if not cat.owner_id == FAidSpecial[4] else "[{}]".format(cat.temp_owner)
+
+                datline = [ cat.regStr(), faname, cat.name, cat.identif, DBTabSex[cat.sex],
                             ("" if not cat.birthdate else cat.birthdate.strftime('%d/%m/%y') ),
                             DBTabHair[cat.longhair], DBTabColor[cat.color], comments]
 
@@ -963,7 +981,9 @@ def refupage():
             comments = cat.comments.replace("\r",'')
             comments = comments.replace("\n","<EOL>")
 
-            datline = [ cat.regStr(), cat.owner.username, cat.name, cat.identif, DBTabSex[cat.sex],
+            faname = cat.owner.username if not cat.owner_id == FAidSpecial[4] else "[{}]".format(cat.temp_owner)
+
+            datline = [ cat.regStr(), faname, cat.name, cat.identif, DBTabSex[cat.sex],
                         ("" if not cat.birthdate else cat.birthdate.strftime('%d/%m/%y') ),
                         DBTabHair[cat.longhair], DBTabColor[cat.color], comments]
 
@@ -1152,6 +1172,7 @@ def refupage():
 
                     if updated != "----------":
                         msg.append([1, "Numéro de registre {} mis a jour: {}".format(registre, updated)])
+                        theCat.lastop = datetime.now()
 
                         # generate an event
                         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: informations mises a jour (Refugilys): {}".format(current_user.FAname, updated))
@@ -1161,6 +1182,7 @@ def refupage():
                     if v[1]:
                         if theFA:
                             msg.append([0, "Numéro de registre {} deplace de {} vers {}".format(registre, theCat.owner.FAname, theFA.FAname) ])
+                            theCat.lastop = datetime.now()
 
                             # generate an event
                             theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: FA mise a jour (Refugilys): {} -> {}".format(current_user.FAname, theCat.owner.FAname, theFA.FAname))
@@ -1185,6 +1207,7 @@ def refupage():
 
                     if r_vetshort != '--------':
                         msg.append([0, "Numéro de registre {} mis a jour: visites {}".format(registre, r_vetshort)])
+                        theCat.lastop = datetime.now()
                         # generate an event
                         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: Visites mises a jour (Refugilys): {}".format(current_user.FAname, r_vetshort))
                         db.session.add(theEvent)

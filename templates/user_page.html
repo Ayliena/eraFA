@@ -53,6 +53,7 @@
                     {% if fa.FAisADM %} GR {% endif %}
 
                     {% if fa.FAisREF %} Refuge {% endif %}
+                    {% if fa.FAisTEMP %} S:TempFA {% endif %}
                     {% if fa.FAisAD %} S:Adopt {% endif %}
                     {% if fa.FAisDCD %} S:Dec {% endif %}
                     {% if fa.FAisHIST %} S:Hist {% endif %}
@@ -132,6 +133,9 @@
         <div class="row form-group">
             <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isDCD"{% if fauser.FAisDCD %} checked{% endif %} disabled>Special: chats decedes</label></div>
             <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isHIST"{% if fauser.FAisHIST %} checked{% endif %} disabled>Special: historique</label></div>
+        </div>
+        <div class="row form-group">
+            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isTEMP"{% if fauser.FAisTEMP %} checked{% endif %} disabled>Special: FA temporaires</label></div>
         </div>
         <hr>
         <div class="row form-group">

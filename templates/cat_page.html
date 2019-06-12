@@ -135,6 +135,12 @@
                         <option value="1">Disponible a l'adoption</option></select>
                     </div>
                 </div>
+                {% if not cat.regnum or cat.owner_id == FAids[4] %}<div class="row form-group">
+                    <div class="col-sm-3">FA temporaire:</div>
+                    <div class="col-sm-9">
+                        <input type="text" name="c_fatemp" value="{{ cat.temp_owner }}" {% if readonly %}disabled{% endif %}>
+                    </div>
+                </div>{% endif %}
                 <div class="row form-group">
                     <div class="col-sm-2">Nom:</div>
                     <div class="col-sm-4">
@@ -328,8 +334,10 @@
             <div class="col-sm-2"><button type="submit" name="action" value="fa_modcatr">Mettre à jour les informations et rester sur la page</button></div>
             <div class="col-sm-2"><button type="submit" name="action" value="fa_return">Annuler les changements et revenir à la liste</button></div>
             <div class="col-sm-1"></div>
+            {% if cat.owner_id != FAids[2] %}
             <div class="col-sm-2">{% if cat.owner_id != FAids[0] %}<button type="submit" name="action" value="fa_adopted">Adoption: indiquer que le chat a été adopté</button>{% endif %}</div>
             <div class="col-sm-2">{% if cat.owner_id != FAids[1] %}<button type="submit" name="action" value="fa_dead">Décès: Indiquer que le chat est décédé</button>{% endif %}</div>
+            {% endif %}
             {% endif %}
         </div>
         {% if user.FAisADM %}

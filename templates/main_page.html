@@ -63,7 +63,16 @@
                     {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %},
                     {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})</div>
                 <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
+                {% if cat.owner_id == FAids[4] %}<div class="col-sm-2">
+                    {{ cat.temp_owner }}
+                </div>{% endif %}
+                {% if otheruser and otheruser.FAisHIST %}
+                <div class="col-sm-4">
+                    Sortie: {{ cat.lastop.strftime("%d/%m/%y") }}
+                </div>
+                {% else %}
                 <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success">Adoptable</span>{% else %}Non adoptable{% endif %}</div>
+                {% endif %}
             </div>
             <div class="row" style="display: none;" id="desc_{{cat.id}}">
                 <div class="col-sm-1"></div>
