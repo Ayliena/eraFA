@@ -120,7 +120,7 @@
         <h2>Nouveau chat</h2>
     {% endif %}
 
-    <form action="cat" id="c_form" onsubmit="return validateForm()" enctype="multipart/form-data" method="POST">
+    <form action="/cat" id="c_form" onsubmit="return validateForm()" enctype="multipart/form-data" method="POST">
         <input type="hidden" name="catid" value="{{cat.id}}">
         <div class="row">
             <div class="col-sm-6">
@@ -372,6 +372,7 @@
         {% endif %}
     </form>
 
+    {% include 'bottom.html' %}
     </div><!-- /.container -->
 </body>
 </html>

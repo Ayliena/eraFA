@@ -295,10 +295,14 @@ def set_response_headers(response):
 
 # test page
 
-@app.route('/misc')
+@app.route('/misc', methods=["GET", "POST"])
+@app.route('/misc/<int:cat_id>', methods=["GET"])
 @login_required
-def miscpage():
-    return render_template("misc_page.html", user=current_user, FAids=FAidSpecial, msg="hello!")
+def miscpage(cat_id=-1):
+    if request.method == "POST":
+        return render_template("misc_page.html", user=current_user, FAids=FAidSpecial, msg="POST REQUEST, id={} cmd={}".format(request.form["id"], request.form["action"]))
+
+    return render_template("misc_page.html", user=current_user, FAids=FAidSpecial, msg="GET REQUEST: id={}".format(cat_id))
 
 # --------------- WEB PAGES
 
@@ -400,7 +404,7 @@ def fapage():
 
             # we then use the /list page to display the cat list
             return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                listtitle="Résultat de la recherche", catlist=cats, FAids=FAidSpecial)
+                listtitle="Résultat de la recherche", catlist=cats, FAids=FAidSpecial, msg=message)
 
         if FAid != current_user.id:
             return render_template("main_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
@@ -476,13 +480,20 @@ def selfpage():
     return redirect(url_for('fapage'))
 
 
-@app.route("/cat", methods=["GET", "POST"])
+@app.route("/cat", methods=["POST"])
+@app.route('/cat/<int:catid>', methods=["GET"])
 @login_required
-def catpage():
+def catpage(catid=-1):
     if request.method == "GET":
-        return redirect(url_for('fapage'))
+        if catid == -1:
+            return redirect(url_for('fapage'))
 
-    cmd = request.form["action"]
+        # we simulate a post request with action = fa_viewcat
+        cmd = 'fa_viewcat'
+
+    elif request.method == "POST":
+        cmd = request.form["action"]
+        catid = request.form["catid"]
 
     if cmd == "fa_return":
         return redirect(url_for('fapage'))
@@ -555,7 +566,7 @@ def catpage():
         return redirect(url_for('fapage'))
 
     # existing cat, populate the page with the available data
-    theCat = Cat.query.filter_by(id=request.form["catid"]).first();
+    theCat = Cat.query.filter_by(id=catid).first();
     if theCat == None:
         return render_template("error_page.html", user=current_user, errormessage="invalid cat id", FAids=FAidSpecial)
 #        return redirect(url_for('fapage'))
@@ -1064,15 +1075,28 @@ def refupage():
 
                 # locate the FA, using the username
                 # note that editmode can work with special FAs
-                if editmode:
-                    theFA = User.query.filter_by(username=v[1]).first()
+                # we also handle the special case of temp FAs (recognized by the '[]' around the name)
+                faname = v[1];
+                temp_faname = ''
+                if faname and faname[0] == '[' and faname[-1] == ']':
+                    # temp fa
+                    theFA = User.query.filter_by(id=FAidSpecial[4]).first()
+                    temp_faname = faname[1:-1]
                 else:
-                    theFA = User.query.filter(and_(User.username==v[1], or_(User.FAisFA==True,User.FAisREF==True))).first()
+                    # normal (or special) FA
+                    if editmode:
+                        theFA = User.query.filter_by(username=faname).first()
+                    else:
+                        theFA = User.query.filter(and_(User.username==faname, or_(User.FAisFA==True,User.FAisREF==True))).first()
 
                 # make sure that we have the FA
                 if not theFA:
                     if editmode:
                         # assume it's the old one, in any case it's not like we can edit anything....
+                        if faname:
+                            # this means we wanted to move it, but the FA doesn't exist
+                            msg.append([2, "{}: FA '{}' inexistente, le chat va rester dans la famille actuelle".format(registre, faname)])
+
                         theFA = theCat.owner
 
                     else:
@@ -1111,8 +1135,11 @@ def refupage():
                         break
 
                     # this is a complete mess, since there's no way to know WHICH FA has done the visit
-                    # the code here assumes that it's the new one.... which may mean that some special FAs end up having done visits
-                    v_doneby = theFA.id if (v[offs+4]=='FA') else FAidSpecial[3]
+                    # if the line specifies 'FA' we use the current (new FA)
+                    # in all other cases AND for temporary FAs, we use the REF
+                    v_doneby = FAidSpecial[3]
+                    if v[offs+4] == 'FA' and not theFA.id == FAidSpecial[4]:
+                        v_doneby = theFA.id
 
                     # all is good, cumulate vetinfo and prepare the object, cat_id will be invalid for now
                     if not v_planned:
@@ -1136,34 +1163,34 @@ def refupage():
                     # ok, we update the info here
 
                     # NOTE: in edit mode an empty fields means "leave data alone" and does not mean "erase data"
-                    # info is Adoppt Name Ident Sex Birthdate L(hairlen) Color (c)omments Description Picture
+                    # info is Adopt Name Ident Sex Birthdate L(hairlen) Color (c)omments Description Picture
                     updated = ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-']
 
-                    if r_name:
+                    if r_name and theCat.name != r_name:
                         theCat.name = r_name
                         updated[1] = 'N'
 
-                    if r_id:
+                    if r_id and theCat.identif != r_id:
                         theCat.identif = r_id
                         updated[2] ='I'
 
-                    if r_sex:
+                    if r_sex and theCat.sex != r_sex:
                         theCat.sex = r_sex
                         updated[3] = 'S'
 
-                    if r_bd:
+                    if r_bd and theCat.birthdate != r_bd:
                         theCat.birthdate = r_bd
                         updated[4] = 'B'
 
-                    if r_hl:
+                    if r_hl and theCat.longhair != r_hl:
                         theCat.longhair = r_hl
                         updated[5] = 'L'
 
-                    if r_col:
+                    if r_col and theCat.color != r_col:
                         theCat.color = r_col
                         updated[6] = 'C'
 
-                    if r_comm:
+                    if r_comm and theCat.comments != r_comm:
                         theCat.comments = r_comm
                         updated[7] = 'c'
 
@@ -1178,27 +1205,27 @@ def refupage():
                         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: informations mises a jour (Refugilys): {}".format(current_user.FAname, updated))
                         db.session.add(theEvent)
 
-                    # update the FA if modified
-                    if v[1]:
-                        if theFA:
-                            msg.append([0, "Numéro de registre {} deplace de {} vers {}".format(registre, theCat.owner.FAname, theFA.FAname) ])
-                            theCat.lastop = datetime.now()
+                    # update the FA if modified (note that here theFA is always defined!)
+                    if faname:
+                        msg.append([0, "Numéro de registre {} deplace de {} vers {}{}".format(registre, theCat.owner.FAname, theFA.FAname, faname if theFA.id == FAidSpecial[4] else '') ])
+                        theCat.lastop = datetime.now()
 
-                            # generate an event
-                            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: FA mise a jour (Refugilys): {} -> {}".format(current_user.FAname, theCat.owner.FAname, theFA.FAname))
-                            db.session.add(theEvent)
+                        # generate an event
+                        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: FA mise a jour (Refugilys): {} -> {}".format(current_user.FAname, theCat.owner.FAname, theFA.FAname))
+                        db.session.add(theEvent)
 
-                            # update the FA by moving the cat
-                            theCat.owner.numcats -= 1
-                            theCat.owner_id = theFA.id
-                            theFA.numcats += 1
+                        # update the FA by moving the cat
+                        theCat.owner.numcats -= 1
+                        theCat.owner_id = theFA.id
+                        theFA.numcats += 1
 
-                            # if the destination FA is any of dead/adopted/historical then clear the adopted flag
-                            if theFA.id == FAidSpecial[0] or theFA.id == FAidSpecial[1] or theFA.id == FAidSpecial[2]:
-                                theCat.adoptable = False
+                        # if we are moving TO a tempFA, update the name
+                        if theFA.id == FAidSpecial[4]:
+                            theCat.temp_owner = temp_faname
 
-                        else:
-                            msg.append([3, "Mise a jour de la FA du {} impossible: FA '{}' non trouvee!".format(registre, v[1]) ])
+                        # if the destination FA is any of dead/adopted/historical then clear the adopted flag
+                        if theFA.id == FAidSpecial[0] or theFA.id == FAidSpecial[1] or theFA.id == FAidSpecial[2]:
+                            theCat.adoptable = False
 
                     # associate the vet visits
                     for vv in vvisits:
@@ -1207,11 +1234,11 @@ def refupage():
 
                     if r_vetshort != '--------':
                         msg.append([0, "Numéro de registre {} mis a jour: visites {}".format(registre, r_vetshort)])
+                        theCat.vetshort = vetAddStrings(theCat.vetshort, r_vetshort)
                         theCat.lastop = datetime.now()
                         # generate an event
                         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: Visites mises a jour (Refugilys): {}".format(current_user.FAname, r_vetshort))
                         db.session.add(theEvent)
-
 
                     # should be done only if we updated something?
                     db.session.commit()
@@ -1272,7 +1299,7 @@ def refupage():
 
                 # now take care of the vetvisits
                 # create the cat
-                theCat = Cat(regnum=rn, owner_id=theFA.id, name=r_name, sex=r_sex, birthdate=r_bd, color=r_col, longhair=r_hl, identif=r_id,
+                theCat = Cat(regnum=rn, owner_id=theFA.id, temp_owner=temp_faname, name=r_name, sex=r_sex, birthdate=r_bd, color=r_col, longhair=r_hl, identif=r_id,
                         vetshort=r_vetshort, comments=r_comm, adoptable=False)
 
                 db.session.add(theCat)
@@ -1338,6 +1365,41 @@ def vetpage():
     if cmd == "fa_vetplan":
         session["otherMode"] = "special-vetplan"
         return redirect(url_for('fapage'))
+
+    if cmd == "fa_vetmv":
+        return render_template("error_page.html", user=current_user, errormessage="command error (/vet:fa_vetmv)", FAids=FAidSpecial)
+
+    if cmd == "fa_vetmvd":
+        return render_template("error_page.html", user=current_user, errormessage="command error (/vet:fa_vetmvd)", FAids=FAidSpecial)
+
+    if cmd == "fa_vetmpl":
+        FAid = current_user.id
+        if "otherFA" in session:
+            FAid = session["otherFA"]
+            theFA = User.query.filter_by(id=FAid).first()
+            faexists = theFA is not None;
+
+            if not faexists:
+                return render_template("error_page.html", user=current_user, errormessage="invalid FA id", FAids=FAidSpecial)
+
+            # permissions: ADM and OV see all
+            # RF can see the ones they manage + adopt/dead/refuge
+            if not (current_user.FAisRF and theFA.FAresp_id != current_user.id) and not (current_user.FAisRF and (FAid == FAidSpecial[0] or
+                        FAid == FAidSpecial[1] or FAid == FAidSpecial[3])) and not (current_user.FAisOV or current_user.FAisADM):
+                FAid = current_user.id
+
+        VETlist = User.query.filter_by(FAisVET=True).all()
+
+        if FAid != current_user.id:
+            return render_template("vet_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                cats=Cat.query.filter_by(owner_id=FAid).order_by(Cat.regnum).all(), FAids=FAidSpecial, VETids=VETlist)
+
+        return render_template("vet_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+            cats=Cat.query.filter_by(owner_id=current_user.id).order_by(Cat.regnum).all(), FAids=FAidSpecial, VETids=VETlist)
+
+
+    if cmd == "fa_vetmpl_save":
+        return render_template("error_page.html", user=current_user, errormessage="command error (/vet:fa_vetmpl_save)", FAids=FAidSpecial)
 
     return render_template("error_page.html", user=current_user, errormessage="command error (/vet)", FAids=FAidSpecial)
 

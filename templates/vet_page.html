@@ -19,21 +19,48 @@
     </head>
     <script>
 {% include 'functions.html' %}
+        function populatevets(selid) {
+            var vettab = [ {% for v in VETids %} [{{v.id}}, "{{v.FAname|safe}}"], {% endfor %}]
+            var sel, i, option;
+            sel = document.getElementById(selid);
+
+            for (i = 0; i < vettab.length; ++i) {
+                option = document.createElement('option');
+                option.value = vettab[i][0];
+                option.text = vettab[i][1];
+                sel.add(option);
+            }
+        }
         window.onload=function() {
-            var i;
+            var i, dates = document.querySelectorAll('[id^="bd_"]');
+            var today = new Date().getTime() / 1000;
+
+            for (i = 0; i < dates.length; ++i) {
+                days = Math.floor((today - parseInt(dates[i].innerHTML))/86400);
+                dates[i].innerHTML = readableAge(days);
+            }
 
             var regnums = document.querySelectorAll('[id^="rn_"]');
             for (i = 0; i < regnums.length; ++i) {
                 regnum = parseInt(regnums[i].innerHTML);
                 regnums[i].innerHTML = readableRegistre(regnum);
             }
+
+            populatevets('visit_vet');
         }
-$(document).ready(function() {
-  $('.datepick').datetimepicker({
-    format: 'DD/MM/YY'
-  });
-});
-</script>
+        $(document).ready(function() {
+          $('.datepick').datetimepicker({
+            format: 'DD/MM/YY'
+          });
+        });
+    </script>
+    <style>
+   hr {
+       border-top: 1px dotted #000000 !important;
+       margin-bottom:10px !important;
+       margin-top:5px !important;
+   }
+    </style>
 <body>
     {% include 'navbar.html' %}
 
@@ -48,62 +75,143 @@ $(document).ready(function() {
 
         {% if otheruser %} <h2>Situation FA : {{ otheruser.FAname }}</h2> {% endif %}
 
-        <h2>Visites vétérinaires planifiées</h2>
-        {% for v in visits %}
-            <form action="/cat" method="POST"><input type="hidden" name="catid" value="{{v.cat.id}}">
-            <div class="row">{{ v.vdate.strftime("%d/%m/%y") }} visite de <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{v.cat.id}}">{{v.cat.regnum}}</span></strong></button>
-                    ( {{ v.cat.name }} / {{ v.cat.identif }} ) chez {{ v.vet.FAname }} pour:</div>
-            <div class="row"><div class="col-sm-1"></div>
-                {% if v.vtype[0] != '-' %}- Primo vaccination{% endif %}
-                {% if v.vtype[1] != '-' %}- 1er rappel{% endif %}
-                {% if v.vtype[2] != '-' %}- 2eme rappel{% endif %}
-                {% if v.vtype[3] != '-' %}- Stérilisation/Castration{% endif %}
-                {% if v.vtype[4] != '-' %}- Identification{% endif %}
-                {% if v.vtype[5] != '-' %}- Test FIV/FelV{% endif %}
-                {% if v.vtype[6] != '-' %}- Soins / autre{% endif %}
-                {% if v.vtype[7] != '-' %}- Rappel annuel{% endif %}
+        {% if visits %}
+            <h2>Visites vétérinaires planifiées</h2>
+
+            <form action="/vet" method="POST">
+            {% for v in visits %}
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="re_{{v.id}}" id="re_{{v.id}}">
+                            <label class="form-check-label" for="re_{{v.id}}">
+                                {{ v.vdate.strftime("%d/%m/%y") }} visite de <a href="{{ url_for('catpage') }}/{{ v.cat.id }}"><span id="rn_{{v.cat.id}}">{{v.cat.regnum}}</span></a>
+                                ( {{ v.cat.name }} / {{ v.cat.identif }} ) chez {{ v.vet.FAname }} pour:
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row"><div class="col-sm-1"></div>
+                    {% if v.vtype[0] != '-' %}- Primo vaccination{% endif %}
+                    {% if v.vtype[1] != '-' %}- 1er rappel{% endif %}
+                    {% if v.vtype[2] != '-' %}- 2eme rappel{% endif %}
+                    {% if v.vtype[3] != '-' %}- Stérilisation/Castration{% endif %}
+                    {% if v.vtype[4] != '-' %}- Identification{% endif %}
+                    {% if v.vtype[5] != '-' %}- Test FIV/FelV{% endif %}
+                    {% if v.vtype[6] != '-' %}- Soins / autre{% endif %}
+                    {% if v.vtype[7] != '-' %}- Rappel annuel{% endif %}
+                </div>
+                {% if v.comments %}<div class="row">Commentaires: {{ v.comments }}</div>{% endif %}
+            {% endfor %}
+            <hr>
+            <div class="row">
+                <div class="col-sm-3">
+                    <button type="submit" name="action" value="fa_vetmv">Indiquer que les visites selectionnees ont ete effectuees a la date prevue</button>
+                </div>
+                <div class="col-sm-1">
+                </div>
+                <div class="col-sm-3"><button type="submit" name="action" value="fa_vetmvd">Indiquer que les visites selectionnees ont ete effectuees a la date indiquee ci-contre</button></div>
+                <div class="col-sm-2">
+                    <div class="form-group">
+                        <div class="input-group datepick">
+                            <input type="text" class="form-control" name="c_vdate" id="c_vdate" placeholder="aujourd'hui">
+                            <div class="input-group-addon">
+                                <span class="glyphicon glyphicon-calendar"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            {% if v.comments %}<div class="row">Commentaires: {{ v.comments }}</div>{% endif %}
+            <hr>
+            <div class="row"><div class="col-sm-3">
+                <button type="submit" name="action" value="fa_vetmpl">Planifier/Indiquer une visite concernant plusieurs chats</button>
+            </div></div>
             </form>
         {% else %}
-        <p>Aucune</p>
-        {% endfor %}
+            {% if not cats %}
+                <h3>Aucune visite vétérinaire planifiée</h3>
+                <hr>
+                <form action="/vet" method="POST">
+                <div class="row"><div class="col-sm-3">
+                    <button type="submit" name="action" value="fa_vetmpl">Planifier/Indiquer une visite concernant plusieurs chats</button>
+                </div></div>
+                </form>
+            {% endif %}
+        {% endif %}
 
-        <hr>
-        <div class="row"><form action="/vet" method="POST">
-            <button type="submit" name="action" value="fa_catlist">Liste des chats</button>
-            <button type="submit" name="action" value="fa_vetreg">Registre des soins</button>
-            <button type="submit" name="action" value="fa_vetplan">Visites planifiées</button>
-        </form></div>
-        {% if user.FAisOV %}
-        <div class="row">
-            Commandes disponibles en tant que Superviseur:
-        </div>
-        <div class="row">
-            <form  action="/list" method="POST">
-                <button type="submit" name="action" value="sv_viewFA">Vision par FA</button>
-                <button type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button>
-                <button type="submit" name="action" value="sv_adoptTab">Chats a l'adoption</button>
+        {% if cats %}
+            <h2>Visite pour plusieurs chats</h2>
+
+            <form action="/vet" method="POST">
+            {% for cat in cats %}
+                <div class="row">
+                    <div class="col-sm-1">
+                        <input class="form-check-input" type="checkbox" name="re_{{cat.id}}" id="re_{{cat.id}}">
+                            <label class="form-check-label" for="re_{{cat.id}}">
+                                <span id="rn_{{cat.id}}">{{cat.regnum}}</span>
+                            </label>
+                    </div>
+                    <div class="col-sm-2">{{ cat.identif }}</div>
+                    <div class="col-sm-4">
+                        <b>{% if cat.name %}{{ cat.name }}{% else %}<span class="bg-warning">sans nom</span>{% endif %}</b>
+                        ({% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}<span class="bg-warning">??sexe??</span>{% endif %},
+                        {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %},
+                        {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})
+                    </div>
+                    <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
+                    {% if cat.owner_id == FAids[4] %}<div class="col-sm-2">
+                        {{ cat.temp_owner }}
+                    </div>{% endif %}
+                </div>
+            {% endfor %}
+            <hr>
+            <div class="row form-group">
+                <div class="col-sm-3">
+                    Nouvelle visite
+                    <select name="visit_state"><option value="0">Effectuée le</option><option value="1">Planifiée pour le</option></select>
+                </div>
+                <div class="col-sm-2">
+                    <div class="input-group datepick">
+                        <input type="text" class="form-control" name="visit_date" id="visit_date" placeholder="aujourd'hui">
+                        <div class="input-group-addon">
+                            <span class="glyphicon glyphicon-calendar"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    chez <select name="visit_vet" id="visit_vet"></select> pour:
+                </div>
+            </div>
+            <div class="row form-group">
+                <div class="col-sm-12">
+                <label class="checkbox-inline"><input type="checkbox" name="visit_pv">Primo vaccination</label>
+                <label class="checkbox-inline"><input type="checkbox" name="visit_r1">1er rappel</label>
+                <label class="checkbox-inline"><input type="checkbox" name="visit_r2">2eme rappel</label>
+                <label class="checkbox-inline"><input type="checkbox" name="visit_sc">Stérilisation/Castration</label>
+                <label class="checkbox-inline"><input type="checkbox" name="visit_id">Identification</label>
+                <label class="checkbox-inline"><input type="checkbox" name="visit_tf">Test FIV/FelV</label>
+                <label class="checkbox-inline"><input type="checkbox" name="visit_gen">Soins / autre</label>
+                <label class="checkbox-inline"><input type="checkbox" name="visit_rr">Rappel annuel</label>
+                </div>
+            </div>
+            <div class="row form-group">
+                <div class="col-sm-12">
+                <textarea class="form-control" name="visit_comments" placeholder="Commentaires / informations additionnelles"></textarea>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-sm-2">
+                    <button type="submit" name="action" value="fa_vetmpl_save">Enregistrer la visite</button>
+                </div>
+                <div class="col-sm-2">
+                    <button type="submit" name="action" value="fa_vetplan">Annuler</button>
+                </div>
+            </div>
             </form>
-        </div>
-        {% endif %}
-        {% if user.FAisADM %}
-        <div class="row">
-            Commandes disponibles en tant que Gestionnaire-Registre:
-        </div>
-        <div class="row">
-            <form action="/cat" method="POST">
-                <button type="submit" name="action" value="adm_newcat">Rajouter un chat</button>
-                <button type="submit" name="action" value="adm_refucat">Rajouter un dossier Refugilys</button>
-            </form></div>
-        <div class="row">
-            <form action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
-                <button name="FAid" value="{{FAids[0]}}">Chats adoptés</button>
-                <button name="FAid" value="{{FAids[1]}}">Chats décédés</button>
-                <button name="FAid" value="{{FAids[2]}}">Historique</button>
-            </form></div>
         {% endif %}
 
+    {% include 'bottom.html' %}
     </div><!-- /.container -->
 </body>
 </html>
