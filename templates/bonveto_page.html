@@ -1,0 +1,131 @@
+<html>
+    <head>
+        <title>Familles d'accueil ERA</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <style>
+            @page {
+                 size: A4 portrait;
+                 margin: 0pt;
+            }
+            @media print {
+                html, body {
+                    margin: 20pt;
+                }
+                table, th, td {
+                    font-size: 11pt;
+                }
+            }
+            table, th, td {
+                border: 0px;
+                margin-left: 10px;
+            }
+            th, td {
+               padding: 2px;
+            }
+        </style>
+    </head>
+    <script>
+{% include 'functions.html' %}
+        window.onload=function() {
+            var i, dates = document.querySelectorAll('[id^="bd_"]');
+            var today = new Date().getTime() / 1000;
+
+            for (i = 0; i < dates.length; ++i) {
+                days = Math.floor((today - parseInt(dates[i].innerHTML))/86400);
+                dates[i].innerHTML = readableAge(days);
+            }
+
+            var regnums = document.querySelectorAll('[id^="rn_"]');
+            for (i = 0; i < regnums.length; ++i) {
+                regnum = parseInt(regnums[i].innerHTML);
+                regnums[i].innerHTML = readableRegistre(regnum);
+            }
+
+            // window.print();
+        }
+    </script>
+<body>
+
+<table>
+    <tr>
+        <td><img src="{{ url_for('static', filename='logo-ERA.png')}}" style="width:160px;" /></td>
+        <td style="white-space: pre;"><b>ERA Ethique et Respect Animal</b><br>
+1 rue des Zouaves
+67000 STRASBOURG
+Tel. 06 58 49 23 93
+E-mail: info@assocera.com
+Web: www.assocera.com</td>
+        <td style="width: 100%; text-align: right;"><img src="{{ qrcode(qrdata) }}" style="width:160px;" /></td>
+    </tr>
+</table>
+
+<h3 style="text-align:center">BON VETERINAIRE</h2>
+
+<table>
+    <tr>
+        <td>Emetteur :</td>
+        <td>{{ user.FAname }}</td>
+    </tr>
+    <tr>
+        <td>Date :</td>
+        <td>{{ bdate.strftime("%d/%m/%y") }}</td>
+    </tr>
+    <tr><td>&nbsp;</td></tr>
+    <tr>
+        <td>Famille d'accueil :</td>
+        <td>{{ fa.FAname }}</td>
+    </tr>
+    <tr><td>&nbsp;</td></tr>
+    {% for cat in cats %}
+        <tr>
+            <td>{% if cat==cats[0] %}{% if cats|length == 1 %}Animal concerne :{% else %}Animaux concernes :{% endif %}{% endif %}</td>
+            <td><span id="rn_{{cat.id}}">{{cat.regnum}}</span> ({{ cat.name }}, {% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}sexe?{% endif %},
+                    {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">âge?</span>{% endif %},
+                    {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">couleur?</span>{% endif %}{{ tabhair[cat.longhair] }})</td>
+    </tr>
+    {% endfor %}
+    <tr><td>&nbsp;</td></tr>
+</table>
+
+<table>
+    <tr>
+        <td>Soins a effectuer :</td>
+    </tr>
+    {% if vtype[0] %}<tr><td>{{ vtype[0] }} vaccination{% if vtype[0] != 1 %}s{% endif %} (typhus/choriza)</td></tr>{% endif %}
+    {% if vtype[1] %}<tr><td>{{ vtype[1] }} rappel{% if vtype[1] != 1 %}s{% endif %} (typhus/choriza)</td></tr>{% endif %}
+    {% if vtype[2] %}<tr><td>{{ vtype[2] }} sterilisation{% if vtype[2] != 1 %}s{% endif %}</td></tr>{% endif %}
+    {% if vtype[3] %}<tr><td>{{ vtype[3] }} castration{% if vtype[3] != 1 %}s{% endif %}</td></tr>{% endif %}
+    {% if vtype[4] %}<tr><td>{{ vtype[4] }} identification{% if vtype[4] != 1 %}s{% endif %}</td></tr>{% endif %}
+    {% if vtype[5] %}<tr><td>{{ vtype[5] }} test{% if vtype[4] != 1 %}s{% endif %} FIV/FeLV</td></tr>{% endif %}
+    {% for c in comments %}
+        <tr><td>{{ c }}</td></tr>
+    {% endfor %}
+</table>
+
+<table>
+    <tr><td>&nbsp;</td></tr>
+    <tr>
+        <td> siret 80894688300010</td>
+    </tr>
+    <tr><td>&nbsp;</td></tr>
+    <tr>
+        <td>Pour les castrations, prise en charge de l'association : 36 €</td>
+    </tr>
+    <tr>
+        <td>Pour les stérilisations, prise en charge de l'association : 70 €</td>
+    </tr>
+    <tr><td>&nbsp;</td></tr>
+</table>
+
+<table style="margin-left: auto; margin-right: auto;">
+    <tr>
+        <td>La presidente:</td>
+        <td>signature<br>signature<br>signature<br>signature</td>
+    </tr>
+</table>
+
+</body>
+</html>

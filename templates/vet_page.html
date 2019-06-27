@@ -82,13 +82,11 @@
             {% for v in visits %}
                 <div class="row">
                     <div class="col-sm-12">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="re_{{v.id}}" id="re_{{v.id}}">
-                            <label class="form-check-label" for="re_{{v.id}}">
-                                {{ v.vdate.strftime("%d/%m/%y") }} visite de <a href="{{ url_for('catpage') }}/{{ v.cat.id }}"><span id="rn_{{v.cat.id}}">{{v.cat.regnum}}</span></a>
-                                ( {{ v.cat.name }} / {{ v.cat.identif }} ) chez {{ v.vet.FAname }} pour:
-                            </label>
-                        </div>
+                        <input class="form-check-input" type="checkbox" name="re_{{v.id}}" id="re_{{v.id}}">
+                        <label class="form-check-label" for="re_{{v.id}}">
+                            {{ v.vdate.strftime("%d/%m/%y") }} visite de <a href="{{ url_for('catpage') }}/{{ v.cat.id }}"><span id="rn_{{v.cat.id}}">{{v.cat.regnum}}</span></a>
+                        </label>
+                            ( {{ v.cat.name }} / {{ v.cat.identif }} ) chez {{ v.vet.FAname }} pour:
                     </div>
                 </div>
                 <div class="row"><div class="col-sm-1"></div>
@@ -101,7 +99,7 @@
                     {% if v.vtype[6] != '-' %}- Soins / autre{% endif %}
                     {% if v.vtype[7] != '-' %}- Rappel annuel{% endif %}
                 </div>
-                {% if v.comments %}<div class="row">Commentaires: {{ v.comments }}</div>{% endif %}
+                {% if v.comments %}<div class="row"><div class="col-sm-1"></div><div class="col-sm-11">Commentaires: {{ v.comments }}</div></div>{% endif %}
             {% endfor %}
             <hr>
             <div class="row">
@@ -126,6 +124,20 @@
             <div class="row"><div class="col-sm-3">
                 <button type="submit" name="action" value="fa_vetmpl">Planifier/Indiquer une visite concernant plusieurs chats</button>
             </div></div>
+            <hr>
+            {% if user.FAisADM %}
+            <div class="row">
+                {% if 0 and (user.FAisADM or user.FAisRF) %}<div class="col-sm-3">
+                    <button type="submit" name="action" value="fa_vetauth">Autoriser les visites selectionnees et permettre a la FA l'impression du bon</button>
+                </div>{% endif %}
+                <div class="col-sm-3">
+                    <button type="submit" name="action" value="fa_vetbon">Imprimer un bon pour les visites selectionnees</button>
+                </div>
+                <div class="col-sm-6">
+                    Le bon ne peut etre genere que pour des visites qui sont autorisees.  La date utilisee est celle de la premiere visite de la liste.
+                </div>
+            </div>
+            {% endif %}
             </form>
         {% else %}
             {% if not cats %}
