@@ -137,6 +137,15 @@
                     Le bon ne peut etre genere que pour des visites qui sont autorisees.  La date utilisee est celle de la premiere visite de la liste.
                 </div>
             </div>
+            <hr>
+            <div class="row">
+                <div class="col-sm-3">
+                    <button type="submit" name="action" value="adm_vbver">Verifier le contenu du QRcode de bon veterinaire colle ci-contre</button>
+                </div>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control" name="vb_qrcode" id="iR" style="width: 100%">
+                </div>
+            </div>
             {% endif %}
             </form>
         {% else %}

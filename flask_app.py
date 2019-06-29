@@ -931,7 +931,9 @@ def searchpage():
 
     if request.method == "GET":
         # generate the search page
-        return render_template("search_page.html", user=current_user, FAids=FAidSpecial)
+        max_regnum = db.session.query(db.func.max(Cat.regnum)).scalar()
+
+        return render_template("search_page.html", user=current_user, FAids=FAidSpecial, maxreg=max_regnum)
 
     cmd = request.form["action"]
 
@@ -1367,10 +1369,10 @@ def vetpage():
 
     cmd = request.form["action"]
 
-    if cmd == "fa_catlist":
-        # just return to the default main page
-        session["otherMode"] = None
-        return redirect(url_for('fapage'))
+#    if cmd == "fa_catlist":
+#        # just return to the default main page
+#        session["otherMode"] = None
+#        return redirect(url_for('fapage'))
 
     if cmd == "fa_vetreg":
         # query all vetinfo which was doneby the FA
@@ -1485,8 +1487,13 @@ def vetpage():
                 et = "effectuee le"
             else:
                 et = "planifiee pour le"
+        else:
+            session["pendingmessage"] = [ [ 2, "Aucun soin indique" ] ]
+            return redirect(url_for('fapage'))
 
         # now iterate on all cats and add the visit
+        catregs = []
+
         for key in request.form.keys():
             if key[0:3] == 're_':
                 catid = int(key[3:])
@@ -1500,6 +1507,8 @@ def vetpage():
                 if not (theCat.owner_id == current_user.id and current_user.FAisFA) and not (theCat.owner.FAresp_id == current_user.id) and not current_user.FAisADM:
                     return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetmv(d): insufficient privileges", FAids=FAidSpecial)
 
+                catregs.append(theCat.regStr())
+
                 # generate the visit and the event
                 # we always associate the visit to the current owner
                 theVisit = VetInfo(cat_id=theCat.id, doneby_id=theCat.owner_id, vet_id=vetId, vtype=VisitType, vdate=VisitDate,
@@ -1511,6 +1520,11 @@ def vetpage():
                 theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} {} {} chez {}".format(current_user.FAname, VisitType, et, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
                 db.session.add(theEvent)
                 db.session.commit()
+
+        if not catregs:
+            session["pendingmessage"] = [ [ 2, "Aucun chat selectionne" ] ]
+        else:
+            session["pendingmessage"] = [ [ 0, "Visite {} enregistree pour les chats: {}".format(VisitType, ", ".join(catregs)) ] ]
 
         # return to vet page
         return redirect(url_for('fapage'))
@@ -1576,6 +1590,7 @@ def vetpage():
 
         # if nothing was selected, stay here
         if not catlist:
+            session["pendingmessage"] = [ [ 2, "Aucune visite selectionnee" ] ]
             return redirect(url_for('fapage'))
 
         bdate = datetime.today()
@@ -1585,6 +1600,20 @@ def vetpage():
         qrstr = qrstr + ERAsum(qrstr)
 
         return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, cats=catlist, fa=theFA, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
+
+    if cmd == "adm_vbver":
+        bvcode = request.form["vb_qrcode"]
+
+        if not bvcode:
+            session["pendingmessage"] = [ [ 2, "Aucune code a verifier" ] ]
+            return redirect(url_for('fapage'))
+
+        if len(bvcode) > 15 and ERAsum(bvcode[0:-12]) == bvcode[-12:]:
+            session["pendingmessage"] = [ [ 0, "Le code fourni est valable" ] ]
+        else:
+            session["pendingmessage"] = [ [ 3, "Le code fourni n'est PAS valable!" ] ]
+
+        return redirect(url_for('fapage'))
 
     return render_template("error_page.html", user=current_user, errormessage="command error (/vet)", FAids=FAidSpecial)
 
@@ -1709,7 +1738,7 @@ def userpage():
         theFA.FAid = request.form["u_pname"]
         theFA.FAname = request.form["u_iname"]
         theFA.FAemail = request.form["u_email"]
-        theFA.FAresp_id = int(request.form["u_resp"])
+        theFA.FAresp_id = int(request.form["u_resp"]) if "u_resp" in request.form else 0
         theFA.FAisFA = "u_isFA" in request.form;
         theFA.FAisRF = "u_isRF" in request.form;
         theFA.FAisOV = "u_isOV" in request.form;
