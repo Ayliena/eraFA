@@ -718,9 +718,9 @@ def catpage(catid=-1):
         if updated != "----------":
             theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: mise à jour des informations {}".format(current_user.FAname, updated))
             db.session.add(theEvent)
-            updated = True
+            cat_updated = True
         else:
-            updated = False
+            cat_updated = False
 
         # generate the vetinfo record, if any, and the associated event
         VisitType = vetMapToString(request.form, "visit")
@@ -745,11 +745,11 @@ def catpage(catid=-1):
             if not VisitPlanned:
                 theCat.vetshort = vetAddStrings(theCat.vetshort, VisitType)
                 et = "effectuee le"
-                updated = True
+                cat_updated = True
             else:
                 et = "planifiee pour le"
 
-            theVisit = VetInfo(cat_id=theCat.id, doneby_id=FAid, vet_id=vetId, vtype=VisitType, vdate=VisitDate,
+            theVisit = VetInfo(cat_id=theCat.id, doneby_id=theCat.owner_id, vet_id=vetId, vtype=VisitType, vdate=VisitDate,
                 planned=VisitPlanned, comments=request.form["visit_comments"])
             db.session.add(theVisit)
             db.session.commit()  # needed for vet.FAname
@@ -779,13 +779,13 @@ def catpage(catid=-1):
 
             # generate the form name prefix
             prefix = "oldv_"+mvid
+            vv_updated = False
 
             # if deleted, delete immediately
             if int(request.form[prefix+"_state"]) == 2:
                 theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} annullée".format(current_user.FAname, theVisit.vtype))
                 db.session.add(theEvent)
                 db.session.delete(theVisit)
-                updated = True
                 continue
 
             # modify the visit with the new data (we'll need to get all of it....)
@@ -802,7 +802,7 @@ def catpage(catid=-1):
             # update the record
             if theVisit.vtype != VisitType:
                 theVisit.vtype = VisitType
-                updated = True
+                vv_updated = True
 
             try:
                 VisitDate = datetime.strptime(request.form[prefix+"_date"], "%d/%m/%y")
@@ -811,7 +811,7 @@ def catpage(catid=-1):
 
             if theVisit.vdate != VisitDate:
                 theVisit.vdate = VisitDate
-                updated = True
+                vv_updated = True
 
             # validate the vet
             vet = next((x for x in VETlist if x.id==int(request.form[prefix+"_vet"])), None)
@@ -821,28 +821,29 @@ def catpage(catid=-1):
             else:
                 if theVisit.vet_id != vet.id:
                     theVisit.vet_id = vet.id
-                    updated = True
+                    vv_updated = True
 
             if theVisit.comments != request.form[prefix+"_comments"]:
                 theVisit.comments = request.form[prefix+"_comments"]
-                updated = True
+                vv_updated = True
 
             if int(request.form[prefix+"_state"]) != 1:
                 # means it's not planned anymore
                 theCat.vetshort = vetAddStrings(theCat.vetshort, VisitType)
                 theVisit.planned = False
-                updated = True
+                cat_updated = True
+                vv_updated = True
                 et = "effectuee le"
             else:
                 et = "re-planifiee pour le"
 
-            if updated:
+            if vv_updated:
                 theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} {} {} chez {}".format(current_user.FAname, VisitType, et, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
                 db.session.add(theEvent)
 
         # end for mv in modvisits
 
-        if updated:
+        if cat_updated:
             theCat.lastop = datetime.now()
         current_user.FAlastop = datetime.now()
         db.session.commit()
@@ -1333,7 +1334,7 @@ def refupage():
                 # now take care of the vetvisits
                 # create the cat
                 theCat = Cat(regnum=rn, owner_id=theFA.id, temp_owner=temp_faname, name=r_name, sex=r_sex, birthdate=r_bd, color=r_col, longhair=r_hl, identif=r_id,
-                        vetshort=r_vetshort, comments=r_comm, adoptable=False)
+                        vetshort=r_vetshort, comments=r_comm, description='', adoptable=False)
 
                 db.session.add(theCat)
                 theFA.numcats += 1
@@ -1369,10 +1370,11 @@ def vetpage():
 
     cmd = request.form["action"]
 
-#    if cmd == "fa_catlist":
-#        # just return to the default main page
-#        session["otherMode"] = None
-#        return redirect(url_for('fapage'))
+    # this is a workaround to allow the 1st menu to return to the main view using a single form
+    if cmd == "fa_catlist":
+        # just return to the default main page
+        session["otherMode"] = None
+        return redirect(url_for('fapage'))
 
     if cmd == "fa_vetreg":
         # query all vetinfo which was doneby the FA
@@ -1626,10 +1628,7 @@ def listpage():
 
     cmd = request.form["action"]
 
-    if cmd == "sv_viewFA" and (current_user.FAisADM or current_user.FAisOV):
-        # normal FAs
-        FAlist=User.query.filter_by(FAisFA=True).order_by(User.FAid).all()
-
+    if (cmd == "sv_viewFA" and (current_user.FAisADM or current_user.FAisOV)) or (cmd == "sv_viewFAresp" and (current_user.FAisRF)):
         # special FA we want some data from
         REFfa=User.query.filter_by(FAisREF=True).first()
 
@@ -1640,13 +1639,21 @@ def listpage():
         for rf in RFlist:
             RFtab[rf.id] = rf.FAname
 
+        # get the correct list of FAs
+        if cmd == "sv_viewFA":
+            FAlist=User.query.filter_by(FAisFA=True).order_by(User.FAid).all()
+        else: # cmd == "sv_viewFAresp"
+            FAlist=User.query.filter_by(FAresp_id=current_user.id).order_by(User.FAid).all()
+
         return render_template("list_page.html", user=current_user, falist=FAlist, rftab=RFtab, refugfa=REFfa, FAids=FAidSpecial)
 
-    if cmd == "sv_viewFAresp" and (current_user.FAisRF):
-        # all FAs we take care of (we assume they are FAs....)
-        FAlist=User.query.filter_by(FAresp_id=current_user.id).all()
+#    if cmd == "sv_viewFAresp" and (current_user.FAisRF):
+        # special FA we want some data from
+#        REFfa=User.query.filter_by(FAisREF=True).first()
 
-        return render_template("list_page.html", user=current_user, falist=FAlist, FAids=FAidSpecial)
+        # all FAs we take care of (we assume they are FAs....)
+
+#        return render_template("list_page.html", user=current_user, falist=FAlist, refugfa=REFfa, FAids=FAidSpecial)
 
     if cmd == "sv_globalTab" and (current_user.FAisADM or current_user.FAisOV):
         # list of all cats
