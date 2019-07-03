@@ -38,6 +38,11 @@
 {% include 'navbar.html' %}
 
     <div class="container">
+    {% if devsite %}<div class="row">
+	<div class="alert alert-danger">ATTENTION: ce site est la version en developpement du logiciel FA, les informations sur les chats de ce site ne correspondent
+        pas a la realite et (sauf demande explicite pour participer au test) ton login ne marchera pas.  Le site officiel est
+        <a href="https://erafa.pythonanywhere.com/fa">https://erafa.pythonanywhere.com/fa</a></div>
+    </div>{% endif %}
     {% if msg %}{% for m in  msg %}
         {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
         {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}

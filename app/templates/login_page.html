@@ -25,7 +25,11 @@
         </nav>
 
         <div class="container">
-
+	    {% if devsite %}<div class="row">
+    	        <div class="alert alert-danger">ATTENTION: ce site est la version en developpement du logiciel FA, les informations sur les chats de ce site ne correspondent
+                pas a la realite et (sauf demande explicite pour participer au test) ton login ne marchera pas.  Le site officiel est
+                <a href="https://erafa.pythonanywhere.com/fa">https://erafa.pythonanywhere.com/fa</a></div>
+	    </div>{% endif %}
             <div class="row">
                 {% if error %}
                 <div class="alert alert-warning" role="alert">
