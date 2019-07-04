@@ -47,7 +47,7 @@ qrcode = QRcode(app)
 # > mysqldump -u ishark -h ishark.mysql.pythonanywhere-services.com 'ishark$comments'  > db-backup.sql
 # RESTORE: DANGEROUS! > mysql -u ishark -h ishark.mysql.pythonanywhere-services.com 'ishark$comments'  < db-backup.sql
 
-app.secret_key = "tpCff4LR9ldTlZBUUmQO"
+app.secret_key = "vZUUIP1bHXzoUuPHKWF"
 login_manager = LoginManager()
 login_manager.init_app(app)
 

@@ -5,10 +5,14 @@ from flask_login import LoginManager
 import os
 
 app = Flask(__name__)
-app.config.from_object('config')
 
 # determine if we are on the developement site
 devel_site = '/ishark' in os.getcwd()
+
+if devel_site:
+    app.config.from_object('config-dev')
+else:
+    app.config.from_object('config')
 
 db = SQLAlchemy(app)
 qrcode = QRcode(app)

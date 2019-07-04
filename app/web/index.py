@@ -17,7 +17,7 @@ def index():
     cats = Cat.query.filter_by(adoptable=True).all();
 
     # TODO split in pages of 10 or something....
-    return render_template("adopt_page.html", tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, catlist=cats)
+    return render_template("adopt_page.html", tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, catlist=cats, devsite=devel_site)
 
 
 @app.route("/login/", methods=["GET", "POST"])

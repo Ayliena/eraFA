@@ -1,3 +1,6 @@
+import hashlib
+import base64
+
 # --------------- HELPER FUNCTIONS
 
 def vetMapToString(vetmap, prefix):

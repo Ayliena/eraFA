@@ -31,10 +31,6 @@ def catpage(catid=-1):
     if cmd == "fa_return":
         return redirect(url_for('fapage'))
 
-    # generate an empty page for the addition of a Refu dossier
-    if cmd == "adm_refucat" and current_user.FAisADM:
-        return redirect(url_for('refupage'))
-
     # generate an empty page to add a new cat
     if cmd == "adm_newcat" and current_user.FAisADM:
         theCat = Cat(regnum=0)

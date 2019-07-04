@@ -27,4 +27,4 @@ ACC_TOTAL = 3  # full access and transfer
 
 # IMPORTANT: the special FAs are stored statically here, so this must be set with the correct IDs
 # special FA ids (static): AD DCD HIST REF TEMP
-FAidSpecial = [1, 2, 3, 4, 5]
+FAidSpecial = [2, 5, 10, 18, 90]

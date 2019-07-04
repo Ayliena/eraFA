@@ -1,11 +1,16 @@
 from app import app, db
 from app.models import User
-from socket import gethostname
+#from socket import gethostname
 from werkzeug.security import generate_password_hash
 import string
 import secrets
+#from datetime import datetime
 
 if __name__ == '__main__':
+#    file = open("testfile.txt", "w")
+#    file.write("Now is {}\n".format(datetime.now()))
+#    file.close()
+
     print("--- command-line exec mode ---")
     print("Generating db....")
     db.create_all()

@@ -80,24 +80,32 @@
 
             <form action="/vet" method="POST">
             {% for v in visits %}
-                <div class="row">
-                    <div class="col-sm-12">
+                <div class="row" style="margin-top: 8px;">
+                    <div class="col-sm-2">
+                        {% if v.validby_id or ((user.FAisADM or user.FAisRF) and not otheruser) %}<div class="text-success">Visite autorisee</div>
+                        {% elif v.requested %}<div class="text-warning">Demande en cours</div>
+                        {% else %}<div class="text-danger">Demande a effectuer</div>{% endif %}
+                    </div>
+                    <div class="col-sm-10">
                         <input class="form-check-input" type="checkbox" name="re_{{v.id}}" id="re_{{v.id}}">
                         <label class="form-check-label" for="re_{{v.id}}">
-                            {{ v.vdate.strftime("%d/%m/%y") }} visite de <a href="{{ url_for('catpage') }}/{{ v.cat.id }}"><span id="rn_{{v.cat.id}}">{{v.cat.regnum}}</span></a>
+                            {{ v.vdate.strftime("%d/%m/%y") }} {% if v.cat.owner_id == FAids[4] %}[{{ v.cat.temp_owner }}]{% endif %}
+                            visite de <a href="{{ url_for('catpage') }}/{{ v.cat.id }}"><span id="rn_{{v.cat.id}}">{{v.cat.regnum}}</span></a>
                         </label>
                             ( {{ v.cat.name }} / {{ v.cat.identif }} ) chez {{ v.vet.FAname }} pour:
                     </div>
                 </div>
-                <div class="row"><div class="col-sm-1"></div>
-                    {% if v.vtype[0] != '-' %}- Primo vaccination{% endif %}
-                    {% if v.vtype[1] != '-' %}- 1er rappel{% endif %}
-                    {% if v.vtype[2] != '-' %}- 2eme rappel{% endif %}
-                    {% if v.vtype[3] != '-' %}- Stérilisation/Castration{% endif %}
-                    {% if v.vtype[4] != '-' %}- Identification{% endif %}
-                    {% if v.vtype[5] != '-' %}- Test FIV/FelV{% endif %}
-                    {% if v.vtype[6] != '-' %}- Soins / autre{% endif %}
-                    {% if v.vtype[7] != '-' %}- Rappel annuel{% endif %}
+                <div class="row"><div class="col-sm-2"></div>
+                    <div class="col-sm-10">
+                        {% if v.vtype[0] != '-' %}- Primo vaccination{% endif %}
+                        {% if v.vtype[1] != '-' %}- 1er rappel{% endif %}
+                        {% if v.vtype[2] != '-' %}- 2eme rappel{% endif %}
+                        {% if v.vtype[3] != '-' %}- Stérilisation/Castration{% endif %}
+                        {% if v.vtype[4] != '-' %}- Identification{% endif %}
+                        {% if v.vtype[5] != '-' %}- Test FIV/FelV{% endif %}
+                        {% if v.vtype[6] != '-' %}- Soins / autre{% endif %}
+                        {% if v.vtype[7] != '-' %}- Rappel annuel{% endif %}
+                    </div>
                 </div>
                 {% if v.comments %}<div class="row"><div class="col-sm-1"></div><div class="col-sm-11">Commentaires: {{ v.comments }}</div></div>{% endif %}
             {% endfor %}
@@ -125,11 +133,11 @@
                 <button type="submit" name="action" value="fa_vetmpl">Planifier/Indiquer une visite concernant plusieurs chats</button>
             </div></div>
             <hr>
-            {% if user.FAisADM %}
             <div class="row">
-                {% if 0 and (user.FAisADM or user.FAisRF) %}<div class="col-sm-3">
+                <div class="col-sm-3">{% if user.FAisADM or user.FAisRF %}
                     <button type="submit" name="action" value="fa_vetauth">Autoriser les visites selectionnees et permettre a la FA l'impression du bon</button>
-                </div>{% endif %}
+                    {% else %}<button type="submit" name="action" value="fa_vetareq">Demander l'autorisation pour les visites selectionnees</button>{% endif %}
+                    </div>
                 <div class="col-sm-3">
                     <button type="submit" name="action" value="fa_vetbon">Imprimer un bon pour les visites selectionnees</button>
                 </div>
@@ -138,15 +146,17 @@
                 </div>
             </div>
             <hr>
-            <div class="row">
+            {% if user.FAisADM or user.FAisRF %}<div class="row">
+                <div class="col-sm-3">
+                    <button type="submit" name="action" value="fa_vetadel">Annuller l'autorisation des visites selectionnees</button>
+                </div>
                 <div class="col-sm-3">
                     <button type="submit" name="action" value="adm_vbver">Verifier le contenu du QRcode de bon veterinaire colle ci-contre</button>
                 </div>
-                <div class="col-sm-9">
+                <div class="col-sm-6">
                     <input type="text" class="form-control" name="vb_qrcode" id="iR" style="width: 100%">
                 </div>
-            </div>
-            {% endif %}
+            </div>{% endif %}
             </form>
         {% else %}
             {% if not cats %}

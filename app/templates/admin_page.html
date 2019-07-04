@@ -1,0 +1,69 @@
+<html>
+    <head>
+        <title>Familles d'accueil ERA</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    </head>
+    <script>
+{% include 'functions.html' %}
+        window.onload=function() {
+            var i;
+            var regnums = document.querySelectorAll('[id^="rn_"]');
+            for (i = 0; i < regnums.length; ++i) {
+                regnum = parseInt(regnums[i].innerHTML);
+                regnums[i].innerHTML = readableRegistre(regnum);
+            }
+        }
+    </script>
+    <style>
+    hr {
+       border-top: 1px dotted #000000 !important;
+       margin-bottom:10px !important;
+       margin-top:5px !important;
+
+    }
+    </style><body>
+{% include 'navbar.html' %}
+
+    <div class="container">
+    {% if msg %}{% for m in  msg %}
+        {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
+        {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
+        {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
+        {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
+        {{ m[1] }}</div>
+    {% endfor %}{% endif %}
+
+        <h2>Utilitaires de systeme</h2>
+
+        <div class="alert alert-danger"><h3>ATTENTION!!! Les operations effectuees par cette page sont a utiliser SEULEMENT SI ON SAIT
+        EXACTEMENT CE QUE L'ON FAIT, comme les degats peuvent etre enormes et irreversibles.</h3></div>
+
+        <form action="/admin" method="POST">
+            <div class="row form-group">
+                <div class="col-sm-3"><button type="submit" name="action" value="adm_vettab">Generer le vet hash map pour FawebHelper.pm</button></div>
+                <div class="col-sm-3"><button type="submit" name="action" value="adm_numcats">Recalculer le nombre des chats dans chaque FA</button></div>
+                <div class="col-sm-3"><button type="submit" name="action" value="adm_cleanup">Nettoyer l'historique en effacant tous les chats de l'annee derniere</button></div>
+            </div>
+            <div class="row form-group">
+                <div class="col-sm-3"><button type="submit" name="action" value="adm_deluser">Effacer un utilisateur: les chats sont reassignes a "FA temporaires"</button></div>
+                <div class="col-sm-2"><input type="text" name="u_name"></div>
+            </div>
+            <div class="row form-group">
+                <div class="col-sm-3"><button type="submit" name="action" value="adm_delvisits">Effacer toutes les visites veterinaires associees a un chat</button></div>
+                <div class="col-sm-3"><button type="submit" name="action" value="adm_revetsh">Regenerer le sommaire des visites veterinaires associees a un chat</button></div>
+                <div class="col-sm-2"><input type="text" name="c_regnum"></div>
+            </div>
+        </form>
+        <hr>
+        {% if admresult %}Resultat: {{ admresult }}{% endif %}
+
+        {% include 'bottom.html' %}
+     </div><!-- /.container -->
+</body>
+</html>

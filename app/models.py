@@ -97,6 +97,8 @@ class Cat(db.Model):
     def regStr(self):
         return "{}-{}".format(self.regnum%10000, int(self.regnum/10000))
 
+    def canAccess(self, fauser):
+        return self.owner_id == fauser.id or fauser.FAisADM or (fauser.FAisRF and self.owner.FAresp_id == fauser.id)
 
 # --------------- VETINFO CLASS
 
@@ -115,6 +117,8 @@ class VetInfo(db.Model):
     vdate = db.Column(db.DateTime, default=datetime.now)
     planned = db.Column(db.Boolean)
     requested = db.Column(db.Boolean)
-    validated = db.Column(db.Boolean)
+    validby_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    validby = db.relationship('User', foreign_keys=doneby_id)
+    validdate = db.Column(db.DateTime)
     comments = db.Column(db.String(1024))
 

@@ -177,17 +177,92 @@ def vetpage():
         # return to vet page
         return redirect(url_for('fapage'))
 
+    if cmd == "fa_vetareq":
+        # iterate on the checkboxes to see which cats are to be processed
+        for key in request.form.keys():
+            if key[0:3] == 're_':
+                vvid = int(key[3:])
+
+                # make sure you can access this (= must be one of your cats)
+                theVisit = VetInfo.query.filter_by(id=vvid).first()
+                if not theVisit:
+                    return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetareq: invalid vetinfo id", FAids=FAidSpecial)
+
+               # find the cat and make sure we can access it
+                theCat = Cat.query.filter_by(id=theVisit.cat_id).first()
+                if not theCat.canAccess(current_user):
+                    return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetareq: insufficient privileges", FAids=FAidSpecial)
+
+                # you can access this, indicate that the visit is now requested
+                theVisit.requested = True
+
+        db.session.commit()
+        return redirect(url_for('fapage'))
+
+    if cmd == "fa_vetauth" and (current_user.FAisADM or current_user.FAisRF):
+        # iterate on the checkboxes to see which cats are to be processed
+        for key in request.form.keys():
+            if key[0:3] == 're_':
+                vvid = int(key[3:])
+
+                # make sure you can access this (= must be one of your cats)
+                theVisit = VetInfo.query.filter_by(id=vvid).first()
+                if not theVisit:
+                    return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetauth: invalid vetinfo id", FAids=FAidSpecial)
+
+               # find the cat and make sure we can access it
+                theCat = Cat.query.filter_by(id=theVisit.cat_id).first()
+                if not theCat.canAccess(current_user):
+                    return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetauth: insufficient privileges", FAids=FAidSpecial)
+
+                # sanity check
+                if theCat.owner_id == FAidSpecial[4]:
+                    session["pendingmessage"] = [ [ 3, "Authoriser une visite pour une FA temporaire est inutile".format(theCat.regStr()) ] ]
+                    return redirect(url_for('fapage'))
+
+                # you can access this, indicate that the visit is now authorized (even if the authorization was not requested)
+                theVisit.requested = False
+                theVisit.validby_id = current_user.id
+                theVisit.validdate = datetime.now()
+
+        db.session.commit()
+        return redirect(url_for('fapage'))
+
+    if cmd == "fa_vetadel" and (current_user.FAisADM or current_user.FAisRF):
+        # iterate on the checkboxes to see which cats are to be processed
+        for key in request.form.keys():
+            if key[0:3] == 're_':
+                vvid = int(key[3:])
+
+                # make sure you can access this (= must be one of your cats)
+                theVisit = VetInfo.query.filter_by(id=vvid).first()
+                if not theVisit:
+                    return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetadel: invalid vetinfo id", FAids=FAidSpecial)
+
+               # find the cat and make sure we can access it
+                theCat = Cat.query.filter_by(id=theVisit.cat_id).first()
+                if not theCat.canAccess(current_user):
+                    return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetadel: insufficient privileges", FAids=FAidSpecial)
+
+                # you can access this, indicate that the visit is now authorized (even if the authorization was not requested)
+                theVisit.validby_id = None
+                theVisit.validdate = None
+
+        db.session.commit()
+        return redirect(url_for('fapage'))
+
     if cmd == "fa_vetbon":
         # generate the data for the bon
         catlist = []
         catregs = []
-        theFA = None
+        FAname = None
+        theAuthFA = None
         # vaccinations, rappels, sterilisations, castrations, identifications, tests fiv/felv, soins
         # if vtype is "soins" then we append the comment as visit description
         vtypes = [0, 0, 0, 0, 0, 0, 0]
         vdate = None
         comments = []
-        # the QR code contains: ERA;<who authorized>;<today's date>;<FAid>;<visit date>;<cat regs>;<vtypes joined as string>;<check>
+        # the QR code contains: ERA;<today's date>;<who authorized>;<authorization date>;<FAid>;<visit date>;<cat regs>;<vtypes joined as string>;<check>
         # check is a 12-byte string obtained by md5sum of previous part + some random junk + base64_encode + cut in half
 
         # iterate on the checkboxes to see which cats are to be processed
@@ -198,18 +273,37 @@ def vetpage():
                 # make sure you can access this (= must be one of your cats)
                 theVisit = VetInfo.query.filter_by(id=vvid).first()
                 if not theVisit:
-                    return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetmv(d): invalid vetinfo id", FAids=FAidSpecial)
+                    return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetbon: invalid vetinfo id", FAids=FAidSpecial)
 
                 if not vdate:
                     vdate = theVisit.vdate
 
                 # find the cat and make sure we can access it
                 theCat = Cat.query.filter_by(id=theVisit.cat_id).first()
-                if not (theCat.owner_id == current_user.id and current_user.FAisFA) and not (theCat.owner.FAresp_id == current_user.id) and not current_user.FAisADM:
-                    return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetmv(d): insufficient privileges", FAids=FAidSpecial)
+                if not theCat.canAccess(current_user):
+                    return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetbon: insufficient privileges", FAids=FAidSpecial)
 
-                if not theFA:
-                    theFA = theCat.owner
+                # do we need authorization?
+                if not current_user.FAisADM and not (current_user.FAisRF and theCat.owner.FAresp_id == current_user.id) and not theVisit.validby_id:
+                    session["pendingmessage"] = [ [ 3, "La visite du chat {} n'est pas autorisee!".format(theCat.regStr()) ] ]
+                    return redirect(url_for('fapage'))
+
+                if not FAname:
+                    if theCat.owner_id == FAidSpecial[4]:
+                        FAname = theCat.temp_owner
+                        FAid = "[{}]".format(FAname)
+                    else:
+                        FAname = theCat.owner.FAname
+                        FAid = theCat.owner.FAid
+
+                # manage validation source and date
+                if not theAuthFA:
+                    if current_user.FAisADM or (current_user.FAisRF and theCat.owner.FAresp_id == current_user.id):
+                        theAuthFA = current_user
+                        authdate = datetime.now()
+                    elif theVisit.validby_id:
+                        theAuthFA = theVisit.validby
+                        authdate = theVisit.validdate
 
                 # cumulate the information
                 catlist.append(theCat)
@@ -241,13 +335,18 @@ def vetpage():
             session["pendingmessage"] = [ [ 2, "Aucune visite selectionnee" ] ]
             return redirect(url_for('fapage'))
 
+        # check the auth
+        if not theAuthFA:
+            # this is a major problem which should not happen
+            return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetbon: no authorization FA found??", FAids=FAidSpecial)
+
         bdate = datetime.today()
 
         # generate the qrcode string
-        qrstr = "ERA;{};{};{};{};{};{};".format(current_user.FAid, bdate.strftime('%Y%m%d'), theFA.FAid, vdate.strftime('%Y%m%d'), "/".join(catregs), "".join(str(e) for e in vtypes))
+        qrstr = "ERA;{};{};{};{};{};{};".format(bdate.strftime('%Y%m%d'), theAuthFA.FAid, authdate.strftime('%Y%m%d'), FAid, vdate.strftime('%Y%m%d'), "/".join(catregs), "".join(str(e) for e in vtypes))
         qrstr = qrstr + ERAsum(qrstr)
 
-        return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, cats=catlist, fa=theFA, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
+        return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, cats=catlist, faname=FAname, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
 
     if cmd == "adm_vbver":
         bvcode = request.form["vb_qrcode"]
