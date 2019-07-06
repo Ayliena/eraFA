@@ -224,8 +224,9 @@ def refupage():
                     # this is a complete mess, since there's no way to know WHICH FA has done the visit
                     # if the line specifies 'FA' we use the current (new FA)
                     # in all other cases AND for temporary FAs, we use the REF
+                    # exception: if the visit is planned then always associate with the current FA
                     v_doneby = FAidSpecial[3]
-                    if v[offs+4] == 'FA' and not theFA.id == FAidSpecial[4]:
+                    if (v[offs+4] == 'FA' and not theFA.id == FAidSpecial[4]) or v_planned:
                         v_doneby = theFA.id
 
                     # all is good, cumulate vetinfo and prepare the object, cat_id will be invalid for now
@@ -313,6 +314,12 @@ def refupage():
                         # if the destination FA is any of dead/adopted/historical then clear the adopted flag
                         if theFA.id == FAidSpecial[0] or theFA.id == FAidSpecial[1] or theFA.id == FAidSpecial[2]:
                             theCat.adoptable = False
+
+                        # reassociate any planned visit and clear any validation
+                        theVisits = VetInfo.query.filter(and_(VetInfo.cat_id == theCat.id, VetInfo.planned == True)).all()
+                        for v in theVisits:
+                            v.doneby_id = theFA.id
+                            v.validby_id = None
 
                     # associate the vet visits
                     for vv in vvisits:

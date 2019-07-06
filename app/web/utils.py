@@ -111,8 +111,10 @@ def adminpage():
 
             c.temp_owner = tempname
 
+            # we shift the visits and also kill any authorization, which is useless anyway
             for vv in c.vetvisits:
                 vv.doneby_id = FAidSpecial[4]
+                vv.validby_id = None
 
             # modify the FA
             # generate the event
@@ -146,6 +148,7 @@ def adminpage():
 
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: remise a zero des visites veterinaires".format(current_user.FAname))
         db.session.add(theEvent)
+        current_user.FAlastop = datetime.now()
         db.session.commit()
 
         return render_template("admin_page.html", user=current_user, FAids=FAidSpecial, admresult="Visites du {} effacees".format(theCat.regStr()))

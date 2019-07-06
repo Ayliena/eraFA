@@ -421,10 +421,12 @@ def catpage(catid=-1):
             theCat.lastop = datetime.now()
             # in order to make it easier to list the "planned visits", any visit which is PLANNED is transferred to the new owner
             # the idea is than that any VetInfo with planned=True and doneby_id matching the user ALWAYS corresponds to cats he owns
+            # any validated visit is also reversed back to NON-validated
             # this doesn't affect the visits which were performed. and the events will reflect the reality of who planned the visit since they are static
             theVisits = VetInfo.query.filter(and_(VetInfo.cat_id == theCat.id, VetInfo.planned == True)).all()
             for v in theVisits:
                 v.doneby_id = FAid
+                v.validby_id = None
 
             current_user.FAlastop = datetime.now()
             db.session.commit()

@@ -54,9 +54,9 @@ def fapage():
             theVisits = VetInfo.query.filter(and_(VetInfo.doneby_id==FAid, VetInfo.planned==True)).order_by(VetInfo.vdate).all()
 
             if FAid != current_user.id:
-                return render_template("vet_page.html", user=current_user, otheruser=theFA, visits=theVisits, FAids=FAidSpecial, msg=message)
+                return render_template("vet_page.html", devsite=devel_site, user=current_user, otheruser=theFA, visits=theVisits, FAids=FAidSpecial, msg=message)
 
-            return render_template("vet_page.html", user=current_user, visits=theVisits, FAids=FAidSpecial, msg=message)
+            return render_template("vet_page.html", devsite=devel_site, user=current_user, visits=theVisits, FAids=FAidSpecial, msg=message)
 
         elif mode == "special-all":
             return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,

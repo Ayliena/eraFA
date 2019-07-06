@@ -1,4 +1,4 @@
-from app import app, db
+from app import app, db, devel_site
 from app.staticdata import TabColor, TabSex, TabHair, FAidSpecial
 from app.models import User, Cat, VetInfo, Event
 from app.helpers import vetMapToString, vetAddStrings, ERAsum
@@ -99,10 +99,10 @@ def vetpage():
         VETlist = User.query.filter_by(FAisVET=True).all()
 
         if FAid != current_user.id:
-            return render_template("vet_page.html", user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+            return render_template("vet_page.html", devsite=devel_site, user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
                 cats=Cat.query.filter_by(owner_id=FAid).order_by(Cat.regnum).all(), FAids=FAidSpecial, VETids=VETlist)
 
-        return render_template("vet_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+        return render_template("vet_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
             cats=Cat.query.filter_by(owner_id=current_user.id).order_by(Cat.regnum).all(), FAids=FAidSpecial, VETids=VETlist)
 
 
