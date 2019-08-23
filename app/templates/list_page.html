@@ -128,7 +128,9 @@
                     {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}??âge??{% endif %},
                     {{ tabcol[cat.color] }}{{ tabhair[cat.longhair] }})</div>
                 <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
-                <div class="col-sm-2">{{ cat.owner.FAname }}</div>
+                <div class="col-sm-2">
+                    {% if cat.owner_id == FAids[4] %}[{{ cat.temp_owner }}]{% else %}{{ cat.owner.FAname }}{% endif %}
+                </div>
                 {% if not adoptonly %}
                     <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success">Adoptable</span>{% else %}<span class="bg-danger">Non adoptable</span>{% endif %}</div>
                 {% endif %}

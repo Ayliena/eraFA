@@ -59,15 +59,15 @@ def exportCSV(catlist):
     csv="FA,Registre,Puce,Nom,Sexe,Date Naissance,Couleur,Poil,Veterinaire,Adoptable,Commentaires\n"
 
     for cat in catlist:
-        # historical cats are ignored
-        if cat.owner.FAisHIST:
-            continue
+        # historical cats are ignored ?
+        #if cat.owner.FAisHIST:
+        #    continue
 
         # this is looking for trouble.....
         cdesc = cat.comments
         cdesc.replace('"', '""')
 
-        csv += ('"'+cat.owner.FAname+'",'+cat.regStr()+','+cat.identif+',"'+cat.name+'",'+
+        csv += ('"'+(cat.owner.FAname if cat.owner_id!=FAidSpecial[4] else ("["+cat.temp_owner+"]"))+'",'+cat.regStr()+','+cat.identif+',"'+cat.name+'",'+
             TabSex[cat.sex]+','+(cat.birthdate.strftime("%d/%m/%y") if cat.birthdate else '')+','+TabColor[cat.color]+','+
             TabHair[cat.longhair]+','+cat.vetshort+','+('Adoptable' if cat.adoptable else '')+',"'+cdesc+'"\n')
 

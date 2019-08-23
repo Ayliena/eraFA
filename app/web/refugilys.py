@@ -28,7 +28,7 @@ def refupage():
         except ValueError:
             mdate = datetime.now()
 
-        cats = Cat.query.filter(Cat.lastop>=mdate).all()
+        cats = Cat.query.filter(Cat.lastop>=mdate).order_by(Cat.lastop.desc()).all()
         return render_template("refu_page.html", user=current_user, mdate=mdate, modcats=cats, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair)
 
     if cmd == "adm_refuexport":

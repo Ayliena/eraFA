@@ -64,7 +64,12 @@
                 <div class="col-sm-2"><input type="text" name="mod_date" id="mod_date" value="{{ mdate.strftime('%d/%m/%y') }}"></div>
                 <div class="col-sm-2"><button type="submit" name="action" value="adm_modfilter">Filtrer</button></div>
             </div>
+            <div class="row form-group">
+                <div class="col-sm-3"><button type="submit" name="action" value="adm_refuexport">Exporter les chats selectionnes</button></div>
+                <div class="col-sm-3"><button type="submit" name="action" value="adm_refuexpall">Exporter tous les chats</button></div>
+            </div>
             {% if modcats %}{% for cat in modcats %}
+            <hr>
             <div class="row">
                 <div class="col-sm-1">
                     <div class="form-check">
@@ -90,12 +95,7 @@
                     <div class="col-sm-9">{{ ev.etext }}</div>
                 </div>
             {% endfor %}
-            <hr>
             {% endfor %}{% endif %}
-            <div class="row form-group">
-                <div class="col-sm-3"><button type="submit" name="action" value="adm_refuexport">Exporter les chats selectionnes</button></div>
-                <div class="col-sm-3"><button type="submit" name="action" value="adm_refuexpall">Exporter tous les chats</button></div>
-            </div>
         </form>
 
     </div><!-- /.container -->

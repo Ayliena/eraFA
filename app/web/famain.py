@@ -1,11 +1,11 @@
 from app import app, db, devel_site
 from app.staticdata import TabColor, TabSex, TabHair, FAidSpecial
 from app.models import User, Cat, VetInfo, Event
+from app.helpers import cat_delete
 from flask import render_template, redirect, request, url_for, session
 from flask_login import login_required, current_user
 from sqlalchemy import and_
 from datetime import datetime
-import os
 
 
 @app.route('/fa', methods=["GET", "POST"])
@@ -149,14 +149,8 @@ def fapage():
         # NOTE THAT THIS IS IRREVERSIBLE AND LEAVES NO TRACE
         session["pendingmessage"] = [ [0, "Chat {} effacé du systeme".format(theCat.asText())] ]
 
-        # start by erasing the image (if any)
-        if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], "{}.jpg".format(theCat.regnum))):
-            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], "{}.jpg".format(theCat.regnum)))
+        cat_delete(theCat)
 
-        theCat.owner.numcats -= 1
-        Event.query.filter_by(cat_id=theCat.id).delete()
-        VetInfo.query.filter_by(cat_id=theCat.id).delete()
-        db.session.delete(theCat)
         current_user.FAlastop = datetime.now()
         db.session.commit()
 

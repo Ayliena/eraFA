@@ -1,5 +1,8 @@
+from app import app, db
+from app.models import Event, VetInfo
 import hashlib
 import base64
+import os
 
 # --------------- HELPER FUNCTIONS
 
@@ -49,3 +52,14 @@ def ERAsum(str1):
     str2 = base64.b64encode(m.digest()).decode('utf-8')
 
     return str2[0:12]
+
+def cat_delete(theCat):
+    # start by erasing the image (if any)
+    if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], "{}.jpg".format(theCat.regnum))):
+        os.remove(os.path.join(app.config['UPLOAD_FOLDER'], "{}.jpg".format(theCat.regnum)))
+
+    theCat.owner.numcats -= 1
+    Event.query.filter_by(cat_id=theCat.id).delete()
+    VetInfo.query.filter_by(cat_id=theCat.id).delete()
+    db.session.delete(theCat)
+    # note that WE DO NOT COMMIT

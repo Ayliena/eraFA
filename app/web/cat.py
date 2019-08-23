@@ -150,8 +150,8 @@ def catpage(catid=-1):
     if cmd == "fa_viewcat":
         return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist, VETids=VETlist, FAids=FAidSpecial)
 
-    # cat commands
-    if cmd == "fa_modcat" or cmd == "fa_modcatr":
+    # cat commands, except for "cancel" we always process any data change
+    if cmd == "fa_modcat" or cmd == "fa_modcatr" or cmd == "fa_adopted" or cmd == "fa_dead" or (cmd == "adm_putcat" and access == ACC_TOTAL):
         # return jsonify(request.form.to_dict())
 
         # update cat information and indicate what was changed
@@ -235,6 +235,8 @@ def catpage(catid=-1):
         else:
             cat_updated = False
 
+        visitupdated = ""
+
         # generate the vetinfo record, if any, and the associated event
         VisitType = vetMapToString(request.form, "visit")
 
@@ -267,6 +269,8 @@ def catpage(catid=-1):
             db.session.add(theVisit)
             db.session.commit()  # needed for vet.FAname
 
+            visitupdated += " +{}[{}]".format('P' if VisitPlanned else 'E', VisitType)
+
             # add it as event (planned or not)
             theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} {} {} chez {}".format(current_user.FAname, VisitType, et, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
             db.session.add(theEvent)
@@ -296,6 +300,7 @@ def catpage(catid=-1):
 
             # if deleted, delete immediately
             if int(request.form[prefix+"_state"]) == 2:
+                visitupdated += " -{}[{}]".format('P' if theVisit.planned else 'E', theVisit.vtype)
                 theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} annullée".format(current_user.FAname, theVisit.vtype))
                 db.session.add(theEvent)
                 db.session.delete(theVisit)
@@ -307,6 +312,7 @@ def catpage(catid=-1):
 
             if VisitType == "--------":
                 # all reasons removed, erase this
+                visitupdated += " -{}[{}]".format('P' if theVisit.planned else 'E', theVisit.vtype)
                 theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} annullée".format(current_user.FAname, theVisit.vtype))
                 db.session.add(theEvent)
                 db.session.delete(theVisit)
@@ -351,89 +357,96 @@ def catpage(catid=-1):
                 et = "re-planifiee pour le"
 
             if vv_updated:
+                visitupdated += " *{}[{}]".format('P' if theVisit.planned else 'E', VisitType)
+
                 theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} {} {} chez {}".format(current_user.FAname, VisitType, et, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
                 db.session.add(theEvent)
 
         # end for mv in modvisits
 
-        if cat_updated:
+        message = []
+
+        if cat_updated or visitupdated:
             theCat.lastop = datetime.now()
-        current_user.FAlastop = datetime.now()
-        db.session.commit()
-        message = [ [0, "Informations mises a jour"] ]
+            current_user.FAlastop = datetime.now()
+            db.session.commit()
+            message.append([0, "Informations mises a jour: {}{}".format(updated, visitupdated)])
+        else:
+            message.append([0, "Aucune information etait modifiee"])
 
         # if we stay on the page, regenerate it directly
         if cmd == "fa_modcatr":
             return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist, msg=message, VETids=VETlist, FAids=FAidSpecial)
 
-        session["pendingmessage"] = message
-        return redirect(url_for('fapage'))
+        if cmd == "fa_modcat":
+            session["pendingmessage"] = message
+            return redirect(url_for('fapage'))
 
-    if cmd == "fa_adopted":
-        newFA = User.query.filter_by(id=FAidSpecial[0]).first()
-        newFA.numcats += 1
-        theCat.owner.numcats -= 1
-        theCat.owner_id = newFA.id
-        theCat.adoptable = False
-        # erase any planned visit
-        VetInfo.query.filter_by(cat_id=theCat.id, planned=True).delete()
-        theCat.lastop = datetime.now()
-        # generate the event
-        session["pendingmessage"] = [ [0, "Chat {} transféré dans les adoptés".format(theCat.asText())] ]
-        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: donné aux adoptants".format(current_user.FAname))
-        db.session.add(theEvent)
-        current_user.FAlastop = datetime.now()
-        db.session.commit()
-        return redirect(url_for('fapage'))
-
-    if cmd == "fa_dead":
-        newFA = User.query.filter_by(id=FAidSpecial[1]).first()
-        newFA.numcats += 1
-        theCat.owner.numcats -= 1
-        theCat.owner_id = newFA.id
-        theCat.adoptable = False
-        # erase any planned visit
-        VetInfo.query.filter_by(cat_id=theCat.id, planned=True).delete()
-        theCat.lastop = datetime.now()
-        # generate the event
-        session["pendingmessage"] = [ [0, "Chat {} transféré dans les décédés".format(theCat.asText())] ]
-        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: indiqué décédé".format(current_user.FAname))
-        db.session.add(theEvent)
-        current_user.FAlastop = datetime.now()
-        db.session.commit()
-        return redirect(url_for('fapage'))
-
-    if cmd == "adm_putcat" and access == ACC_TOTAL:
-        # cat information is not updated
-        FAid = int(request.form["FAid"])
-        # validate the id
-        theFA = User.query.filter_by(id=FAid).first()
-
-        if theFA and FAid != theCat.owner_id:
-            # generate the event
-            session["pendingmessage"] = [ [0, "Chat {} transféré chez {}".format(theCat.asText(), theFA.FAname)] ]
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transféré de {} a {}".format(current_user.FAname, theCat.owner.FAname, theFA.FAname))
-            db.session.add(theEvent)
-            # modify the FA
-            theFA.numcats += 1
+        if cmd == "fa_adopted":
+            newFA = User.query.filter_by(id=FAidSpecial[0]).first()
+            newFA.numcats += 1
             theCat.owner.numcats -= 1
-            theCat.owner_id = FAid
+            theCat.owner_id = newFA.id
+            theCat.adoptable = False
+            # erase any planned visit
+            VetInfo.query.filter_by(cat_id=theCat.id, planned=True).delete()
             theCat.lastop = datetime.now()
-            # in order to make it easier to list the "planned visits", any visit which is PLANNED is transferred to the new owner
-            # the idea is than that any VetInfo with planned=True and doneby_id matching the user ALWAYS corresponds to cats he owns
-            # any validated visit is also reversed back to NON-validated
-            # this doesn't affect the visits which were performed. and the events will reflect the reality of who planned the visit since they are static
-            theVisits = VetInfo.query.filter(and_(VetInfo.cat_id == theCat.id, VetInfo.planned == True)).all()
-            for v in theVisits:
-                v.doneby_id = FAid
-                v.validby_id = None
-
+            # generate the event
+            message.append([0, "Chat {} transféré dans les adoptés".format(theCat.asText())])
+            session["pendingmessage"] = message
+            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: donné aux adoptants".format(current_user.FAname))
+            db.session.add(theEvent)
             current_user.FAlastop = datetime.now()
             db.session.commit()
+            return redirect(url_for('fapage'))
 
-        return redirect(url_for('fapage'))
+        if cmd == "fa_dead":
+            newFA = User.query.filter_by(id=FAidSpecial[1]).first()
+            newFA.numcats += 1
+            theCat.owner.numcats -= 1
+            theCat.owner_id = newFA.id
+            theCat.adoptable = False
+            # erase any planned visit
+            VetInfo.query.filter_by(cat_id=theCat.id, planned=True).delete()
+            theCat.lastop = datetime.now()
+            # generate the event
+            message.append([0, "Chat {} transféré dans les décédés".format(theCat.asText())])
+            session["pendingmessage"] = message
+            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: indiqué décédé".format(current_user.FAname))
+            db.session.add(theEvent)
+            current_user.FAlastop = datetime.now()
+            db.session.commit()
+            return redirect(url_for('fapage'))
+
+        if cmd == "adm_putcat" and access == ACC_TOTAL:
+            FAid = int(request.form["FAid"])
+            # validate the id
+            theFA = User.query.filter_by(id=FAid).first()
+
+            if theFA and FAid != theCat.owner_id:
+                # generate the event
+                message.append([0, "Chat {} transféré chez {}".format(theCat.asText(), theFA.FAname)])
+                session["pendingmessage"] = message
+                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transféré de {} a {}".format(current_user.FAname, theCat.owner.FAname, theFA.FAname))
+                db.session.add(theEvent)
+                # modify the FA
+                theFA.numcats += 1
+                theCat.owner.numcats -= 1
+                theCat.owner_id = FAid
+                theCat.lastop = datetime.now()
+                # in order to make it easier to list the "planned visits", any visit which is PLANNED is transferred to the new owner
+                # the idea is than that any VetInfo with planned=True and doneby_id matching the user ALWAYS corresponds to cats he owns
+                # any validated visit is also reversed back to NON-validated
+                # this doesn't affect the visits which were performed. and the events will reflect the reality of who planned the visit since they are static
+                theVisits = VetInfo.query.filter(and_(VetInfo.cat_id == theCat.id, VetInfo.planned == True)).all()
+                for v in theVisits:
+                    v.doneby_id = FAid
+                    v.validby_id = None
+
+                current_user.FAlastop = datetime.now()
+                db.session.commit()
+
+            return redirect(url_for('fapage'))
 
     # this should never be reached
-    # display info about a cat
-#    return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter_by(FAisFA=True).all())
     return render_template("error_page.html", user=current_user, errormessage="command error (/cat)", FAids=FAidSpecial)

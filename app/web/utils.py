@@ -1,8 +1,10 @@
 from app import app, db
 from app.staticdata import FAidSpecial
 from app.models import  Cat, User, Event, VetInfo
+from app.helpers import cat_delete
 from flask import render_template, redirect, request, url_for, session
 from flask_login import login_required, current_user
+from sqlalchemy import and_
 from sqlalchemy.sql import text
 from datetime import datetime
 
@@ -154,7 +156,33 @@ def adminpage():
         return render_template("admin_page.html", user=current_user, FAids=FAidSpecial, admresult="Visites du {} effacees".format(theCat.regStr()))
 
     if cmd == "adm_cleanup":
-        return render_template("error_page.html", user=current_user, errormessage="command error (adm_cleanup)", FAids=FAidSpecial)
+        # we do this manually by iterating on all the "historique" cats
+
+        # determine current year and define the beginning of the current year
+        curryear = datetime.now().year
+
+        # get the cats, of course any cat which has arrived this year is automatically excluded
+        cats = Cat.query.filter(and_(Cat.owner_id==FAidSpecial[2], Cat.regnum<(curryear*10000))).all()
+
+        msg = "Chats effaces:"
+
+        # iterate on all cats and check the vet visits, if they all are BEFORE the current year, we can safely delete it
+        for c in cats:
+            to_del = True
+
+            for vv in c.vetvisits:
+                if vv.vdate.year >= curryear:
+                    to_del = False
+                    break
+
+            if to_del:
+                # delete the cat
+                cat_delete(c)
+                msg += " " + c.regStr()
+
+        db.session.commit()
+
+        return render_template("admin_page.html", user=current_user, FAids=FAidSpecial, admresult=msg)
 
     return render_template("error_page.html", user=current_user, errormessage="command error (/admin)", FAids=FAidSpecial)
 
