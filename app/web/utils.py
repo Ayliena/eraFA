@@ -1,7 +1,7 @@
 from app import app, db
 from app.staticdata import FAidSpecial
 from app.models import  Cat, User, Event, VetInfo
-from app.helpers import cat_delete
+from app.helpers import cat_delete, decodeRegnum, vetAddStrings
 from flask import render_template, redirect, request, url_for, session
 from flask_login import login_required, current_user
 from sqlalchemy import and_
@@ -31,6 +31,14 @@ def searchpage():
         # if they are all empty => complain
         if not src_name and not src_regnum and not src_id:
             message = [ [3, "Il faut indiquer au moins un critere de recherche!" ] ]
+            return render_template("search_page.html", user=current_user, FAids=FAidSpecial, msg=message)
+
+        # if regnum ends with '-', remove it, if it starts with '-', refuse it
+        while src_regnum.endswith('-'):
+            src_regnum = src_regnum[:-1]
+
+        if src_regnum.startswith('-'):
+            message = [ [3, "Le numero de registre ne peut pas commencer par '-'!" ] ]
             return render_template("search_page.html", user=current_user, FAids=FAidSpecial, msg=message)
 
         session["otherMode"] = "special-search"
@@ -136,14 +144,14 @@ def adminpage():
         return render_template("admin_page.html", user=current_user, FAids=FAidSpecial, admresult=msg)
 
     if cmd == "adm_delvisits":
-        c_regnum = request.form["c_regnum"]
-        if c_regnum.find('-') == -1:
+        rn = decodeRegnum(request.form["c_regnum"])
+        if rn == -1:
             return render_template("admin_page.html", user=current_user, FAids=FAidSpecial, admresult="Format du numero de registre incorrect")
 
         # exact match
-        rr = c_regnum.split('-')
-        rn = int(rr[0]) + 10000*int(rr[1])
         theCat = Cat.query.filter_by(regnum=rn).first()
+        if not theCat:
+            return render_template("admin_page.html", user=current_user, FAids=FAidSpecial, admresult="Chat {} non trouve".format(request.form["c_regnum"]))
 
         VetInfo.query.filter_by(cat_id=theCat.id).delete()
         theCat.vetshort = "--------"
@@ -151,9 +159,31 @@ def adminpage():
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: remise a zero des visites veterinaires".format(current_user.FAname))
         db.session.add(theEvent)
         current_user.FAlastop = datetime.now()
+        theCat.lastop = datetime.now()
         db.session.commit()
 
         return render_template("admin_page.html", user=current_user, FAids=FAidSpecial, admresult="Visites du {} effacees".format(theCat.regStr()))
+
+    if cmd == "adm_revetsh":
+        rn = decodeRegnum(request.form["c_regnum"])
+        if rn == -1:
+            return render_template("admin_page.html", user=current_user, FAids=FAidSpecial, admresult="Format du numero de registre incorrect")
+
+        theCat = Cat.query.filter_by(regnum=rn).first()
+        if not theCat:
+            return render_template("admin_page.html", user=current_user, FAids=FAidSpecial, admresult="Chat {} non trouve".format(request.form["c_regnum"]))
+
+        theCat.vetshort = "--------"
+        for vv in theCat.vetvisits:
+            theCat.vetshort = vetAddStrings(theCat.vetshort, vv.vtype)
+
+        # note that we add no event
+        current_user.FAlastop = datetime.now()
+        theCat.lastop = datetime.now()
+
+        db.session.commit()
+
+        return render_template("admin_page.html", user=current_user, FAids=FAidSpecial, admresult="Sommaire des visites du {} regenere".format(theCat.regStr()))
 
     if cmd == "adm_cleanup":
         # we do this manually by iterating on all the "historique" cats

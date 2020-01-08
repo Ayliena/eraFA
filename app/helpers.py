@@ -6,6 +6,19 @@ import os
 
 # --------------- HELPER FUNCTIONS
 
+def decodeRegnum(regnum):
+    # decode a nnn-yy string and convert it to a number
+    # returns -1 if the string is invalid
+    if regnum.find('-') == -1:
+        return -1
+
+    rr = regnum.split('-')
+    if len(rr) != 2 or not rr[0] or not rr[1]:
+        return -1
+
+    return int(rr[0]) + 10000*int(rr[1])
+
+
 def vetMapToString(vetmap, prefix):
     str =["-", "-", "-", "-", "-", "-", "-", "-"]
     if prefix+"_pv" in vetmap:
