@@ -4,6 +4,7 @@ from app.models import User, Cat
 from flask import render_template, redirect, request, url_for, session, Response
 from flask_login import login_required, current_user
 from datetime import datetime
+from sqlalchemy import and_
 
 
 @app.route("/list", methods=["GET", "POST"])
@@ -16,7 +17,8 @@ def listpage():
 
     if (cmd == "sv_viewFA" and (current_user.FAisADM or current_user.FAisOV)) or (cmd == "sv_viewFAresp" and (current_user.FAisRF)):
         # special FA we want some data from
-        REFfa=User.query.filter_by(FAisREF=True).first()
+        REFfa=User.query.filter_by(id=FAidSpecial[3]).first()
+        TEMPfa=User.query.filter_by(id=FAidSpecial[4]).first()
 
         # prepare the table of the RFs
         RFlist=User.query.filter_by(FAisRF=True).all()
@@ -27,11 +29,11 @@ def listpage():
 
         # get the correct list of FAs
         if cmd == "sv_viewFA":
-            FAlist=User.query.filter_by(FAisFA=True).order_by(User.FAid).all()
+            FAlist=User.query.filter(and_(User.FAisFA==True,User.id!=FAidSpecial[4])).order_by(User.FAid).all()
         else: # cmd == "sv_viewFAresp"
             FAlist=User.query.filter_by(FAresp_id=current_user.id).order_by(User.FAid).all()
 
-        return render_template("list_page.html", user=current_user, falist=FAlist, rftab=RFtab, refugfa=REFfa, FAids=FAidSpecial)
+        return render_template("list_page.html", user=current_user, falist=FAlist, rftab=RFtab, refugfa=REFfa, tempfa=TEMPfa, FAids=FAidSpecial)
 
 #    if cmd == "sv_viewFAresp" and (current_user.FAisRF):
         # special FA we want some data from

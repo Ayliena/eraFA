@@ -73,9 +73,11 @@ def catpage(catid=-1):
             if cmd == "adm_addcatputFA" and faexists:
                 newFA.numcats += 1
                 theCat.owner_id = FAid
+                theCat.temp_owner = newFA.FAname
             else:
                 current_user.numcats += 1
                 theCat.owner_id = current_user.id
+                theCat.temp_owner = current_user.FAname
 
         else: # cmd == "addcathere"
             current_user.numcats += 1
@@ -387,6 +389,7 @@ def catpage(catid=-1):
             newFA.numcats += 1
             theCat.owner.numcats -= 1
             theCat.owner_id = newFA.id
+            theCat.temp_owner = ""
             theCat.adoptable = False
             # erase any planned visit
             VetInfo.query.filter_by(cat_id=theCat.id, planned=True).delete()
@@ -405,6 +408,7 @@ def catpage(catid=-1):
             newFA.numcats += 1
             theCat.owner.numcats -= 1
             theCat.owner_id = newFA.id
+            theCat.temp_owner = ""
             theCat.adoptable = False
             # erase any planned visit
             VetInfo.query.filter_by(cat_id=theCat.id, planned=True).delete()
@@ -421,18 +425,20 @@ def catpage(catid=-1):
         if cmd == "adm_putcat" and access == ACC_TOTAL:
             FAid = int(request.form["FAid"])
             # validate the id
-            theFA = User.query.filter_by(id=FAid).first()
+            newFA = User.query.filter_by(id=FAid).first()
 
-            if theFA and FAid != theCat.owner_id:
+            if newFA and FAid != theCat.owner_id:
                 # generate the event
-                message.append([0, "Chat {} transféré chez {}".format(theCat.asText(), theFA.FAname)])
+                message.append([0, "Chat {} transféré chez {}".format(theCat.asText(), newFA.FAname)])
                 session["pendingmessage"] = message
-                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transféré de {} a {}".format(current_user.FAname, theCat.owner.FAname, theFA.FAname))
+                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transféré de {} a {}".format(current_user.FAname, theCat.owner.FAname, newFA.FAname))
                 db.session.add(theEvent)
                 # modify the FA
-                theFA.numcats += 1
+                newFA.numcats += 1
                 theCat.owner.numcats -= 1
                 theCat.owner_id = FAid
+                # indicate the FA name in the tempowner so as to allow searches
+                theCat.temp_owner = newFA.FAname
                 theCat.lastop = datetime.now()
                 # in order to make it easier to list the "planned visits", any visit which is PLANNED is transferred to the new owner
                 # the idea is than that any VetInfo with planned=True and doneby_id matching the user ALWAYS corresponds to cats he owns

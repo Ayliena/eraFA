@@ -1,7 +1,7 @@
 from app import app, db
 from app.staticdata import FAidSpecial
 from app.models import User
-from flask import render_template, redirect, request, url_for, session
+from flask import render_template, redirect, request, url_for, session, Response
 from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
 import string
@@ -70,6 +70,30 @@ def userpage():
 
         session["pendingmessage"] = [ [0, "Nouveau utilisateur '{}' creé sans mot de passe".format(theFA.username) ] ]
         return redirect(url_for('userpage'))
+
+    if cmd == "adm_expusers":
+        # export a table of all users
+        FAlist=User.query.order_by(User.FAid).all()
+
+        datfile = []
+
+        for FA in FAlist:
+            FAtype = "SPEC"
+            if FA.FAisVET:
+                FAtype = "VET"
+            if FA.FAisFA:
+                FAtype = "FA"
+
+            datline = [ FA.username, FAtype, FA.FAid, FA.FAname, FA.FAemail, str(FA.numcats),
+                        FA.FAlastop.strftime("%d/%m/%Y %H:%M") if FA.FAlastop else "never" ]
+
+            datfile.append(";".join(datline))
+
+        return Response(
+            "\n".join(datfile),
+            mimetype="text/csv",
+            headers={"Content-disposition":
+                     "attachment; filename=faweb-users.dat"})
 
     # edit existing user
     theFA = User.query.filter_by(id=request.form["FAid"]).first()

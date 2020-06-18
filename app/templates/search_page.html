@@ -38,7 +38,7 @@
         {{ m[1] }}</div>
     {% endfor %}{% endif %}
 
-        <h2>Recherche d'un chat</h2>
+        <h2>Recherche de chats</h2>
 
         <p>Le resultat est la liste de tous les chats qui verifient au moins un des criteres.</p>
         <p>Pour le registre "nnn-yy" cherche un chat precis, "nnn" cherche le numero independemment de l'annee.</p>
@@ -56,6 +56,10 @@
             <div class="row">
                 <div class="col-sm-2">Identification:</div>
                 <div class="col-sm-4"><input type="text" name="src_id"></div>
+            </div>
+            <div class="row">
+                <div class="col-sm-2">Nom FA:</div>
+                <div class="col-sm-4"><input type="text" name="src_faname"></div>
             </div>
             <div class="row">
                 <div class="col-sm-2"><button type="submit" name="action" value="adm_search">Rechercher</button></div>

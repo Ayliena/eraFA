@@ -69,7 +69,7 @@ def fapage():
         elif mode == "special-search":
             searchfilter = session["searchFilter"]
 
-            (src_name, src_regnum, src_id) = searchfilter.split(';')
+            (src_name, src_regnum, src_id, src_FAname) = searchfilter.split(';')
 
             # rules for search: OR mode always
             # name and id: substring searches
@@ -94,6 +94,9 @@ def fapage():
 
             if src_id:
                 cats = cats + Cat.query.filter(Cat.identif.contains(src_id)).all()
+
+            if src_FAname:
+                cats = cats + Cat.query.filter(Cat.temp_owner.contains(src_FAname)).all()
 
             # we then use the /list page to display the cat list
             return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,

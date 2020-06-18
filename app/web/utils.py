@@ -27,9 +27,10 @@ def searchpage():
         src_name = request.form["src_name"]
         src_regnum = request.form["src_regnum"]
         src_id = request.form["src_id"]
+        src_FAname = request.form["src_faname"]
 
         # if they are all empty => complain
-        if not src_name and not src_regnum and not src_id:
+        if not src_name and not src_regnum and not src_id and not src_FAname:
             message = [ [3, "Il faut indiquer au moins un critere de recherche!" ] ]
             return render_template("search_page.html", user=current_user, FAids=FAidSpecial, msg=message)
 
@@ -42,7 +43,7 @@ def searchpage():
             return render_template("search_page.html", user=current_user, FAids=FAidSpecial, msg=message)
 
         session["otherMode"] = "special-search"
-        session["searchFilter"] = src_name+";"+src_regnum+";"+src_id
+        session["searchFilter"] = src_name+";"+src_regnum+";"+src_id+";"+src_FAname
         return redirect(url_for('fapage'))
 
     return render_template("error_page.html", user=current_user, errormessage="command error (/search)", FAids=FAidSpecial)
@@ -114,6 +115,7 @@ def adminpage():
 
         msg = "Conversion nom: {} -> {}, chats transferes:".format(theFA.FAname, tempname)
 
+        # move all the cats to FA_temp
         cats = Cat.query.filter_by(owner_id=theFA.id).all()
 
         for c in cats:
@@ -135,6 +137,14 @@ def adminpage():
             c.owner_id = FAtemp.id
             c.lastop = datetime.now()
             db.session.commit()
+
+        # some vet visits on historical cats may still be associated to this FA, relink them to FA_temp
+        # as above, kill any authorization
+        vetvisits = VetInfo.query.filter_by(doneby_id=theFA.id).all()
+
+        for vv in vetvisits:
+            vv.doneby_id = FAidSpecial[4]
+            vv.validby_id = None
 
         # now delete the user
         db.session.delete(theFA)
