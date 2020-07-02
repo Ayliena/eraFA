@@ -2,10 +2,11 @@ from app import app, db, devel_site
 from app.staticdata import TabColor, TabSex, TabHair, FAidSpecial
 from app.models import User, Cat, VetInfo, Event
 from app.helpers import vetMapToString, vetAddStrings, ERAsum
-from flask import render_template, redirect, request, url_for, session
+from flask import render_template, redirect, request, url_for, session, Markup
 from flask_login import login_required, current_user
 from sqlalchemy import and_
 from datetime import datetime
+from html import escape
 
 
 @app.route("/vet", methods=["GET", "POST"])
@@ -339,6 +340,93 @@ def vetpage():
         if not theAuthFA:
             # this is a major problem which should not happen
             return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetbon: no authorization FA found??", FAids=FAidSpecial)
+
+        bdate = datetime.today()
+
+        # generate the qrcode string
+        qrstr = "ERA;{};{};{};{};{};{};".format(bdate.strftime('%Y%m%d'), theAuthFA.FAid, authdate.strftime('%Y%m%d'), FAid, vdate.strftime('%Y%m%d'), "/".join(catregs), "".join(str(e) for e in vtypes))
+        qrstr = qrstr + ERAsum(qrstr)
+
+        return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, cats=catlist, faname=FAname, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
+
+    if cmd == "fa_vetbonfast":
+        # generate the data for the bon
+        # note that no planned visit is generated, so apart from the PDF, no information is stored anywhere
+        catlist = []
+        catregs = []
+
+        # the name used will be the one of the first FA
+        FAname = None
+
+        # the count will just be the number of cats (but we keep it split, just in case...)
+        vtypes = [0, 0, 0, 0, 0, 0, 0]
+        comments = []
+        # the QR code contains: ERA;<today's date>;<who authorized>;<authorization date>;<FAid>;<visit date>;<cat regs>;<vtypes joined as string>;<check>
+        # check is a 12-byte string obtained by md5sum of previous part + some random junk + base64_encode + cut in half
+
+        try:
+            vdate = datetime.strptime(request.form["visit_date"], "%d/%m/%y")
+        except ValueError:
+            vdate = datetime.now()
+
+        # manage validation source and date
+        theAuthFA = current_user
+        authdate = datetime.now()
+
+        # generate the vetinfo from the form
+        VisitType = vetMapToString(request.form, "visit")
+
+        # in this special case, we assume that "filled comments -> X type", so we force it
+        if request.form["visit_comments"]:
+            VisitType = VisitType[:6] + "X" + VisitType[7:]
+
+        # iterate on the checkboxes to see which cats are to be processed
+        for key in request.form.keys():
+            if key[0:3] == 're_':
+                catid = int(key[3:])
+
+                # find the cat
+                theCat = Cat.query.filter_by(id=catid).first()
+
+                if not FAname:
+                    if theCat.owner_id == FAidSpecial[4]:
+                        FAname = theCat.temp_owner
+                        FAid = "[{}]".format(FAname)
+                    else:
+                        FAname = theCat.owner.FAname
+                        FAid = theCat.owner.FAid
+
+                # cumulate the information
+                catlist.append(theCat)
+                catregs.append(theCat.regStr())
+
+                if VisitType[0] != '-':
+                    vtypes[0] += 1
+                if VisitType[1] != '-':
+                    vtypes[1] += 1
+                if VisitType[2] != '-':
+                    vtypes[1] += 1
+                if VisitType[3] != '-':
+                    if theCat.sex == 2:
+                        vtypes[3] += 1
+                    else:
+                        vtypes[2] += 1
+                if VisitType[4] != '-':
+                    vtypes[4] += 1
+                if VisitType[5] != '-':
+                    vtypes[5] += 1
+                if VisitType[6] != '-':
+                    if not comments:
+                        # we also fix the comments so that newlines are respected
+                        comments.append(Markup(escape(request.form["visit_comments"]).replace("\n","<br>")))
+                    vtypes[6] += 1
+                if VisitType[7] != '-':
+                    vtypes[1] += 1
+
+            # if nothing was selected, return an error and stay here
+            if not catlist:
+                session["pendingmessage"] = [ [ 2, "Aucun chat selectionne" ] ]
+                return redirect(url_for('fapage'))
 
         bdate = datetime.today()
 

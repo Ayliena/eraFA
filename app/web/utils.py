@@ -1,4 +1,4 @@
-from app import app, db
+from app import app, db, devel_site
 from app.staticdata import FAidSpecial
 from app.models import  Cat, User, Event, VetInfo
 from app.helpers import cat_delete, decodeRegnum, vetAddStrings
@@ -15,24 +15,25 @@ def searchpage():
     if not current_user.FAisADM and not current_user.FAisOV:
         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges", FAids=FAidSpecial)
 
+    max_regnum = db.session.query(db.func.max(Cat.regnum)).scalar()
+
     if request.method == "GET":
         # generate the search page
-        max_regnum = db.session.query(db.func.max(Cat.regnum)).scalar()
-
-        return render_template("search_page.html", user=current_user, FAids=FAidSpecial, maxreg=max_regnum)
+        return render_template("search_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, maxreg=max_regnum)
 
     cmd = request.form["action"]
 
-    if cmd == "adm_search":
+    if cmd == "adm_search" or cmd == "adm_searchs":
         src_name = request.form["src_name"]
         src_regnum = request.form["src_regnum"]
         src_id = request.form["src_id"]
         src_FAname = request.form["src_faname"]
+        src_mode = "info" if cmd == "adm_search" else "select"
 
         # if they are all empty => complain
         if not src_name and not src_regnum and not src_id and not src_FAname:
             message = [ [3, "Il faut indiquer au moins un critere de recherche!" ] ]
-            return render_template("search_page.html", user=current_user, FAids=FAidSpecial, msg=message)
+            return render_template("search_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, msg=message, maxreg=max_regnum)
 
         # if regnum ends with '-', remove it, if it starts with '-', refuse it
         while src_regnum.endswith('-'):
@@ -40,10 +41,10 @@ def searchpage():
 
         if src_regnum.startswith('-'):
             message = [ [3, "Le numero de registre ne peut pas commencer par '-'!" ] ]
-            return render_template("search_page.html", user=current_user, FAids=FAidSpecial, msg=message)
+            return render_template("search_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, msg=message, maxreg=max_regnum)
 
         session["otherMode"] = "special-search"
-        session["searchFilter"] = src_name+";"+src_regnum+";"+src_id+";"+src_FAname
+        session["searchFilter"] = src_name+";"+src_regnum+";"+src_id+";"+src_FAname+";"+src_mode
         return redirect(url_for('fapage'))
 
     return render_template("error_page.html", user=current_user, errormessage="command error (/search)", FAids=FAidSpecial)

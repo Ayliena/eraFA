@@ -1,4 +1,4 @@
-from app import app, db
+from app import app, db, devel_site
 from app.staticdata import FAidSpecial
 from app.models import User
 from flask import render_template, redirect, request, url_for, session, Response
@@ -32,7 +32,7 @@ def userpage():
         else:
             message = []
 
-        return render_template("user_page.html", user=current_user, falist=FAlist, rftab=RFtab, FAids=FAidSpecial, msg=message)
+        return render_template("user_page.html", devsite=devel_site, user=current_user, falist=FAlist, rftab=RFtab, FAids=FAidSpecial, msg=message)
 
     # user operations
     cmd = request.form["action"]
@@ -40,7 +40,7 @@ def userpage():
     if cmd == "adm_newuser":
         # generate an empty page to create a new user
         theFA = User()
-        return render_template("user_page.html", user=current_user, fauser=theFA, rftab=RFtab, FAids=FAidSpecial)
+        return render_template("user_page.html", devsite=devel_site, user=current_user, fauser=theFA, rftab=RFtab, FAids=FAidSpecial)
 
     if cmd == "adm_adduser":
         # add a new user
@@ -99,10 +99,10 @@ def userpage():
     theFA = User.query.filter_by(id=request.form["FAid"]).first()
 
     if not theFA:
-        return render_template("error_page.html", user=current_user, errormessage="invalid used id", FAids=FAidSpecial)
+        return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage="invalid used id", FAids=FAidSpecial)
 
     if cmd == "adm_edituser":
-        return render_template("user_page.html", user=current_user, fauser=theFA, rftab=RFtab, FAids=FAidSpecial)
+        return render_template("user_page.html", devsite=devel_site, user=current_user, fauser=theFA, rftab=RFtab, FAids=FAidSpecial)
 
     if cmd == "adm_moduser":
         theFA.FAid = request.form["u_pname"]

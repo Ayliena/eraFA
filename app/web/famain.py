@@ -59,17 +59,17 @@ def fapage():
             return render_template("vet_page.html", devsite=devel_site, user=current_user, visits=theVisits, FAids=FAidSpecial, msg=message)
 
         elif mode == "special-all":
-            return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+            return render_template("list_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
                 listtitle="Tableau global des chats", catlist=Cat.query.order_by(Cat.regnum).all(), FAids=FAidSpecial, msg=message)
 
         elif mode == "special-adopt":
-            return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+            return render_template("list_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
                 listtitle="Chats disponibles à l'adoption", catlist=Cat.query.filter_by(adoptable=True).order_by(Cat.regnum).all(), FAids=FAidSpecial, msg=message, adoptonly=True)
 
         elif mode == "special-search":
             searchfilter = session["searchFilter"]
 
-            (src_name, src_regnum, src_id, src_FAname) = searchfilter.split(';')
+            (src_name, src_regnum, src_id, src_FAname, src_mode) = searchfilter.split(';')
 
             # rules for search: OR mode always
             # name and id: substring searches
@@ -98,9 +98,16 @@ def fapage():
             if src_FAname:
                 cats = cats + Cat.query.filter(Cat.temp_owner.contains(src_FAname)).all()
 
-            # we then use the /list page to display the cat list
-            return render_template("list_page.html", user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                listtitle="Résultat de la recherche", catlist=cats, FAids=FAidSpecial, msg=message)
+            max_regnum = db.session.query(db.func.max(Cat.regnum)).scalar()
+            defaultvalues = [src_regnum, src_name, src_id, src_FAname];
+
+            # we reuse the search page to display the list
+            if src_mode == "select":
+                return render_template("search_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                    listtitle="Résultat de la recherche", scatlist=cats, FAids=FAidSpecial, msg=message, defval=defaultvalues, maxreg=max_regnum)
+            else:
+                return render_template("search_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                    listtitle="Résultat de la recherche", catlist=cats, FAids=FAidSpecial, msg=message, defval=defaultvalues, maxreg=max_regnum)
 
         if FAid != current_user.id:
             return render_template("main_page.html", devsite=devel_site, user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,

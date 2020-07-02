@@ -12,7 +12,14 @@
     <script>
 {% include 'functions.html' %}
         window.onload=function() {
-            var i;
+            var i, dates = document.querySelectorAll('[id^="bd_"]');
+            var today = new Date().getTime() / 1000;
+
+            for (i = 0; i < dates.length; ++i) {
+                days = Math.floor((today - parseInt(dates[i].innerHTML))/86400);
+                dates[i].innerHTML = readableAge(days);
+            }
+
             var regnums = document.querySelectorAll('[id^="rn_"]');
             for (i = 0; i < regnums.length; ++i) {
                 regnum = parseInt(regnums[i].innerHTML);
@@ -30,6 +37,11 @@
 {% include 'navbar.html' %}
 
     <div class="container">
+    {% if devsite %}<div class="row">
+	<div class="alert alert-danger">ATTENTION: ce site est la version en developpement du logiciel FA, les informations sur les chats de ce site ne correspondent
+        pas a la realite.  Le site officiel est
+        <a href="https://erafa.pythonanywhere.com/fa">https://erafa.pythonanywhere.com/fa</a></div>
+    </div>{% endif %}
     {% if msg %}{% for m in  msg %}
         {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
         {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
@@ -46,25 +58,117 @@
         <form action="/search" method="POST">
             <div class="row">
                 <div class="col-sm-2">Registre:</div>
-                <div class="col-sm-3"><input type="text" name="src_regnum"></div>
+                <div class="col-sm-3"><input type="text" name="src_regnum"{% if defval and defval[0] %} value="{{defval[0]}}"{% endif %}></div>
                 <div class="col-sm-3">(dernier <span id="rn_1">{{maxreg}}</span>)</div>
             </div>
             <div class="row">
                 <div class="col-sm-2">Nom:</div>
-                <div class="col-sm-3"><input type="text" name="src_name"></div>
+                <div class="col-sm-3"><input type="text" name="src_name"{% if defval and defval[1] %} value="{{defval[1]}}"{% endif %}></div>
             </div>
             <div class="row">
                 <div class="col-sm-2">Identification:</div>
-                <div class="col-sm-4"><input type="text" name="src_id"></div>
+                <div class="col-sm-4"><input type="text" name="src_id"{% if defval and defval[2] %} value="{{defval[2]}}"{% endif %}></div>
             </div>
-            <div class="row">
+            <div class="row form-group">
                 <div class="col-sm-2">Nom FA:</div>
-                <div class="col-sm-4"><input type="text" name="src_faname"></div>
+                <div class="col-sm-4"><input type="text" name="src_faname"{% if defval and defval[3] %} value="{{defval[3]}}"{% endif %}></div>
             </div>
             <div class="row">
-                <div class="col-sm-2"><button type="submit" name="action" value="adm_search">Rechercher</button></div>
+                <div class="col-sm-2"><button type="submit" name="action" value="adm_search">Rechercher (information)</button></div>
+                <div class="col-sm-2"><button type="submit" name="action" value="adm_searchs">Rechercher (selection)</button></div>
             </div>
         </form>
+        {% if listtitle %}<hr>
+            <h2>{{ listtitle }}</h2>
+            {% if scatlist %}
+                <form action="/vet" method="POST">
+                {% for cat in scatlist %}
+                    <div class="row">
+                        <div class="col-sm-1">
+                            <input class="form-check-input" type="checkbox" name="re_{{cat.id}}" id="re_{{cat.id}}">
+                                <label class="form-check-label" for="re_{{cat.id}}">
+                                    <span id="rn_{{cat.id}}">{{cat.regnum}}</span>
+                                </label>
+                        </div>
+                        <div class="col-sm-2">{{ cat.identif }}</div>
+                        <div class="col-sm-4">
+                            <b>{% if cat.name %}{{ cat.name }}{% else %}<span class="bg-warning">sans nom</span>{% endif %}</b>
+                            ({% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}<span class="bg-warning">??sexe??</span>{% endif %},
+                            {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %},
+                            {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})
+                        </div>
+                        <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
+                        {% if cat.owner_id == FAids[4] %}[{{ cat.temp_owner }}]{% else %}{{ cat.owner.FAname }}{% endif %}
+                    </div>
+                {% endfor %}
+                <hr>
+                <div class="row form-group">
+                    <div class="col-sm-3">Generer le bon pour une visite le</div>
+                    <div class="col-sm-2">
+                        <div class="input-group datepick">
+                            <input type="text" class="form-control" name="visit_date" id="visit_date" placeholder="aujourd'hui">
+                            <div class="input-group-addon">
+                                <span class="glyphicon glyphicon-calendar"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-12">
+                    <label class="checkbox-inline"><input type="checkbox" name="visit_pv">Primo vaccination</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="visit_r1">1er rappel</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="visit_r2">2eme rappel</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="visit_sc">Stérilisation/Castration</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="visit_id">Identification</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="visit_tf">Test FIV/FelV</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="visit_gen">Soins / autre</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="visit_rr">Rappel annuel</label>
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-12">
+                    <textarea class="form-control" name="visit_comments" placeholder="Soins specifiques" rows="5"></textarea>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-2">
+                        <button type="submit" name="action" value="fa_vetbonfast">Generer le bon</button>
+                    </div>
+                </div>
+                </form>
+            {% else %}
+                <p><a href="#" onClick="showHideAll();">Montrer/cacher toutes les commentaires</a></p>
+                {% for cat in catlist %}
+                <div class="row">
+                     <div class="col-sm-1">
+                        <form action="/cat" method="POST">
+                            <input type="hidden" name="catid" value="{{cat.id}}">
+                            <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{{cat.regnum}}</span></strong></button>
+                        </form>
+                    </div>
+                    <div class="col-sm-2">{{ cat.identif }}</div>
+                    <div class="col-sm-4">
+                        <a href="#" onClick="showHide('desc_{{cat.registre}}');"><b>{% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}</b></a>
+                        ({{ tabsex[cat.sex] }},
+                        {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}??âge??{% endif %},
+                        {{ tabcol[cat.color] }}{{ tabhair[cat.longhair] }})</div>
+                    <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
+                    <div class="col-sm-2">
+                        {% if cat.owner_id == FAids[4] %}[{{ cat.temp_owner }}]{% else %}{{ cat.owner.FAname }}{% endif %}
+                    </div>
+                    {% if not adoptonly %}
+                        <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success">Adoptable</span>{% else %}<span class="bg-danger">Non adoptable</span>{% endif %}</div>
+                    {% endif %}
+                </div>
+                <div class="row" style="display: none;" id="desc_{{cat.registre}}">
+                    <div class="col-sm-1"></div>
+                    <div class="col-sm-11"><p class="small">{{ cat.comments }}</p></div>
+                </div>
+                {% else %}
+                    Aucun chat trouvé.
+                {% endfor %}
+            {% endif %}
+        {% endif %}
 
         {% include 'bottom.html' %}
      </div><!-- /.container -->

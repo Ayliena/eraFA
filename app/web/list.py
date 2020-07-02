@@ -1,4 +1,4 @@
-from app import app, db
+from app import app, db, devel_site
 from app.staticdata import TabColor, TabSex, TabHair, FAidSpecial
 from app.models import User, Cat
 from flask import render_template, redirect, request, url_for, session, Response
@@ -33,7 +33,7 @@ def listpage():
         else: # cmd == "sv_viewFAresp"
             FAlist=User.query.filter_by(FAresp_id=current_user.id).order_by(User.FAid).all()
 
-        return render_template("list_page.html", user=current_user, falist=FAlist, rftab=RFtab, refugfa=REFfa, tempfa=TEMPfa, FAids=FAidSpecial)
+        return render_template("list_page.html", devsite=devel_site, user=current_user, falist=FAlist, rftab=RFtab, refugfa=REFfa, tempfa=TEMPfa, FAids=FAidSpecial)
 
 #    if cmd == "sv_viewFAresp" and (current_user.FAisRF):
         # special FA we want some data from
