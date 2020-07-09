@@ -75,12 +75,12 @@
             </div>
             <div class="row">
                 <div class="col-sm-2"><button type="submit" name="action" value="adm_search">Rechercher (information)</button></div>
-                <div class="col-sm-2"><button type="submit" name="action" value="adm_searchs">Rechercher (selection)</button></div>
+                {% if user.FAisADM %}<div class="col-sm-2"><button type="submit" name="action" value="adm_searchs">Rechercher (selection)</button></div>{% endif %}
             </div>
         </form>
         {% if listtitle %}<hr>
             <h2>{{ listtitle }}</h2>
-            {% if scatlist %}
+            {% if scatlist and user.FAisADM %}
                 <form action="/vet" method="POST">
                 {% for cat in scatlist %}
                     <div class="row">

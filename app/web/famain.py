@@ -34,6 +34,7 @@ def fapage():
         # display current user pages or alternate user's?
         # we can see pages of other FAs if we are OV/ADM or we are the FA's resp
         FAid = current_user.id
+        theFA = current_user
         if "otherFA" in session:
             FAid = session["otherFA"]
             theFA = User.query.filter_by(id=FAid).first()
@@ -47,16 +48,14 @@ def fapage():
             if not (current_user.FAisRF and theFA.FAresp_id != current_user.id) and not (current_user.FAisRF and (FAid == FAidSpecial[0] or
                         FAid == FAidSpecial[1] or FAid == FAidSpecial[3])) and not (current_user.FAisOV or current_user.FAisADM):
                 FAid = current_user.id
+                theFA = current_user
 
         # handle special cases
         if mode == "special-vetplan":
             # query all vetinfo which are planned and associated with cats owned by the FA
             theVisits = VetInfo.query.filter(and_(VetInfo.doneby_id==FAid, VetInfo.planned==True)).order_by(VetInfo.vdate).all()
 
-            if FAid != current_user.id:
-                return render_template("vet_page.html", devsite=devel_site, user=current_user, otheruser=theFA, visits=theVisits, FAids=FAidSpecial, msg=message)
-
-            return render_template("vet_page.html", devsite=devel_site, user=current_user, visits=theVisits, FAids=FAidSpecial, msg=message)
+            return render_template("vet_page.html", devsite=devel_site, user=current_user, viewuser=theFA, visits=theVisits, FAids=FAidSpecial, msg=message)
 
         elif mode == "special-all":
             return render_template("list_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
@@ -109,12 +108,28 @@ def fapage():
                 return render_template("search_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
                     listtitle="Résultat de la recherche", catlist=cats, FAids=FAidSpecial, msg=message, defval=defaultvalues, maxreg=max_regnum)
 
-        if FAid != current_user.id:
-            return render_template("main_page.html", devsite=devel_site, user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                cats=Cat.query.filter_by(owner_id=FAid).order_by(Cat.regnum).all(), FAids=FAidSpecial, msg=message)
+        # default list, which is not the same for FAs or Vets
+        if theFA.FAisVET:
+            # display the visits, sorted by FA
 
-        return render_template("main_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-            cats=Cat.query.filter_by(owner_id=current_user.id).order_by(Cat.regnum).all(), FAids=FAidSpecial, msg=message)
+            visits = VetInfo.query.filter(and_(VetInfo.vet_id==FAid, and_(VetInfo.planned==True,VetInfo.transferred==True))).order_by(VetInfo.doneby_id).all()
+
+            return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                    vvisits=visits, FAids=FAidSpecial, msg=message)
+
+        elif theFA.FAisFA:
+            if FAid == FAidSpecial[4]:
+                theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.temp_owner,Cat.regnum).all()
+            else:
+                theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.regnum).all()
+
+            return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                    cats=theCats, FAids=FAidSpecial, msg=message)
+
+        else:
+            # display empty page
+            return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                   FAids=FAidSpecial, msg=message)
 
     # handle POST commands
     cmd = request.form["action"]

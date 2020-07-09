@@ -26,6 +26,7 @@ def vetpage():
     if cmd == "fa_vetreg":
         # query all vetinfo which was doneby the FA
         FAid = current_user.id
+        theFA = current_user
         if "otherFA" in session:
             FAid = session["otherFA"]
             theFA = User.query.filter_by(id=FAid).first()
@@ -36,13 +37,11 @@ def vetpage():
 
             if theFA.FAresp_id != current_user.id and not (current_user.FAisOV or current_user.FAisADM):
                 FAid = current_user.id
+                theFA = current_user
 
         theVisits = VetInfo.query.filter(and_(VetInfo.doneby_id==FAid, VetInfo.planned==False)).order_by(VetInfo.vdate).all()
 
-        if FAid != current_user.id:
-            return render_template("regsoins_page.html", user=current_user, otheruser=theFA, visits=theVisits, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair)
-
-        return render_template("regsoins_page.html", user=current_user, visits=theVisits, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair)
+        return render_template("regsoins_page.html", user=current_user, viewuser=theFA, visits=theVisits, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair)
 
     if cmd == "fa_vetplan":
         session["otherMode"] = "special-vetplan"
@@ -54,15 +53,18 @@ def vetpage():
             if key[0:3] == 're_':
                 vvid = int(key[3:])
 
-                # make sure you can access this (= must be one of your cats)
+                # make sure you can access this (= must be one of your cats or one of your visits)
                 theVisit = VetInfo.query.filter_by(id=vvid).first()
                 if not theVisit:
                     return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetmv(d): invalid vetinfo id", FAids=FAidSpecial)
 
                 # find the cat and make sure we can access it
                 theCat = Cat.query.filter_by(id=theVisit.cat_id).first()
-                if not (theCat.owner_id == current_user.id and current_user.FAisFA) and not (theCat.owner.FAresp_id == current_user.id) and not current_user.FAisADM:
-                    return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetmv(d): insufficient privileges", FAids=FAidSpecial)
+
+                # if vet, and the visit is ours, then it's ok
+                if not (current_user.FAisVET and (theVisit.vet_id == current_user.id)):
+                    if not (theCat.owner_id == current_user.id and current_user.FAisFA) and not (theCat.owner.FAresp_id == current_user.id) and not current_user.FAisADM:
+                        return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetmv(d): insufficient privileges", FAids=FAidSpecial)
 
                 # convert the visit to "effectuee" and log the event
                 theCat.vetshort = vetAddStrings(theCat.vetshort, theVisit.vtype)
@@ -81,8 +83,39 @@ def vetpage():
         # return to the same page
         return redirect(url_for('fapage'))
 
+    if cmd == "fa_vetmdel":
+        # iterate on the checkboxes to see which cats are to be processed
+        catregs = []
+
+        for key in request.form.keys():
+            if key[0:3] == 're_':
+                vvid = int(key[3:])
+
+                # make sure you can access this (= must be one of your cats)
+                theVisit = VetInfo.query.filter_by(id=vvid).first()
+                if not theVisit:
+                    return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetareq: invalid vetinfo id", FAids=FAidSpecial)
+
+               # find the cat and make sure we can access it
+                theCat = Cat.query.filter_by(id=theVisit.cat_id).first()
+                if not theCat.canAccess(current_user):
+                    return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetareq: insufficient privileges", FAids=FAidSpecial)
+
+                # you can access this, delete the visit
+                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} annullée".format(current_user.FAname, theVisit.vtype))
+                db.session.add(theEvent)
+                db.session.delete(theVisit)
+                catregs.append(theCat.regStr())
+
+        db.session.commit()
+
+        session["pendingmessage"] = [ [ 0, "Visites annullees enregistree pour les chats: {}".format(", ".join(catregs)) ] ]
+
+        return redirect(url_for('fapage'))
+
     if cmd == "fa_vetmpl":
         FAid = current_user.id
+        theFA = current_user
         if "otherFA" in session:
             FAid = session["otherFA"]
             theFA = User.query.filter_by(id=FAid).first()
@@ -96,15 +129,18 @@ def vetpage():
             if not (current_user.FAisRF and theFA.FAresp_id != current_user.id) and not (current_user.FAisRF and (FAid == FAidSpecial[0] or
                         FAid == FAidSpecial[1] or FAid == FAidSpecial[3])) and not (current_user.FAisOV or current_user.FAisADM):
                 FAid = current_user.id
+                theFA = current_user
 
         VETlist = User.query.filter_by(FAisVET=True).all()
 
-        if FAid != current_user.id:
-            return render_template("vet_page.html", devsite=devel_site, user=current_user, otheruser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                cats=Cat.query.filter_by(owner_id=FAid).order_by(Cat.regnum).all(), FAids=FAidSpecial, VETids=VETlist)
+        if FAid == FAidSpecial[4]:
+            theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.temp_owner,Cat.regnum).all()
+        else:
+            theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.regnum).all()
 
-        return render_template("vet_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-            cats=Cat.query.filter_by(owner_id=current_user.id).order_by(Cat.regnum).all(), FAids=FAidSpecial, VETids=VETlist)
+
+        return render_template("vet_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+            cats=theCats, FAids=FAidSpecial, VETids=VETlist)
 
 
     if cmd == "fa_vetmpl_save":
@@ -200,7 +236,7 @@ def vetpage():
         db.session.commit()
         return redirect(url_for('fapage'))
 
-    if cmd == "fa_vetauth" and (current_user.FAisADM or current_user.FAisRF):
+    if (cmd == "fa_vetauth" or cmd == "fa_vettrans") and (current_user.FAisADM or current_user.FAisRF):
         # iterate on the checkboxes to see which cats are to be processed
         for key in request.form.keys():
             if key[0:3] == 're_':
@@ -226,6 +262,9 @@ def vetpage():
                 theVisit.validby_id = current_user.id
                 theVisit.validdate = datetime.now()
 
+                # indicate as transferred if it's what was asked
+                theVisit.transferred = True if cmd == "fa_vettrans" else False
+
         db.session.commit()
         return redirect(url_for('fapage'))
 
@@ -246,6 +285,7 @@ def vetpage():
                     return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetadel: insufficient privileges", FAids=FAidSpecial)
 
                 # you can access this, indicate that the visit is now authorized (even if the authorization was not requested)
+                theVisit.transferred = False
                 theVisit.validby_id = None
                 theVisit.validdate = None
 
@@ -349,7 +389,7 @@ def vetpage():
 
         return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, cats=catlist, faname=FAname, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
 
-    if cmd == "fa_vetbonfast":
+    if cmd == "fa_vetbonfast" and current_user.FAisADM:
         # generate the data for the bon
         # note that no planned visit is generated, so apart from the PDF, no information is stored anywhere
         catlist = []

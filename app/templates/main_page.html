@@ -26,6 +26,11 @@
                 regnums[i].innerHTML = readableRegistre(regnum);
             }
         }
+        $(document).ready(function() {
+          $('.datepick').datetimepicker({
+            format: 'DD/MM/YY'
+          });
+        });
     </script>
     <style>
    hr {
@@ -51,54 +56,113 @@
         {{ m[1] }}</div>
     {% endfor %}{% endif %}
 
-        {% if otheruser %} <h2>Situation FA : {{ otheruser.FAname }}</h2> {% endif %}
+        {% if viewuser.FAisVET %}
+            {% if viewuser != user %} <h2>Situation veterinaire : {{ viewuser.FAname }}</h2>{% endif %}
 
-        <h2>Chats detenus</h2>
-        {% if cats %}<p><a href="#" onClick="showHideAllDescs();">Montrer/cacher toutes les commentaires</a></p>{% endif %}
-        {% for cat in cats %}
-            <form action="/cat" method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
-            <div class="row">
-                <div class="col-sm-1">
-                    <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{{cat.regnum}}</span></strong></button>
-                </div>
-                <div class="col-sm-2">{{ cat.identif }}</div>
-                <div class="col-sm-4">
-                    <a href="#" onClick="showHide('desc_{{cat.id}}');"><b>{% if cat.name %}{{ cat.name }}{% else %}<span class="bg-warning">sans nom</span>{% endif %}</b></a>
-                    ({% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}<span class="bg-warning">??sexe??</span>{% endif %},
-                    {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %},
-                    {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})</div>
-                <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
-                {% if cat.owner_id == FAids[4] %}<div class="col-sm-2">
-                    {{ cat.temp_owner }}
-                </div>{% endif %}
-                {% if otheruser and otheruser.FAisHIST %}
-                <div class="col-sm-4">
-                    Sortie: {{ cat.lastop.strftime("%d/%m/%y") }}
-                </div>
-                {% else %}
-                <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success">Adoptable</span>{% else %}Non adoptable{% endif %}</div>
-                {% endif %}
-            </div>
-            <div class="row" style="display: none;" id="desc_{{cat.id}}">
-                <div class="col-sm-1"></div>
-                <div class="col-sm-11"><p class="small">{{ cat.comments }}</p></div>
-            </div>
-            </form>
-            {% if otheruser and (otheruser.FAisAD or otheruser.FAisDCD or otheruser.FAisHIST) and user.FAisADM %}
-                <form action="/fa" method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
+            <h2>Visites prevues a la clinique</h2>
+            {% if vvisits %}
+                <form action="/vet" method="POST">
+                {% for v in vvisits %}
+                    <div class="row" style="margin-top: 8px;">
+                        <div class="col-sm-3">
+                            <input class="form-check-input" type="checkbox" name="re_{{v.id}}" id="re_{{v.id}}">
+                            <label class="form-check-label" for="re_{{v.id}}">
+                                {{ v.vdate.strftime("%d/%m/%y") }}, {{ v.doneby.FAname }}
+                            </label>
+                        </div>
+                        <div class="col-sm-9">
+                            animal {% if v.cat.identif %}{{ v.cat.identif }}{% else %}non identifie{% endif %}
+                            ({% if v.cat.name %}{{ v.cat.name }}{% else %}sans nom{% endif %} / <span id="rn_{{v.cat.id}}">{{v.cat.regnum}}</span>)
+                            pour:
+                        </div>
+                    </div>
+                    <div class="row"><div class="col-sm-2"></div>
+                        <div class="col-sm-10">
+                            {% if v.vtype[0] != '-' %}- Primo vaccination{% endif %}
+                            {% if v.vtype[1] != '-' %}- 1er rappel{% endif %}
+                            {% if v.vtype[2] != '-' %}- 2eme rappel{% endif %}
+                            {% if v.vtype[3] != '-' %}- Stérilisation/Castration{% endif %}
+                            {% if v.vtype[4] != '-' %}- Identification{% endif %}
+                            {% if v.vtype[5] != '-' %}- Test FIV/FelV{% endif %}
+                            {% if v.vtype[6] != '-' %}- Soins / autre{% endif %}
+                            {% if v.vtype[7] != '-' %}- Rappel annuel{% endif %}
+                        </div>
+                    </div>
+                    {% if v.comments %}<div class="row"><div class="col-sm-1"></div><div class="col-sm-11">Commentaires: {{ v.comments }}</div></div>{% endif %}
+                {% endfor %}
+                <hr>
                 <div class="row">
-                    <div class="col-sm-1"></div>
                     <div class="col-sm-3">
-                        {% if otheruser.FAisAD %}<button type="submit" name="action" value="adm_histcat">Confirmer l'adoption et déplacer le chat dans l'historique</button>{% endif %}
-                        {% if otheruser.FAisDCD %}<button type="submit" name="action" value="adm_histcat">Confirmer le décès et déplacer le chat dans l'historique</button>{% endif %}
-                        {% if otheruser.FAisHIST %}<button type="submit" name="action" value="adm_deletecat">EFFACER LE CHAT DU SYSTEME (ATTENTION: IRREVERSIBLE)</button>{% endif %}
+                        <button type="submit" name="action" value="fa_vetmv">Indiquer que les visites selectionnees ont ete effectuees a la date prevue</button>
+                    </div>
+                    <div class="col-sm-3"><button type="submit" name="action" value="fa_vetmvd">Indiquer que les visites selectionnees ont ete effectuees a la date indiquee ci-contre</button></div>
+                    <div class="col-sm-2">
+                        <div class="form-group">
+                            <div class="input-group datepick">
+                                <input type="text" class="form-control" name="c_vdate" id="c_vdate" placeholder="aujourd'hui">
+                                <div class="input-group-addon">
+                                    <span class="glyphicon glyphicon-calendar"></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 </form>
+            {% else %}
+                <div class="row"><div class="col-sm-12">Aucune visite prevue</div></div>
             {% endif %}
+        {% elif viewuser.FAisFA  %}
+            {% if viewuser != user %} <h2>Situation FA : {{ viewuser.FAname }}</h2>{% endif %}
+
+            <h2>Chats detenus</h2>
+            {% if cats %}<p><a href="#" onClick="showHideAllDescs();">Montrer/cacher toutes les commentaires</a></p>{% endif %}
+            {% for cat in cats %}
+                <form action="/cat" method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
+                <div class="row">
+                    <div class="col-sm-1">
+                        <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{{cat.regnum}}</span></strong></button>
+                    </div>
+                    <div class="col-sm-2">{{ cat.identif }}</div>
+                    <div class="col-sm-4">
+                        <a href="#" onClick="showHide('desc_{{cat.id}}');"><b>{% if cat.name %}{{ cat.name }}{% else %}<span class="bg-warning">sans nom</span>{% endif %}</b></a>
+                        ({% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}<span class="bg-warning">??sexe??</span>{% endif %},
+                        {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %},
+                        {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})</div>
+                    <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
+                    {% if cat.owner_id == FAids[4] %}<div class="col-sm-2">
+                        {{ cat.temp_owner }}
+                    </div>{% endif %}
+                    {% if viewuser.FAisHIST %}
+                    <div class="col-sm-4">
+                        Sortie: {{ cat.lastop.strftime("%d/%m/%y") }}
+                    </div>
+                    {% else %}
+                    <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success">Adoptable</span>{% else %}Non adoptable{% endif %}</div>
+                    {% endif %}
+                </div>
+                <div class="row" style="display: none;" id="desc_{{cat.id}}">
+                    <div class="col-sm-1"></div>
+                    <div class="col-sm-11"><p class="small">{{ cat.comments }}</p></div>
+                </div>
+                </form>
+                {% if (viewuser.FAisAD or viewuser.FAisDCD or viewuser.FAisHIST) and user.FAisADM %}
+                    <form action="/fa" method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
+                    <div class="row">
+                        <div class="col-sm-1"></div>
+                        <div class="col-sm-3">
+                            {% if viewuser.FAisAD %}<button type="submit" name="action" value="adm_histcat">Confirmer l'adoption et déplacer le chat dans l'historique</button>{% endif %}
+                            {% if viewuser.FAisDCD %}<button type="submit" name="action" value="adm_histcat">Confirmer le décès et déplacer le chat dans l'historique</button>{% endif %}
+                            {% if viewuser.FAisHIST %}<button type="submit" name="action" value="adm_deletecat">EFFACER LE CHAT DU SYSTEME (ATTENTION: IRREVERSIBLE)</button>{% endif %}
+                        </div>
+                    </div>
+                    </form>
+                {% endif %}
+            {% else %}
+                <div class="row"><div class="col-sm-12">Aucun</div></div>
+            {% endfor %}
         {% else %}
-            <div class="row"><div class="col-sm-12">Aucun</div></div>
-        {% endfor %}
+            <div class="row"><div class="col-sm-12">Choisir une action avec le menu</div></div>
+        {% endif %}
 
         {% include 'bottom.html' %}
      </div><!-- /.container -->

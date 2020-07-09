@@ -11,14 +11,20 @@
         </div>
         <div id="navbar" class="navbar-collapse collapse">
              <ul class="nav navbar-nav">
-                <li class="dropdown">
+                {% if user.FAisFA %}<li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">Famille<span class="caret"></span></a>
                     <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/vet" method="POST">
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_catlist">Chats en FA</button></li>
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_vetplan">Visites vétérinaires</button></li>
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_vetreg">Registre des Soins</button></li>
                     </form></ul>
-                </li>
+                </li>{% endif %}
+                {% if user.FAisVET %}<li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Vétérinaire<span class="caret"></span></a>
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/vet" method="POST">
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="vet_vilist">Historique des visites</button></li>
+                    </form></ul>
+                </li>{% endif %}
                 {% if user.FAisRF %}<li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">Resp. FA<span class="caret"></span></a>
                     <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/list" method="POST">

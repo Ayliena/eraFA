@@ -117,6 +117,7 @@ class VetInfo(db.Model):
     vdate = db.Column(db.DateTime, default=datetime.now)
     planned = db.Column(db.Boolean)
     requested = db.Column(db.Boolean)
+    transferred = db.Column(db.Boolean)
     validby_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     validby = db.relationship('User', foreign_keys=doneby_id)
     validdate = db.Column(db.DateTime)
