@@ -157,8 +157,8 @@ def catpage(catid=-1):
         # return jsonify(request.form.to_dict())
 
         # update cat information and indicate what was changed
-        # info is Adoppt Name Ident Sex Birthdate L(hairlen) Color (c)omments Description Picture
-        updated = ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-']
+        # info is Adopt Name Ident Sex Birthdate L(hairlen) Color (c)omments Description Picture F(tempFA)
+        updated = ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-']
         if theCat.name != request.form["c_name"]:
             theCat.name = request.form["c_name"]
             updated[1] = 'N'
@@ -170,6 +170,7 @@ def catpage(catid=-1):
                 theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transféré de [{}] a [{}]".format(current_user.FAname, theCat.temp_owner, request.form["c_fatemp"]))
                 db.session.add(theEvent)
                 theCat.temp_owner = request.form["c_fatemp"]
+                updated[10] = 'F'
 
         if theCat.sex != int(request.form["c_sex"]):
             theCat.sex=request.form["c_sex"]
@@ -230,7 +231,7 @@ def catpage(catid=-1):
         # indicate moodification of the data
         updated = "".join(updated)
 
-        if updated != "----------":
+        if updated != "-----------":
             theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: mise à jour des informations {}".format(current_user.FAname, updated))
             db.session.add(theEvent)
             cat_updated = True
