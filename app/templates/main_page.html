@@ -111,10 +111,10 @@
             {% else %}
                 <div class="row"><div class="col-sm-12">Aucune visite prevue</div></div>
             {% endif %}
-        {% elif viewuser.FAisFA  %}
-            {% if viewuser != user %} <h2>Situation FA : {{ viewuser.FAname }}</h2>{% endif %}
+        {% elif viewuser.FAisFA or viewuser.FAisREF or viewuser.FAisAD or viewuser.FAisDCD or viewuser.FAisHIST %}
+            {% if viewuser != user %} <h2>{% if viewuser.FAisFA %}Situation FA : {% endif %}{{ viewuser.FAname }}</h2>{% endif %}
 
-            <h2>Chats detenus</h2>
+            {% if viewuser.FAisFA %}<h2>Chats detenus</h2>{% endif %}
             {% if cats %}<p><a href="#" onClick="showHideAllDescs();">Montrer/cacher toutes les commentaires</a></p>{% endif %}
             {% for cat in cats %}
                 <form action="/cat" method="POST"><input type="hidden" name="catid" value="{{cat.id}}">

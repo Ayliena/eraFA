@@ -117,7 +117,7 @@ def fapage():
             return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
                     vvisits=visits, FAids=FAidSpecial, msg=message)
 
-        elif theFA.FAisFA:
+        elif theFA.FAisFA or theFA.FAisREF or theFA.FAisAD or theFA.FAisDCD or theFA.FAisHIST:
             if FAid == FAidSpecial[4]:
                 theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.temp_owner,Cat.regnum).all()
             else:
