@@ -1,7 +1,7 @@
 from app import app, db, devel_site
 from app.staticdata import TabColor, TabSex, TabHair, FAidSpecial
 from app.models import User, Cat, VetInfo, Event
-from app.helpers import vetMapToString, vetAddStrings, ERAsum
+from app.helpers import vetMapToString, vetAddStrings, ERAsum, encodeRegnum
 from flask import render_template, redirect, request, url_for, session, Markup
 from flask_login import login_required, current_user
 from sqlalchemy import and_
@@ -432,6 +432,9 @@ def vetpage():
                     if theCat.owner_id == FAidSpecial[4]:
                         FAname = theCat.temp_owner
                         FAid = "[{}]".format(FAname)
+                    elif theCat.owner_id == FAidSpecial[0] or theCat.owner_id == FAidSpecial[2]:
+                        FAname = None
+                        FAid = "[{}]".format(theCat.owner_id)
                     else:
                         FAname = theCat.owner.FAname
                         FAid = theCat.owner.FAid
@@ -468,6 +471,11 @@ def vetpage():
                 session["pendingmessage"] = [ [ 2, "Aucun chat selectionne" ] ]
                 return redirect(url_for('fapage'))
 
+            # if no visit type was selected... same
+            if sum(vtypes) == 0:
+                session["pendingmessage"] = [ [ 2, "Aucune visite selectionnee" ] ]
+                return redirect(url_for('fapage'))
+
         bdate = datetime.today()
 
         # generate the qrcode string
@@ -475,6 +483,114 @@ def vetpage():
         qrstr = qrstr + ERAsum(qrstr)
 
         return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, cats=catlist, faname=FAname, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
+
+    if cmd == "fa_vetbonunreg" and current_user.FAisADM:
+        # generate the data for the bon using the provided info
+        catlist = []
+        catregs = []
+
+        # if the name is empty, no field will appear in the bon
+        FAname = request.form["visit_faname"]
+
+        # the count will just be the number of cats (but we keep it split, just in case...)
+        vtypes = [0, 0, 0, 0, 0, 0, 0]
+        comments = []
+        # the QR code contains: ERA;<today's date>;<who authorized>;<authorization date>;<FAname>;<visit date>;<cat regs>;<vtypes joined as string>;<check>
+        # check is a 12-byte string obtained by md5sum of previous part + some random junk + base64_encode + cut in half
+
+        try:
+            vdate = datetime.strptime(request.form["visit_date"], "%d/%m/%y")
+        except ValueError:
+            vdate = datetime.now()
+
+        # manage validation source and date
+        theAuthFA = current_user
+        authdate = datetime.now()
+
+        # increment the number of the cat
+        # TODO: get from db state table
+        regnum = (authdate.year - 2000) * 10000 + 3000;
+
+        # generate the vetinfo from the form
+        VisitType = vetMapToString(request.form, "visit")
+
+        # in this special case, we assume that "filled comments -> X type", so we force it
+        if request.form["visit_comments"]:
+            VisitType = VisitType[:6] + "X" + VisitType[7:]
+
+        # iterate on the table to see how many cats to add
+
+        for key in ("c1", "c2", "c3", "c4", "c5"):
+            kage = key + "_age";
+            age = int(request.form[kage])
+            if age:
+                # cat is defined, add the data
+                urcat = {'regnum' : regnum}
+                catregs.append(encodeRegnum(regnum))
+                regnum = regnum + 1
+
+                ksex = key + "_sex"
+                kcol = key + "_color"
+
+                if age == 1:
+                    urcat['age'] = "chaton"
+                elif age == 2:
+                    urcat['age'] = "chat"
+                elif age == 3:
+                    urcat['age'] = "chat age"
+
+                if int(request.form[ksex]):
+                    urcat['sex'] = TabSex[int(request.form[ksex])]
+
+                if int(request.form[kcol]):
+                    urcat['col'] = TabColor[int(request.form[kcol])]
+
+                # forget about the name for now
+                # urcat['name'] = ....
+
+                # cumulate the information
+                catlist.append(urcat)
+
+                if VisitType[0] != '-':
+                    vtypes[0] += 1
+                if VisitType[1] != '-':
+                    vtypes[1] += 1
+                if VisitType[2] != '-':
+                    vtypes[1] += 1
+                if VisitType[3] != '-':
+                    if int(request.form[ksex]) == 2:
+                        vtypes[3] += 1
+                    else:
+                        vtypes[2] += 1
+                if VisitType[4] != '-':
+                    vtypes[4] += 1
+                if VisitType[5] != '-':
+                    vtypes[5] += 1
+                if VisitType[6] != '-':
+                    if not comments:
+                        # we also fix the comments so that newlines are respected
+                        comments.append(Markup(escape(request.form["visit_comments"]).replace("\n","<br>")))
+                    vtypes[6] += 1
+                if VisitType[7] != '-':
+                    vtypes[1] += 1
+
+            # if nothing was selected, return an error and stay here
+            if not catlist:
+                session["pendingmessage"] = [ [ 2, "Aucun chat selectionne" ] ]
+                return redirect(url_for('unregpage'))
+
+            # if no visit type was selected... same
+            if sum(vtypes) == 0:
+                session["pendingmessage"] = [ [ 2, "Aucune visite selectionnee" ] ]
+                return redirect(url_for('unregpage'))
+
+        bdate = datetime.today()
+
+        # generate the qrcode string
+        qrstr = "ERA;{};{};{};{};{};{};".format(bdate.strftime('%Y%m%d'), theAuthFA.FAid, authdate.strftime('%Y%m%d'), FAname, vdate.strftime('%Y%m%d'), "/".join(catregs), "".join(str(e) for e in vtypes))
+        qrstr = qrstr + ERAsum(qrstr)
+
+        return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, ucats=catlist, faname=FAname, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
 
     if cmd == "adm_vbver":
         bvcode = request.form["vb_qrcode"]

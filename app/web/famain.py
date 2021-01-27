@@ -161,6 +161,7 @@ def fapage():
         theCat.owner.numcats -= 1
         newFA.numcats += 1
         theCat.owner_id = newFA.id
+        theCat.temp_owner = ""
         theCat.adoptable = False
         theCat.lastop = datetime.now()
         session["pendingmessage"] = [ [0, "Chat {} déplacé dans l'historique".format(theCat.asText())] ]

@@ -31,3 +31,29 @@
             rn = regnum - 10000*ry;
             return rn.toString()+"-"+ry.toString();
         }
+        function populatecolor(selid) {
+            var cols = ["INCONNU", "BEIGE", "BEIGE ET BLANC", "BLANC", "BLUE POINT", "CREME", "ECAILLE DE TORTUE", "GRIS", "GRIS CHARTREUX", "GRIS ET BLANC",
+                "NOIR", "NOIR ET BLANC", "NOIR ET SMOKE", "NOIR PLASTRON BLANC", "ROUX", "ROUX ET BLANC", "SEAL POINT", "TABBY BLANC", "TABBY BRUN", "TABBY GRIS",
+                "TIGRE", "TIGRE BEIGE", "TIGRE BRUN", "TIGRE CREME", "TIGRE GRIS", "TRICOLORE"];
+            var sel, i, option;
+            sel = document.getElementById(selid);
+
+            for (i = 0; i < cols.length; ++i) {
+                option = document.createElement('option');
+                option.value = i;
+                option.text = cols[i];
+                sel.add(option);
+            }
+        }
+        function populatevets(selid) {
+            var vettab = [ {% for v in VETids %} [{{v.id}}, "{{v.FAname|safe}}"], {% endfor %}]
+            var sel, i, option;
+            sel = document.getElementById(selid);
+
+            for (i = 0; i < vettab.length; ++i) {
+                option = document.createElement('option');
+                option.value = vettab[i][0];
+                option.text = vettab[i][1];
+                sel.add(option);
+            }
+        }

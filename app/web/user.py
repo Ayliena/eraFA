@@ -1,6 +1,6 @@
 from app import app, db, devel_site
 from app.staticdata import FAidSpecial
-from app.models import User
+from app.models import Cat, User
 from flask import render_template, redirect, request, url_for, session, Response
 from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
@@ -81,7 +81,7 @@ def userpage():
             FAtype = "SPEC"
             if FA.FAisVET:
                 FAtype = "VET"
-            if FA.FAisFA:
+            if FA.FAisFA and not FA.id == FAidSpecial[4]:
                 FAtype = "FA"
 
             datline = [ FA.username, FAtype, FA.FAid, FA.FAname, FA.FAemail, str(FA.numcats),
@@ -117,6 +117,12 @@ def userpage():
         # sanity check
         if not theFA.FAresp_id or theFA.FAisRF or theFA.FAisADM:
             theFA.FAresp_id = None
+
+        # update the temp_owner for all the cats owned by this user
+        cats = Cat.query.filter_by(owner_id=theFA.id).all()
+
+        for c in cats:
+            c.temp_owner = theFA.FAname
 
         db.session.commit()
         session["pendingmessage"] = [ [0, "Utilisateur {} : informations mises à jour".format(theFA.username) ] ]
