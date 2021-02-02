@@ -86,7 +86,9 @@ Web: www.assocera.com</td>
     {% for cat in cats %}
         <tr>
             <td>{% if cat==cats[0] %}{% if cats|length == 1 %}Animal concerné:{% else %}Animaux concernés:{% endif %}{% endif %}</td>
-            <td><span id="rn_{{cat.id}}">{{cat.regnum}}</span> {% if cat.identif %}/ {{ cat.identif }} {% endif %}({% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}, {% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}sexe?{% endif %},
+            <td>{% if faname %}<span id="rn_{{cat.id}}">{{cat.regnum}}</span> {% if cat.identif %}/ {{cat.identif}} {% endif %}
+                {% else %}{% if cat.identif %}{{cat.identif}}{% else %}non identifié{% endif %}{% endif %}
+                ({% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}, {% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}sexe?{% endif %},
                     {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">âge?</span>{% endif %},
                     {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">couleur?</span>{% endif %}{{ tabhair[cat.longhair] }})</td>
         </tr>
