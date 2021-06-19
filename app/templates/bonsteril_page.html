@@ -1,0 +1,117 @@
+<html>
+    <head>
+        <title>Familles d'accueil ERA</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <style>
+            @page {
+                 size: A4 portrait;
+                 margin: 0pt;
+            }
+            @media print {
+                html, body {
+                    margin: 20pt;
+                }
+                table, th, td, p {
+                    font-size: 11pt;
+                }
+            }
+            table, th, td {
+                border: 0px;
+            }
+            th, td {
+               padding: 2px;
+            }
+        </style>
+    </head>
+<body>
+
+<table>
+    <tr>
+        <td><img src="{{ url_for('static', filename='logo-ERA.png')}}" style="width:160px;" /></td>
+        <td style="white-space: pre;"><b>ERA Ethique et Respect Animal</b><br>
+1 rue des Zouaves
+67000 STRASBOURG
+Tel. 06 58 49 23 93
+SIRET 80894688300010
+E-mail: info@assocera.com
+Web: www.assocera.com</td>
+        <td style="width: 100%; text-align: right;"><img src="{{ qrcode(qrdata) }}" style="width:160px;" /></td>
+    </tr>
+</table>
+
+<h3 style="text-align:center">BON EN VUE DE {{ opupper }}</h2>
+<p>emis dans le cadre de l'article 4 du contrat d'adoption, signe le {{ datcont }} par:</p>
+<table>
+    <tr>
+        <td><b>{{ propr[0] }}</b></td>
+    </tr>
+    <tr>
+        <td>{{ propr[1] }} {{ propr[2] }}</td>
+    </tr>
+    <tr>
+        <td>{{ propr[4] }}</td>
+    </tr>
+    <tr>
+        <td>Tel. {{ propr[5] }} {{ propr[6] }}</td>
+    </tr>
+</table>
+<p>concernant l'animal :</p>
+<table style="margin-bottom: 0.5cm; width=100%;">
+    <tr>
+        <td width="50%">Nom: <b>{{ nom }}</b></td>
+        <td>Espece: <b>CHAT</b></td>
+    </tr>
+    <tr>
+        <td>Race/genre: <b>{{ race }}</b></td>
+        <td>Sexe: <b>{% if sexe=="F" %}FEMELLE{% else %}MALE{% endif %}</b></td>
+    </tr>
+    <tr>
+        <td>Couleur: <b>{{couleur}}{% if hlen!="C" %} poil{% if hlen=="M" %}mi-{% endif %}long{% endif %}</b></td>
+        <td>Date de naissance: <b>{{ datnaiss }}</b></td>
+    </tr>
+    <tr>
+        <td>Dossier ERA: <b>{{ regnum }}</b></td>
+        <td>Identification: <b>{{ puce }}</b></td>
+    </tr>
+</table>
+<table style="margin-bottom: 2.8cm; width: 100%">
+    <tr>
+        <td>Date indicative de {{ optype }}: <b>{{ dprov }}</b></td>
+    </tr>
+    <tr>
+        <td><b>Date limite de validite de ce bon: {{ dlimit }}</b></td>
+    </tr>
+    <tr>
+        <td width="60%"></td>
+        <td>Signature et cachet association:</td>
+    </tr>
+</table>
+<table style="border: 1px solid black; width: 100%;">
+    <tr>
+        <td colspan="2" style="text-align:center;">INTERVENTION VETERINAIRE</td>
+    </tr>
+    <tr>
+        <td width="30%">Date de l'intervention:</td>
+        <td style="border-bottom: 1px solid black;"></td>
+    </tr>
+    <tr>
+        <td>Nature de l'intervention:</td>
+        <td style="border-bottom: 1px solid black;"></td>
+    </tr>
+    <tr>
+        <td colspan="2" style="padding-bottom: 2.8cm;">Signature et cachet du veterinaire</td>
+    </tr>
+</table>
+<table>
+    <tr>
+        <td style="font-size: 10pt">Montant maximum pris en charge par l'association : {{ optype }} {{ opcost }}</td>
+    </tr>
+    <tr>
+        <td style="font-size: 10pt">Facture vétérinaire + bon à envoyer à l'association (courrier postal ou courriel info@assocera.com)</td>
+    </tr>
+</table>
+</body>
+</html>
