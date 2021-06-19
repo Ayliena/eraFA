@@ -19,6 +19,10 @@ def decodeRegnum(regnum):
     return int(rr[0]) + 10000*int(rr[1])
 
 
+def encodeRegnum(regnum):
+    return "{}-{}".format(regnum%10000, int(regnum/10000))
+
+
 def vetMapToString(vetmap, prefix):
     str =["-", "-", "-", "-", "-", "-", "-", "-"]
     if prefix+"_pv" in vetmap:

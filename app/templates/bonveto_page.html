@@ -73,7 +73,7 @@ Web: www.assocera.com</td>
         <td>Date:</td>
         <td>{{ bdate.strftime("%d/%m/%y") }}</td>
     </tr>
-    <tr><td>&nbsp;</td></tr>
+    {% if faname %}<tr><td>&nbsp;</td></tr>
     <tr>
         <td>Famille d'accueil:</td>
         <td>{{ faname }}</td>
@@ -81,15 +81,25 @@ Web: www.assocera.com</td>
     <tr>
         <td></td>
         <td>L'association mandate la famille d'accueil pour effectuer les soins sur le chat jusqu'à son adoption.</td>
-    </tr>
+    </tr>{% endif %}
     <tr><td>&nbsp;</td></tr>
     {% for cat in cats %}
         <tr>
             <td>{% if cat==cats[0] %}{% if cats|length == 1 %}Animal concerné:{% else %}Animaux concernés:{% endif %}{% endif %}</td>
-            <td><span id="rn_{{cat.id}}">{{cat.regnum}}</span> ({% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}, {% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}sexe?{% endif %},
+            <td>{% if faname %}<span id="rn_{{cat.id}}">{{cat.regnum}}</span> {% if cat.identif %}/ {{cat.identif}} {% endif %}
+                {% else %}{% if cat.identif %}{{cat.identif}}{% else %}non identifié{% endif %}{% endif %}
+                ({% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}, {% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}sexe?{% endif %},
                     {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">âge?</span>{% endif %},
                     {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">couleur?</span>{% endif %}{{ tabhair[cat.longhair] }})</td>
-    </tr>
+        </tr>
+    {% endfor %}
+    {% for cat in ucats %}
+        <tr>
+            <td>{% if cat==ucats[0] %}{% if ucats|length == 1 %}Animal concerné:{% else %}Animaux concernés:{% endif %}{% endif %}</td>
+            <td><span id="rn_{{cat.id}}">{{cat['regnum']}}</span> ({% if cat['name'] %}{{ cat['name'] }}{% endif %} {% if cat['age'] %}{{ cat['age'] }}{% else %}chat{% endif %}
+                    {% if cat['sex'] %}{{ cat['sex'] }}{% endif %}
+                    {% if cat['col'] %}{{ cat['col'] }}{% endif %})</td>
+        </tr>
     {% endfor %}
     <tr><td>&nbsp;</td></tr>
 </table>

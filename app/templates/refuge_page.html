@@ -1,0 +1,88 @@
+<html>
+    <head>
+        <title>Familles d'accueil ERA</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+<script language="javascript" src="https://momentjs.com/downloads/moment.js"></script>
+<script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/js/bootstrap-datetimepicker.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/css/bootstrap-datetimepicker.min.css">
+    </head>
+    <script>
+{% include 'functions.html' %}
+        window.onload=function() {
+            var i, dates = document.querySelectorAll('[id^="bd_"]');
+            var today = new Date().getTime() / 1000;
+
+            for (i = 0; i < dates.length; ++i) {
+                days = Math.floor((today - parseInt(dates[i].innerHTML))/86400);
+                dates[i].innerHTML = readableAge(days);
+            }
+
+            var regnums = document.querySelectorAll('[id^="rn_"]');
+            for (i = 0; i < regnums.length; ++i) {
+                regnum = parseInt(regnums[i].innerHTML);
+                regnums[i].innerHTML = readableRegistre(regnum);
+            }
+        }
+        {% if pagetype==2 %}function checkClipboard() {
+            try {
+                navigator.clipboard.readText().then(data => {if (data.startsWith("AD_BSC")) {document.getElementById("bcs_data").value = data; document.getElementById("bcs_submit").click();}});
+            } catch (err) {
+                console.error('Failed to read clipboard contents: ', err);
+            }
+  //const data = await
+//            prompt("match", data);
+            //    if (1 or data.startsWith("AD_BSC"))
+            //        {
+            //            document.getElementById("bcs_data").value = data;
+            //            getElementById("bcs_form").submit();
+            //        });
+        }{% endif %}
+    </script>
+    <style>
+   hr {
+       border-top: 1px dotted #000000 !important;
+       margin-bottom:10px !important;
+       margin-top:5px !important;
+   }
+    </style>
+<body {% if pagetype==2 %} onLoad="checkClipboard()"{% endif %}>
+{% include 'navbar.html' %}
+
+    <div class="container">
+    {% if devsite %}<div class="row">
+	   <div class="alert alert-danger">ATTENTION: ce site est la version en developpement du logiciel FA, les informations sur les chats de ce site ne correspondent
+        pas a la realite.  Le site officiel est
+        <a href="https://erafa.pythonanywhere.com/fa">https://erafa.pythonanywhere.com/fa</a></div>
+    </div>{% endif %}
+    {% if msg %}{% for m in  msg %}
+        {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
+        {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
+        {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
+        {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
+        {{ m[1] }}</div>
+    {% endfor %}{% endif %}
+
+        {% if pagetype==2 %}
+            <h2>Bon de castration/sterilisation post-adoption</h2>
+
+            <form action="/refuge" method="POST">
+                <div class="form-group"><label for="bcs_data">Coller ci-dessus le resultat du click sur "Gen BonSteril" fait dans la page de refugilys.</label>
+                <input type="text" class="form-control" id="bcs_data" name="bcs_data"></div>
+                <button type="submit" id="bcs_submit" name="action" value="ref_genbonSter">Generer</button>
+            </form>
+        {% endif %}
+        {% if pagetype==1 %}
+            <h2>Document de prise en charge</h2>
+            <p>...pas encore disponible...</p>
+        {% endif %}
+        {% include 'bottom.html' %}
+     </div><!-- /.container -->
+</body>
+</html>

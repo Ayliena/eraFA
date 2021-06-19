@@ -311,9 +311,10 @@ def refupage():
                         if theFA.id == FAidSpecial[4]:
                             theCat.temp_owner = temp_faname
 
-                        # if the destination FA is any of dead/adopted/historical then clear the adopted flag
+                        # if the destination FA is any of dead/adopted/historical then clear the adopted flag and clear the fa name
                         if theFA.id == FAidSpecial[0] or theFA.id == FAidSpecial[1] or theFA.id == FAidSpecial[2]:
                             theCat.adoptable = False
+                            theCat.temp_owner = ""
 
                         # reassociate any planned visit and clear any validation
                         theVisits = VetInfo.query.filter(and_(VetInfo.cat_id == theCat.id, VetInfo.planned == True)).all()

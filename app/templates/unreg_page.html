@@ -1,0 +1,169 @@
+<html>
+    <head>
+        <title>Familles d'accueil ERA</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+<script language="javascript" src="https://momentjs.com/downloads/moment.js"></script>
+<script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/js/bootstrap-datetimepicker.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/css/bootstrap-datetimepicker.min.css">
+    </head>
+    <script>
+{% include 'functions.html' %}
+        window.onload=function() {
+//            var regnums = document.querySelectorAll('[id^="rn_"]');
+//            for (i = 0; i < regnums.length; ++i) {
+//                regnum = parseInt(regnums[i].innerHTML);
+//                regnums[i].innerHTML = readableRegistre(regnum);
+//            }
+
+            populatecolor("c1_color");
+            populatecolor("c2_color");
+            populatecolor("c3_color");
+            populatecolor("c4_color");
+            populatecolor("c5_color");
+        }
+        $(document).ready(function() {
+          $('.datepick').datetimepicker({
+            format: 'DD/MM/YY'
+        });
+        });
+    </script>
+    <style>
+   hr {
+       border-top: 1px dotted #000000 !important;
+       margin-bottom:10px !important;
+       margin-top:5px !important;
+   }
+    </style><body>
+{% include 'navbar.html' %}
+
+    <div class="container">
+    {% if devsite %}<div class="row">
+	<div class="alert alert-danger">ATTENTION: ce site est la version en developpement du logiciel FA, les informations sur les chats de ce site ne correspondent
+        pas a la realite.  Le site officiel est
+        <a href="https://erafa.pythonanywhere.com/fa">https://erafa.pythonanywhere.com/fa</a></div>
+    </div>{% endif %}
+    {% if msg %}{% for m in  msg %}
+        {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
+        {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
+        {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
+        {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
+        {{ m[1] }}</div>
+    {% endfor %}{% endif %}
+
+        <h2>Generateur de bon veterinaire</h2>
+        <p>Page a utiliser pour des chats <b>non enregistres</b>, pour des chats enregistres il vaut mieux passer par "Recherche des chats".<br>
+        (si l'age est inconnue, utiliser "adulte")</p>
+
+        <form action="/vet" method="POST">
+            <div class="row form-group">
+                <div class="col-sm-2">Nom FA:</div>
+                <div class="col-sm-4"><input type="text" name="visit_faname"></div>
+            </div>
+            <div class="row form-group">
+                <div class="col-sm-2">Date:</div>
+                <div class="col-sm-2">
+                    <div class="form-group">
+                        <div class="input-group datepick">
+                            <input type="text" class="form-control" name="visit_date" id="visit_date">
+                            <div class="input-group-addon">
+                                <span class="glyphicon glyphicon-calendar"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row form-group">
+                <div class="col-sm-2"><select name="c1_age" id="c1_age">
+                        <option value="0">----</option>
+                        <option value="1">CHATON</option>
+                        <option value="2">ADULTE</option>
+                        <option value="3">CHAT AGE</option></select></div>
+                <div class="col-sm-2">Sexe: <select name="c1_sex" id="c1_sex">
+                        <option value="0">INCONNU</option>
+                        <option value="1">FEMELLE</option>
+                        <option value="2">MALE</option></select></div>
+                <div class="col-sm-3">Couleur: <select name="c1_color" id="c1_color"></select></div>
+            </div>
+            <div class="row form-group">
+                <div class="col-sm-2"><select name="c2_age" id="c2_age">
+                        <option value="0">----</option>
+                        <option value="1">CHATON</option>
+                        <option value="2">ADULTE</option>
+                        <option value="3">CHAT AGE</option></select></div>
+                <div class="col-sm-2">Sexe: <select name="c2_sex" id="c2_sex">
+                        <option value="0">INCONNU</option>
+                        <option value="1">FEMELLE</option>
+                        <option value="2">MALE</option></select></div>
+                <div class="col-sm-3">Couleur: <select name="c2_color" id="c2_color"></select></div>
+            </div>
+            <div class="row form-group">
+                <div class="col-sm-2"><select name="c3_age" id="c3_age">
+                        <option value="0">----</option>
+                        <option value="1">CHATON</option>
+                        <option value="2">ADULTE</option>
+                        <option value="3">CHAT AGE</option></select></div>
+                <div class="col-sm-2">Sexe: <select name="c3_sex" id="c3_sex">
+                        <option value="0">INCONNU</option>
+                        <option value="1">FEMELLE</option>
+                        <option value="2">MALE</option></select></div>
+                <div class="col-sm-3">Couleur: <select name="c3_color" id="c3_color"></select></div>
+            </div>
+            <div class="row form-group">
+                <div class="col-sm-2"><select name="c4_age" id="c4_age">
+                        <option value="0">----</option>
+                        <option value="1">CHATON</option>
+                        <option value="2">ADULTE</option>
+                        <option value="3">CHAT AGE</option></select></div>
+                <div class="col-sm-2">Sexe: <select name="c4_sex" id="c4_sex">
+                        <option value="0">INCONNU</option>
+                        <option value="1">FEMELLE</option>
+                        <option value="2">MALE</option></select></div>
+                <div class="col-sm-3">Couleur: <select name="c4_color" id="c4_color"></select></div>
+            </div>
+            <div class="row form-group">
+                <div class="col-sm-2"><select name="c5_age" id="c5_age">
+                        <option value="0">----</option>
+                        <option value="1">CHATON</option>
+                        <option value="2">ADULTE</option>
+                        <option value="3">CHAT AGE</option></select></div>
+                <div class="col-sm-2">Sexe: <select name="c5_sex" id="c5_sex">
+                        <option value="0">INCONNU</option>
+                        <option value="1">FEMELLE</option>
+                        <option value="2">MALE</option></select></div>
+                <div class="col-sm-3">Couleur: <select name="c5_color" id="c5_color"></select></div>
+            </div>
+            <div class="row form-group">
+                <div class="col-sm-12">
+                <label class="checkbox-inline"><input type="checkbox" name="visit_pv">Primo vaccination</label>
+                <label class="checkbox-inline"><input type="checkbox" name="visit_r1">1er rappel</label>
+                <label class="checkbox-inline"><input type="checkbox" name="visit_r2">2eme rappel</label>
+                <label class="checkbox-inline"><input type="checkbox" name="visit_sc">Stérilisation/Castration</label>
+                <label class="checkbox-inline"><input type="checkbox" name="visit_id">Identification</label>
+                <label class="checkbox-inline"><input type="checkbox" name="visit_tf">Test FIV/FelV</label>
+                <label class="checkbox-inline"><input type="checkbox" name="visit_gen">Soins / autre</label>
+                <label class="checkbox-inline"><input type="checkbox" name="visit_rr">Rappel annuel</label>
+                </div>
+            </div>
+            <div class="row form-group">
+                <div class="col-sm-12">
+                <textarea class="form-control" name="visit_comments" placeholder="Soins specifiques" rows="5"></textarea>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-2">
+                    <button type="submit" name="action" value="fa_vetbonunreg">Generer le bon</button>
+                </div>
+            </div>
+        </form>
+
+        {% include 'bottom.html' %}
+    </div><!-- /.container -->
+</body>
+</html>
