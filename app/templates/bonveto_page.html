@@ -66,16 +66,16 @@ Web: www.assocera.com</td>
 
 <table>
     <tr>
-        <td>Emetteur :</td>
+        <td>Emetteur:</td>
         <td>{{ user.FAname }}</td>
     </tr>
     <tr>
-        <td>Date :</td>
+        <td>Date:</td>
         <td>{{ bdate.strftime("%d/%m/%y") }}</td>
     </tr>
     <tr><td>&nbsp;</td></tr>
     <tr>
-        <td>Famille d'accueil :</td>
+        <td>Famille d'accueil:</td>
         <td>{{ faname }}</td>
     </tr>
     <tr>
@@ -85,7 +85,7 @@ Web: www.assocera.com</td>
     <tr><td>&nbsp;</td></tr>
     {% for cat in cats %}
         <tr>
-            <td>{% if cat==cats[0] %}{% if cats|length == 1 %}Animal concerne :{% else %}Animaux concernes :{% endif %}{% endif %}</td>
+            <td>{% if cat==cats[0] %}{% if cats|length == 1 %}Animal concerné:{% else %}Animaux concernés:{% endif %}{% endif %}</td>
             <td><span id="rn_{{cat.id}}">{{cat.regnum}}</span> ({% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}, {% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}sexe?{% endif %},
                     {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">âge?</span>{% endif %},
                     {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">couleur?</span>{% endif %}{{ tabhair[cat.longhair] }})</td>
@@ -96,9 +96,9 @@ Web: www.assocera.com</td>
 
 <table>
     <tr>
-        <td>Soins á effectuer :</td>
+        <td>Soins à effectuer :</td>
     </tr>
-    {% if vtype[0] %}<tr><td>{{ vtype[0] }} vaccination{% if vtype[0] != 1 %}s{% endif %} (typhus/choriza)</td></tr>{% endif %}
+    {% if vtype[0] %}<tr><td>{{ vtype[0] }} vaccination{% if vtype[0] != 1 %}s{% endif %} (typhus/coryza)</td></tr>{% endif %}
     {% if vtype[1] %}<tr><td>{{ vtype[1] }} rappel{% if vtype[1] != 1 %}s{% endif %} (typhus/coryza)</td></tr>{% endif %}
     {% if vtype[2] %}<tr><td>{{ vtype[2] }} stérilisation{% if vtype[2] != 1 %}s{% endif %}</td></tr>{% endif %}
     {% if vtype[3] %}<tr><td>{{ vtype[3] }} castration{% if vtype[3] != 1 %}s{% endif %}</td></tr>{% endif %}
