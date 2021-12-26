@@ -20,10 +20,10 @@
                     </form></ul>
                 </li>{% endif %}
                 {% if user.FAisREF %}<li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Operations refuge<span class="caret"></span></a>
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Opérations refuge<span class="caret"></span></a>
                     <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/refuge" method="POST">
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="ref_prise">Prise en charge</button></li>
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="ref_bonSter">Bon de sterilisation</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="ref_bonSter">Bon de stérilisation</button></li>
                     </form></ul>
                 </li>{% endif %}
                 {% if user.FAisVET %}<li class="dropdown">

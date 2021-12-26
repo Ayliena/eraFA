@@ -32,17 +32,10 @@
         }
         {% if pagetype==2 %}function checkClipboard() {
             try {
-                navigator.clipboard.readText().then(data => {if (data.startsWith("AD_BSC")) {document.getElementById("bcs_data").value = data; document.getElementById("bcs_submit").click();}});
+                navigator.clipboard.readText().then(data => {if (data.startsWith("AD_BSC")) {document.getElementById("bcs_data").value = data; {% if not msg %}document.getElementById("bcs_submit").click();{% endif %}}});
             } catch (err) {
                 console.error('Failed to read clipboard contents: ', err);
             }
-  //const data = await
-//            prompt("match", data);
-            //    if (1 or data.startsWith("AD_BSC"))
-            //        {
-            //            document.getElementById("bcs_data").value = data;
-            //            getElementById("bcs_form").submit();
-            //        });
         }{% endif %}
     </script>
     <style>
@@ -70,12 +63,12 @@
     {% endfor %}{% endif %}
 
         {% if pagetype==2 %}
-            <h2>Bon de castration/sterilisation post-adoption</h2>
+            <h2>Bon de castration/stérilisation post-adoption</h2>
 
             <form action="/refuge" method="POST">
-                <div class="form-group"><label for="bcs_data">Coller ci-dessus le resultat du click sur "Gen BonSteril" fait dans la page de refugilys.</label>
+                <div class="form-group"><label for="bcs_data">Coller ci-dessus le résultat du click sur "Gen BonSteril" fait dans la page de refugilys :</label>
                 <input type="text" class="form-control" id="bcs_data" name="bcs_data"></div>
-                <button type="submit" id="bcs_submit" name="action" value="ref_genbonSter">Generer</button>
+                <button type="submit" id="bcs_submit" name="action" value="ref_genbonSter">Générer</button>
             </form>
         {% endif %}
         {% if pagetype==1 %}

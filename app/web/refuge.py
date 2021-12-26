@@ -46,7 +46,7 @@ def refugepage():
 
         # adapt according to sex
         if vals[4] == "F":
-            optype = "sterilisation"
+            optype = "stérilisation"
             opcost = "70 euros"
         elif vals[4] == "M":
             optype = "castration"
@@ -57,16 +57,17 @@ def refugepage():
 
         # generate the dates
         bdate = datetime.strptime(vals[7], "%d/%m/%y")
-        # steril is +6m
+        # steril is +6m, lim is steril +2m
         datpro = bdate+relativedelta(months=6)
-        datlim = datpro.replace(day=1)
-        datlim = datlim+relativedelta(months=4)
-        datlim = datlim+relativedelta(days=-1)
+        #datlim = datpro.replace(day=1)
+        datlim = datpro+relativedelta(months=2)
+        #datlim = datlim+relativedelta(days=-1)
 
         datpro = datpro.strftime("%d/%m/%y")
         datlim = datlim.strftime("%d/%m/%y")
 
-        data = data + ";" + datpro + ";" + datlim
+        # header datlim regnum puce bdate sex propname addate
+        data = "ERA;AD_BSC;" + datlim + ";" + vals[1] + ";" + vals[8] + ";" + vals[7] + ";" + vals[4] + ";" + prop[0] + ";" + vals[9] + ";"
         qrstr = data + ERAsum(data)
         return render_template("bonsteril_page.html", user=current_user, opupper=optype.upper(), qrdata=qrstr, propr=prop,
                                     datcont=vals[9], nom=vals[2], race=vals[3], sexe=vals[4], couleur=vals[5], hlen=vals[6],
