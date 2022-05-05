@@ -43,10 +43,12 @@ def vetpage():
 
         return render_template("regsoins_page.html", user=current_user, viewuser=theFA, visits=theVisits, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair)
 
+    # action = plan/indicate multiple visits
     if cmd == "fa_vetplan":
         session["otherMode"] = "special-vetplan"
         return redirect(url_for('fapage'))
 
+    # action = visit done / done at specified date
     if cmd == "fa_vetmv" or cmd == "fa_vetmvd":
         # iterate on the checkboxes to see which cats are to be processed
         for key in request.form.keys():
@@ -83,6 +85,7 @@ def vetpage():
         # return to the same page
         return redirect(url_for('fapage'))
 
+    # action = delete visit
     if cmd == "fa_vetmdel":
         # iterate on the checkboxes to see which cats are to be processed
         catregs = []
@@ -137,7 +140,6 @@ def vetpage():
             theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.temp_owner,Cat.regnum).all()
         else:
             theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.regnum).all()
-
 
         return render_template("vet_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
             cats=theCats, FAids=FAidSpecial, VETids=VETlist)
@@ -214,6 +216,7 @@ def vetpage():
         # return to vet page
         return redirect(url_for('fapage'))
 
+    # action = request authorization
     if cmd == "fa_vetareq":
         # iterate on the checkboxes to see which cats are to be processed
         for key in request.form.keys():
@@ -236,8 +239,11 @@ def vetpage():
         db.session.commit()
         return redirect(url_for('fapage'))
 
+    # action = grant authorization or transfer to the vet
     if (cmd == "fa_vetauth" or cmd == "fa_vettrans") and (current_user.FAisADM or current_user.FAisRF):
         # iterate on the checkboxes to see which cats are to be processed
+        session["pendingmessage"] = [[1, "Resultats" ]]
+
         for key in request.form.keys():
             if key[0:3] == 're_':
                 vvid = int(key[3:])
@@ -252,8 +258,8 @@ def vetpage():
                 if not theCat.canAccess(current_user):
                     return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetauth: insufficient privileges", FAids=FAidSpecial)
 
-                # sanity check
-                if theCat.owner_id == FAidSpecial[4]:
+                # authorization is useless for FA_temp, but is ok in the case of transfer to vet
+                if theCat.owner_id == FAidSpecial[4] and cmd == "fa_vetauth":
                     session["pendingmessage"] = [ [ 3, "Authoriser une visite pour une FA temporaire est inutile".format(theCat.regStr()) ] ]
                     return redirect(url_for('fapage'))
 
@@ -266,8 +272,10 @@ def vetpage():
                 theVisit.transferred = True if cmd == "fa_vettrans" else False
 
         db.session.commit()
+
         return redirect(url_for('fapage'))
 
+    # action = revoke authorizaion
     if cmd == "fa_vetadel" and (current_user.FAisADM or current_user.FAisRF):
         # iterate on the checkboxes to see which cats are to be processed
         for key in request.form.keys():
@@ -292,6 +300,7 @@ def vetpage():
         db.session.commit()
         return redirect(url_for('fapage'))
 
+    # action = generate bonVeto
     if cmd == "fa_vetbon":
         # generate the data for the bon
         catlist = []
@@ -311,7 +320,7 @@ def vetpage():
             if key[0:3] == 're_':
                 vvid = int(key[3:])
 
-                # make sure you can access this (= must be one of your cats)
+                # make sure you can access this (for a FA = must be one of your cats, for a VET = visit must be in your clinic
                 theVisit = VetInfo.query.filter_by(id=vvid).first()
                 if not theVisit:
                     return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetbon: invalid vetinfo id", FAids=FAidSpecial)
@@ -319,27 +328,45 @@ def vetpage():
                 if not vdate:
                     vdate = theVisit.vdate
 
-                # find the cat and make sure we can access it
+                # validate the access and the authorization depending if FA or VET
                 theCat = Cat.query.filter_by(id=theVisit.cat_id).first()
-                if not theCat.canAccess(current_user):
+                canAccess = False
+                isAuthorized = False
+
+                if (current_user.FAisVET):
+                    # a VET can generate the bonVeto if the visit is transferred to its clinic
+                    canAccess = (theVisit.vet_id == current_user.id)
+                    isAuthorized = theVisit.transferred
+                else:
+                    canAccess = theCat.canAccess(current_user)
+                    isAuthorized = current_user.FAisADM or (current_user.FAisRF and (theCat.owner.FAresp_id == current_user.id or theCat.owner.id == current_user.id)) or theVisit.validby_id
+
+                if not canAccess:
                     return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetbon: insufficient privileges", FAids=FAidSpecial)
 
                 # do we need authorization?
-                if not current_user.FAisADM and not (current_user.FAisRF and theCat.owner.FAresp_id == current_user.id) and not theVisit.validby_id:
+                # authorization is automatic for : ADMIN / RF (own cats) / RF managed FA cats
+                if not isAuthorized:
                     session["pendingmessage"] = [ [ 3, "La visite du chat {} n'est pas autorisee!".format(theCat.regStr()) ] ]
                     return redirect(url_for('fapage'))
 
                 if not FAname:
                     if theCat.owner_id == FAidSpecial[4]:
+                        # for temp_fa, use the name associated to the cat
                         FAname = theCat.temp_owner
                         FAid = "[{}]".format(FAname)
+                    elif theCat.owner_id == FAidSpecial[3]:
+                        # if the FA is refuge, define FAid for the QR code, but not FAname
+                        FAid = theCat.owner.FAid
+                        FAname = ''
                     else:
+                        # default: define id and name of the FA
                         FAname = theCat.owner.FAname
                         FAid = theCat.owner.FAid
 
                 # manage validation source and date
                 if not theAuthFA:
-                    if current_user.FAisADM or (current_user.FAisRF and theCat.owner.FAresp_id == current_user.id):
+                    if current_user.FAisADM or (current_user.FAisRF and (theCat.owner.FAresp_id == current_user.id or theCat.owner.id == current_user.id)):
                         theAuthFA = current_user
                         authdate = datetime.now()
                     elif theVisit.validby_id:
@@ -387,8 +414,9 @@ def vetpage():
         qrstr = "ERA;{};{};{};{};{};{};".format(bdate.strftime('%Y%m%d'), theAuthFA.FAid, authdate.strftime('%Y%m%d'), FAid, vdate.strftime('%Y%m%d'), "/".join(catregs), "".join(str(e) for e in vtypes))
         qrstr = qrstr + ERAsum(qrstr)
 
-        return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, cats=catlist, faname=FAname, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
+        return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, authFA=theAuthFA.FAname, cats=catlist, faname=FAname, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
 
+    # action = generate bonVeto WITHOUT planned visit (from search page, usually)
     if cmd == "fa_vetbonfast" and current_user.FAisADM:
         # generate the data for the bon
         # note that no planned visit is generated, so apart from the PDF, no information is stored anywhere
@@ -484,6 +512,7 @@ def vetpage():
 
         return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, cats=catlist, faname=FAname, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
 
+    # action = generate bonVeto for unregistered cats
     if cmd == "fa_vetbonunreg" and current_user.FAisADM:
         # generate the data for the bon using the provided info
         catlist = []
@@ -592,6 +621,7 @@ def vetpage():
 
         return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, ucats=catlist, faname=FAname, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
 
+    # action = validate QR code
     if cmd == "adm_vbver":
         bvcode = request.form["vb_qrcode"]
 

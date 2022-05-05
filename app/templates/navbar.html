@@ -24,6 +24,8 @@
                     <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/refuge" method="POST">
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="ref_prise">Prise en charge</button></li>
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="ref_bonSter">Bon de stérilisation</button></li>
+                    </form><form class="form-inline" action="/cat" method="POST">
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_newcatref">Arrivee d'un chat</button></li>
                     </form></ul>
                 </li>{% endif %}
                 {% if user.FAisVET %}<li class="dropdown">

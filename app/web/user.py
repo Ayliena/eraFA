@@ -1,6 +1,7 @@
 from app import app, db, devel_site
 from app.staticdata import FAidSpecial
 from app.models import Cat, User
+from app.helpers import isRefuge
 from flask import render_template, redirect, request, url_for, session, Response
 from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
@@ -118,11 +119,12 @@ def userpage():
         if not theFA.FAresp_id or theFA.FAisRF or theFA.FAisADM:
             theFA.FAresp_id = None
 
-        # update the temp_owner for all the cats owned by this user
-        cats = Cat.query.filter_by(owner_id=theFA.id).all()
+        # update the temp_owner for all the cats owned by this user, except for refuge
+        if not isRefuge(theFA.id):
+            cats = Cat.query.filter_by(owner_id=theFA.id).all()
 
-        for c in cats:
-            c.temp_owner = theFA.FAname
+            for c in cats:
+                c.temp_owner = theFA.FAname
 
         db.session.commit()
         session["pendingmessage"] = [ [0, "Utilisateur {} : informations mises à jour".format(theFA.username) ] ]

@@ -12,20 +12,8 @@
     <script>
 {% include 'functions.html' %}
        window.onload=function() {
-            var i, dates = document.querySelectorAll('[id^="bd_"]');
-            var today = new Date().getTime() / 1000;
-
-            for (i = 0; i < dates.length; ++i) {
-                days = Math.floor((today - parseInt(dates[i].innerHTML))/86400);
-                dates[i].innerHTML = readableAge(days);
-            }
-
-            var regnums = document.querySelectorAll('[id^="rn_"');
-            for (i = 0; i < regnums.length; ++i) {
-                regnum = parseInt(regnums[i].innerHTML);
-                regnums[i].innerHTML = readableRegistre(regnum);
-                // Math.floor(parseInt(dates[i].innerHTML)/86400;
-            }
+            fixAllDates();
+            fixAllRegnums();
         }
     </script>
 <body>
@@ -45,7 +33,42 @@
         {{ m[1] }}</div>
     {% endfor %}{% endif %}
 
-        {% if falist %}
+        {% if catlist %}
+            <h2>{{ listtitle }}</h2>
+            <p><a href="#" onClick="showHideAll();">Montrer/cacher toutes les commentaires</a></p>
+            {% for cat in catlist %}
+            <div class="row">
+                 <div class="col-sm-1">
+                    <form action="/cat" method="POST">
+                        <input type="hidden" name="catid" value="{{cat.id}}">
+                        <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{{cat.regnum}}</span></strong></button>
+                    </form>
+                </div>
+                <div class="col-sm-2">{{ cat.identif }}</div>
+                <div class="col-sm-4">
+                    <a href="#" onClick="showHide('desc_{{cat.registre}}');"><b>{% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}</b></a>
+                    ({{ tabsex[cat.sex] }},
+                    {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}??âge??{% endif %},
+                    {{ tabcol[cat.color] }}{{ tabhair[cat.longhair] }})</div>
+                <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
+                <div class="col-sm-2">
+                    {% if cat.owner_id == FAids[4] %}[{{ cat.temp_owner }}]{% else %}{{ cat.owner.FAname }}{% endif %}
+                </div>
+                {% if not adoptonly %}
+                    <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success">Adoptable</span>{% else %}<span class="bg-danger">Non adoptable</span>{% endif %}</div>
+                {% endif %}
+            </div>
+            <div class="row" style="display: none;" id="desc_{{cat.registre}}">
+                <div class="col-sm-1"></div>
+                <div class="col-sm-11"><p class="small">{{ cat.comments }}</p></div>
+            </div>
+            {% else %}
+                Aucun chat trouvé.
+            {% endfor %}
+            {% if catlist %}<div class="row">
+                <a href="/listcsv{% if adoptonly %}a{%endif%}">Télécharger le tableau en CSV</a>
+            </div>{% endif %}
+        {% else %}
             <h2>Listes spéciales</h2>
 
             <form action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
@@ -90,41 +113,6 @@
                 </div>
             {% endfor %}
             </form>
-        {% else %}
-            <h2>{{ listtitle }}</h2>
-            <p><a href="#" onClick="showHideAll();">Montrer/cacher toutes les commentaires</a></p>
-            {% for cat in catlist %}
-            <div class="row">
-                 <div class="col-sm-1">
-                    <form action="/cat" method="POST">
-                        <input type="hidden" name="catid" value="{{cat.id}}">
-                        <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{{cat.regnum}}</span></strong></button>
-                    </form>
-                </div>
-                <div class="col-sm-2">{{ cat.identif }}</div>
-                <div class="col-sm-4">
-                    <a href="#" onClick="showHide('desc_{{cat.registre}}');"><b>{% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}</b></a>
-                    ({{ tabsex[cat.sex] }},
-                    {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}??âge??{% endif %},
-                    {{ tabcol[cat.color] }}{{ tabhair[cat.longhair] }})</div>
-                <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
-                <div class="col-sm-2">
-                    {% if cat.owner_id == FAids[4] %}[{{ cat.temp_owner }}]{% else %}{{ cat.owner.FAname }}{% endif %}
-                </div>
-                {% if not adoptonly %}
-                    <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success">Adoptable</span>{% else %}<span class="bg-danger">Non adoptable</span>{% endif %}</div>
-                {% endif %}
-            </div>
-            <div class="row" style="display: none;" id="desc_{{cat.registre}}">
-                <div class="col-sm-1"></div>
-                <div class="col-sm-11"><p class="small">{{ cat.comments }}</p></div>
-            </div>
-            {% else %}
-                Aucun chat trouvé.
-            {% endfor %}
-            {% if catlist %}<div class="row">
-                <a href="/listcsv{% if adoptonly %}a{%endif%}">Télécharger le tableau en CSV</a>
-            </div>{% endif %}
         {% endif %}
 
         {% include 'bottom.html' %}

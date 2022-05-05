@@ -1,7 +1,7 @@
 from app import app, db, devel_site
 from app.staticdata import TabColor, TabSex, TabHair, FAidSpecial
 from app.models import User, Cat, VetInfo, Event
-from app.helpers import cat_delete
+from app.helpers import cat_delete, isFATemp, isRefuge
 from flask import render_template, redirect, request, url_for, session
 from flask_login import login_required, current_user
 from sqlalchemy import and_
@@ -118,7 +118,7 @@ def fapage():
                     vvisits=visits, FAids=FAidSpecial, msg=message)
 
         elif theFA.FAisFA or theFA.FAisREF or theFA.FAisAD or theFA.FAisDCD or theFA.FAisHIST:
-            if FAid == FAidSpecial[4]:
+            if isFATemp(FAid) or isRefuge(FAid):
                 theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.temp_owner,Cat.regnum).all()
             else:
                 theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.regnum).all()
@@ -163,6 +163,8 @@ def fapage():
         theCat.owner_id = newFA.id
         theCat.temp_owner = ""
         theCat.adoptable = False
+        # delete all the planned visits
+        VetInfo.query.filter(and_(VetInfo.cat_id == theCat.id, VetInfo.planned == True)).delete()
         theCat.lastop = datetime.now()
         session["pendingmessage"] = [ [0, "Chat {} déplacé dans l'historique".format(theCat.asText())] ]
         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transféré dans l'historique".format(current_user.FAname))

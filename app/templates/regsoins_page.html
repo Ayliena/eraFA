@@ -18,13 +18,7 @@
     <script>
 {% include 'functions.html' %}
         window.onload=function() {
-            var i;
-
-            var regnums = document.querySelectorAll('[id^="rn_"]');
-            for (i = 0; i < regnums.length; ++i) {
-                regnum = parseInt(regnums[i].innerHTML);
-                regnums[i].innerHTML = readableRegistre(regnum);
-            }
+            fixAllRegnums();
         }
     </script>
 <body>

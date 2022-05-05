@@ -16,19 +16,8 @@
     <script>
 {% include 'functions.html' %}
         window.onload=function() {
-            var i, dates = document.querySelectorAll('[id^="bd_"]');
-            var today = new Date().getTime() / 1000;
-
-            for (i = 0; i < dates.length; ++i) {
-                days = Math.floor((today - parseInt(dates[i].innerHTML))/86400);
-                dates[i].innerHTML = readableAge(days);
-            }
-
-            var regnums = document.querySelectorAll('[id^="rn_"]');
-            for (i = 0; i < regnums.length; ++i) {
-                regnum = parseInt(regnums[i].innerHTML);
-                regnums[i].innerHTML = readableRegistre(regnum);
-            }
+            fixAllDates();
+            fixAllRegnums();
         }
     </script>
     <style>
@@ -91,7 +80,7 @@
                         <div class="col-sm-1">
                             <input class="form-check-input" type="checkbox" name="re_{{cat.id}}" id="re_{{cat.id}}">
                                 <label class="form-check-label" for="re_{{cat.id}}">
-                                    <span id="rn_{{cat.id}}">{{cat.regnum}}</span>
+                                    <span id="rn_{{cat.id}}">{% if cat.regnum>0 %}{{cat.regnum}}{% else %}N{{cat.id}}{% endif %}</span>
                                 </label>
                         </div>
                         <div class="col-sm-2">{{ cat.identif }}</div>
@@ -147,7 +136,7 @@
                      <div class="col-sm-1">
                         <form action="/cat" method="POST">
                             <input type="hidden" name="catid" value="{{cat.id}}">
-                            <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{{cat.regnum}}</span></strong></button>
+                            <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{% if cat.regnum>0 %}{{cat.regnum}}{% else %}N{{cat.id}}{% endif %}</span></strong></button>
                         </form>
                     </div>
                     <div class="col-sm-2">{{ cat.identif }}</div>

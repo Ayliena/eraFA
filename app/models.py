@@ -95,7 +95,10 @@ class Cat(db.Model):
         return str
 
     def regStr(self):
-        return "{}-{}".format(self.regnum%10000, int(self.regnum/10000))
+        if self.regnum > 0:
+            return "{}-{}".format(self.regnum%10000, int(self.regnum/10000))
+        else:
+            return "N{}".format(self.id)
 
     def canAccess(self, fauser):
         return self.owner_id == fauser.id or fauser.FAisADM or (fauser.FAisRF and self.owner.FAresp_id == fauser.id)
@@ -119,7 +122,7 @@ class VetInfo(db.Model):
     requested = db.Column(db.Boolean)
     transferred = db.Column(db.Boolean)
     validby_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    validby = db.relationship('User', foreign_keys=doneby_id)
+    validby = db.relationship('User', foreign_keys=validby_id)
     validdate = db.Column(db.DateTime)
     comments = db.Column(db.String(1024))
 

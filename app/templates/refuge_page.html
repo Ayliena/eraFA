@@ -16,19 +16,8 @@
     <script>
 {% include 'functions.html' %}
         window.onload=function() {
-            var i, dates = document.querySelectorAll('[id^="bd_"]');
-            var today = new Date().getTime() / 1000;
-
-            for (i = 0; i < dates.length; ++i) {
-                days = Math.floor((today - parseInt(dates[i].innerHTML))/86400);
-                dates[i].innerHTML = readableAge(days);
-            }
-
-            var regnums = document.querySelectorAll('[id^="rn_"]');
-            for (i = 0; i < regnums.length; ++i) {
-                regnum = parseInt(regnums[i].innerHTML);
-                regnums[i].innerHTML = readableRegistre(regnum);
-            }
+            fixAllDates();
+            fixAllRegnums();
         }
         {% if pagetype==2 %}function checkClipboard() {
             try {

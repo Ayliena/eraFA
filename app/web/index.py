@@ -1,7 +1,7 @@
 from app import app, db, login_manager, devel_site
 from app.staticdata import TabColor, TabSex, TabHair
 from app.models import User, Cat
-from flask import render_template, redirect, request, url_for
+from flask import render_template, redirect, request, url_for, session
 from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime
 
@@ -42,6 +42,10 @@ def login():
     current_user.FAlastop = datetime.now()
     db.session.commit()
 
+    # reset the session data
+    session.pop("otherFA", None)
+    session.pop("otherMode", None)
+    session.pop("searchFilter", None)
     return redirect(url_for('fapage'))
 
 @app.route("/logout/")

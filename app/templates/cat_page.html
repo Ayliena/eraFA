@@ -25,6 +25,8 @@
             {% if cat.color %} document.getElementById("c_color").value = {{ cat.color }}; {% endif %}
             {% if cat.longhair %} document.getElementById("c_hlen").value = {{ cat.longhair }}; {% endif %}
             {% if cat.adoptable %} document.getElementById("c_adoptable").value = 1; {% endif %}
+            {% if cat.owner_id==FAids[3] %}populateCages("c_cage");
+            document.getElementById("c_cage").value = "{{ cat.temp_owner }}";{% endif %}
 
             var sel = document.getElementById("sel_FA");
             var i = 0;
@@ -38,14 +40,13 @@
                 sel.add(option);
             }
 
+            fixAllRegnums();
+
             populatevets("visit_vet");
             {% for vv in cat.vetvisits %}{% if vv.planned %}
             populatevets("oldv_{{vv.id}}_vet");
             document.getElementById("oldv_{{vv.id}}_vet").value = {{vv.vet_id}};
             {% endif %}{% endfor %}
-
-            var regnum = document.getElementById("rn_cat");
-            regnum.innerHTML = readableRegistre(parseInt(regnum.innerHTML));
         }
         $(document).ready(function() {
           $('.datepick').datetimepicker({
@@ -54,8 +55,8 @@
         });
         function validateForm() {
             var x = document.forms["c_form"]["c_registre"].value;
-            if (!x.match("^[0-9]+-[0-9]+$")) {
-                alert("Le numero de registre doit etre de la forme NUMERO-ANNEE");
+            if (!x.match("^[0-9]+-[0-9]+$") && x != "") {
+                alert("Le numero de registre doit etre de la forme NUMERO-ANNEE ou etre vide pour un chat pas encore enregistre");
                 return false;
             }
             return true;
@@ -100,17 +101,29 @@
         <div class="row">
             <div class="col-sm-6">
                 <div class="row form-group">
+                    {% if cat.regnum %}
                     <div class="col-sm-2">Registre:</div>
                     <div class="col-sm-6">
-                        {% if cat.regnum %} <b><span id="rn_cat">{{cat.regnum}}</span></b>
-                        {% else %} <input type="text" name="c_registre" required placeholder="xxx-xx"> {% endif %}
+                        {% if cat.regnum>0 %} <b><span id="rn_cat">{{cat.regnum}}</span></b> (N{{cat.id}})
+                        {% else %}{% if user.FAisADM %}<input type="text" name="c_registre" placeholder="xxx-xx">  {% endif %}(N{{cat.id}}){% endif %}
                     </div>
                     <div class="col-sm-4"><select name="c_adoptable" id="c_adoptable" {% if readonly %}disabled{% endif %}>
                         <option value="0">Non adoptable</option>
                         <option value="1">Disponible a l'adoption</option></select>
                     </div>
+                    {% else %}
+                    <div class="col-sm-8">Registre: non enregistre</div>
+                    <div class="col-sm-4"><select name="c_adoptable" id="c_adoptable">
+                        <option value="0">Non adoptable</option>
+                        <option value="1">Disponible a l'adoption</option></select>
+                    </div>
+                    {% endif %}
                 </div>
-                {% if not cat.regnum or cat.owner_id == FAids[4] %}<div class="row form-group">
+                {% if cat.owner_id==FAids[3] %}<div class="row form-group">
+                    <div class="col-sm-2">Cage:</div>
+                    <div class="col-sm-8"><select name="c_cage" id="c_cage" {% if readonly %}disabled{% endif %}></select></div>
+                </div>
+                {% elif not cat.regnum or cat.owner_id == FAids[4] %}<div class="row form-group">
                     <div class="col-sm-3">FA temporaire:</div>
                     <div class="col-sm-9">
                         <input type="text" name="c_fatemp" value="{{ cat.temp_owner }}" {% if readonly %}disabled{% endif %}>
@@ -130,7 +143,7 @@
                 </div>
                 <div class="row form-group">
                     <div class="col-sm-2">Sexe:</div>
-                    <div class="col-sm-4"><select name="c_sex" id="c_sex"{% if readonly %}disabled{% endif %}>
+                    <div class="col-sm-4"><select name="c_sex" id="c_sex" {% if readonly %}disabled{% endif %}>
                         <option value="0">INCONNU</option>
                         <option value="1">FEMELLE</option>
                         <option value="2">MALE</option></select></div>
@@ -157,7 +170,7 @@
                     </select></div>
                 </div>
             </div>
-            {% if cat.regnum %}
+            {% if cat.regnum>0 %}
             <div class="col-sm-3">
                 <img src="{{ url_for('static', filename='{}.jpg'.format(cat.regnum))}}" style="height:12em; margin-left:20px; margin-right:20px;" onError="this.onerror=null;this.src='{{ url_for('static', filename='logo-ERA.png')}}';">
             </div>
@@ -339,11 +352,11 @@
             Une fois les informations remplies:
         </div>
         <div class="row form-group">
-            <button type="submit" name="action" value="adm_addcathere">Rajouter le chat chez moi</button>
+            <button type="submit" name="action" value="adm_addcathere">Rajouter le chat ici</button>
         </div>
-        <div class="row form-group">
+        {% if falist %}<div class="row form-group">
              <button type="submit" name="action" value="adm_addcatputFA">Placer le chat chez:</button><select id="sel_FA" name="FAid"></select>
-        </div>
+        </div>{% endif %}
         {% endif %}
     </form>
 

@@ -1,7 +1,7 @@
 from app import app, db
-from app.staticdata import TabColor, TabSex, TabHair, DBTabColor, DBTabSex, DBTabHair, FAidSpecial
+from app.staticdata import TabColor, TabSex, TabHair, TabCage, DBTabColor, DBTabSex, DBTabHair, FAidSpecial
 from app.models import User, Cat, VetInfo, Event
-from app.helpers import vetAddStrings
+from app.helpers import vetAddStrings, isRefuge, isFATemp
 from flask import render_template, redirect, request, url_for, session, Response
 from flask_login import login_required, current_user
 from sqlalchemy import and_, or_
@@ -50,7 +50,12 @@ def refupage():
                 comments = cat.comments.replace("\r",'')
                 comments = comments.replace("\n","<EOL>")
 
-                faname = cat.owner.username if not cat.owner_id == FAidSpecial[4] else "[{}]".format(cat.temp_owner)
+                if isFATemp(cat.owner_id):
+                    faname = "[{}]".format(cat.temp_owner)
+                elif isRefuge(cat.owner_id):
+                    faname = "({})".format(cat.temp_owner)
+                else:
+                    faname = cat.owner.username
 
                 datline = [ cat.regStr(), faname, cat.name, cat.identif, DBTabSex[cat.sex],
                             ("" if not cat.birthdate else cat.birthdate.strftime('%d/%m/%y') ),
@@ -79,7 +84,12 @@ def refupage():
             comments = cat.comments.replace("\r",'')
             comments = comments.replace("\n","<EOL>")
 
-            faname = cat.owner.username if not cat.owner_id == FAidSpecial[4] else "[{}]".format(cat.temp_owner)
+            if isFATemp(cat.owner_id):
+                faname = "[{}]".format(cat.temp_owner)
+            elif isRefuge(cat.owner_id):
+                faname = "({})".format(cat.temp_owner)
+            else:
+                faname = cat.owner.username
 
             datline = [ cat.regStr(), faname, cat.name, cat.identif, DBTabSex[cat.sex],
                         ("" if not cat.birthdate else cat.birthdate.strftime('%d/%m/%y') ),
@@ -176,8 +186,13 @@ def refupage():
                     else:
                         theFA = User.query.filter(and_(User.username==faname, or_(User.FAisFA==True,User.FAisREF==True))).first()
 
-                # make sure that we have the FA
-                if not theFA:
+                # make sure that we have the FA, if yes do REF fixes, otherwise indicate a problem
+                if theFA:
+                    # fix the temp_owner for a cat arriving in REF
+                    if theFA and isRefuge(theFA.id):
+                        temp_faname = TabCage[0][0]
+                else:
+                    # we don't have a FA
                     if editmode:
                         # assume it's the old one, in any case it's not like we can edit anything....
                         if faname:
@@ -293,6 +308,19 @@ def refupage():
                         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: informations mises a jour (Refugilys): {}".format(current_user.FAname, updated))
                         db.session.add(theEvent)
 
+                    # associate the vet visits
+                    for vv in vvisits:
+                        vv.cat_id = theCat.id
+                        db.session.add(vv)
+
+                    if r_vetshort != '--------':
+                        msg.append([0, "Numéro de registre {} mis a jour: visites {}".format(registre, r_vetshort)])
+                        theCat.vetshort = vetAddStrings(theCat.vetshort, r_vetshort)
+                        theCat.lastop = datetime.now()
+                        # generate an event
+                        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: Visites mises a jour (Refugilys): {}".format(current_user.FAname, r_vetshort))
+                        db.session.add(theEvent)
+
                     # update the FA if modified (note that here theFA is always defined!)
                     if faname:
                         msg.append([0, "Numéro de registre {} deplace de {} vers {}{}".format(registre, theCat.owner.FAname, theFA.FAname, faname if theFA.id == FAidSpecial[4] else '') ])
@@ -308,32 +336,25 @@ def refupage():
                         theFA.numcats += 1
 
                         # if we are moving TO a tempFA, update the name
-                        if theFA.id == FAidSpecial[4]:
+                        if isFATemp(theFA.id):
                             theCat.temp_owner = temp_faname
+
+                        # if we are moving to refuge, set undefined cage
+                        if isRefuge(theFA.id):
+                            theCat.temp_owner = TabCage[0][0]
 
                         # if the destination FA is any of dead/adopted/historical then clear the adopted flag and clear the fa name
                         if theFA.id == FAidSpecial[0] or theFA.id == FAidSpecial[1] or theFA.id == FAidSpecial[2]:
                             theCat.adoptable = False
                             theCat.temp_owner = ""
-
-                        # reassociate any planned visit and clear any validation
-                        theVisits = VetInfo.query.filter(and_(VetInfo.cat_id == theCat.id, VetInfo.planned == True)).all()
-                        for v in theVisits:
-                            v.doneby_id = theFA.id
-                            v.validby_id = None
-
-                    # associate the vet visits
-                    for vv in vvisits:
-                        vv.cat_id = theCat.id
-                        db.session.add(vv)
-
-                    if r_vetshort != '--------':
-                        msg.append([0, "Numéro de registre {} mis a jour: visites {}".format(registre, r_vetshort)])
-                        theCat.vetshort = vetAddStrings(theCat.vetshort, r_vetshort)
-                        theCat.lastop = datetime.now()
-                        # generate an event
-                        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: Visites mises a jour (Refugilys): {}".format(current_user.FAname, r_vetshort))
-                        db.session.add(theEvent)
+                            # the planned vet visits are also deleted
+                            VetInfo.query.filter(and_(VetInfo.cat_id == theCat.id, VetInfo.planned == True)).delete()
+                        else:
+                            # reassociate any planned visit and clear any validation
+                            theVisits = VetInfo.query.filter(and_(VetInfo.cat_id == theCat.id, VetInfo.planned == True)).all()
+                            for v in theVisits:
+                                v.doneby_id = theFA.id
+                                v.validby_id = None
 
                     # should be done only if we updated something?
                     db.session.commit()

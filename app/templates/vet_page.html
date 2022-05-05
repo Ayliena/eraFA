@@ -32,20 +32,8 @@
             }
         }
         window.onload=function() {
-            var i, dates = document.querySelectorAll('[id^="bd_"]');
-            var today = new Date().getTime() / 1000;
-
-            for (i = 0; i < dates.length; ++i) {
-                days = Math.floor((today - parseInt(dates[i].innerHTML))/86400);
-                dates[i].innerHTML = readableAge(days);
-            }
-
-            var regnums = document.querySelectorAll('[id^="rn_"]');
-            for (i = 0; i < regnums.length; ++i) {
-                regnum = parseInt(regnums[i].innerHTML);
-                regnums[i].innerHTML = readableRegistre(regnum);
-            }
-
+            fixAllDates();
+            fixAllRegnums();
             populatevets('visit_vet');
         }
         $(document).ready(function() {
@@ -97,7 +85,7 @@
                         <input class="form-check-input" type="checkbox" name="re_{{v.id}}" id="re_{{v.id}}">
                         <label class="form-check-label" for="re_{{v.id}}">
                             {{ v.vdate.strftime("%d/%m/%y") }} {% if v.cat.owner_id == FAids[4] %}[{{ v.cat.temp_owner }}]{% endif %}
-                            visite de <a href="{{ url_for('catpage') }}/{{ v.cat.id }}"><span id="rn_{{v.cat.id}}">{{v.cat.regnum}}</span></a>
+                            visite de <a href="{{ url_for('catpage') }}/{{ v.cat.id }}"><span id="rn_{{v.cat.id}}">{% if v.cat.regnum>0 %}{{v.cat.regnum}}{% else %}N{{v.cat.id}}{% endif %}</span></a>
                         </label>
                             ( {{ v.cat.name }} / {{ v.cat.identif }} ) chez {{ v.vet.FAname }} pour:
                     </div>
@@ -194,7 +182,7 @@
                     <div class="col-sm-1">
                         <input class="form-check-input" type="checkbox" name="re_{{cat.id}}" id="re_{{cat.id}}">
                             <label class="form-check-label" for="re_{{cat.id}}">
-                                <span id="rn_{{cat.id}}">{{cat.regnum}}</span>
+                                <span id="rn_{{cat.id}}">{% if cat.regnum>0 %}{{cat.regnum}}{% else %}N{{cat.id}}{% endif %}</span>
                             </label>
                     </div>
                     <div class="col-sm-2">{{ cat.identif }}</div>

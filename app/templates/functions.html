@@ -27,14 +27,29 @@
             else return Math.floor(days/365).toString()+"a";
         }
         function readableRegistre(regnum) {
-            ry = Math.floor(regnum/10000);
-            rn = regnum - 10000*ry;
+            var ry = Math.floor(regnum/10000);
+            var rn = regnum - 10000*ry;
             return rn.toString()+"-"+ry.toString();
         }
+        function fixAllDates() {
+            var i, dates = document.querySelectorAll('[id^="bd_"]');
+            var today = new Date().getTime() / 1000;
+            for (i = 0; i < dates.length; ++i) {
+                days = Math.floor((today - parseInt(dates[i].innerHTML))/86400);
+                dates[i].innerHTML = readableAge(days);
+            }
+        }
+        function fixAllRegnums() {
+            var i, regnums = document.querySelectorAll('[id^="rn_"]');
+            for (i = 0; i < regnums.length; ++i) {
+                var regnum = regnums[i].innerHTML;
+                if (!regnum.startsWith("N")) {
+                    regnums[i].innerHTML = readableRegistre(parseInt(regnum));
+                }
+            }
+        }
         function populatecolor(selid) {
-            var cols = ["INCONNU", "BEIGE", "BEIGE ET BLANC", "BLANC", "BLUE POINT", "CREME", "ECAILLE DE TORTUE", "GRIS", "GRIS CHARTREUX", "GRIS ET BLANC",
-                "NOIR", "NOIR ET BLANC", "NOIR ET SMOKE", "NOIR PLASTRON BLANC", "ROUX", "ROUX ET BLANC", "SEAL POINT", "TABBY BLANC", "TABBY BRUN", "TABBY GRIS",
-                "TIGRE", "TIGRE BEIGE", "TIGRE BRUN", "TIGRE CREME", "TIGRE GRIS", "TRICOLORE"];
+            var cols = [ {% for c in TabCols %} "{{c|safe}}", {% endfor %}];
             var sel, i, option;
             sel = document.getElementById(selid);
 
@@ -50,6 +65,10 @@
             var sel, i, option;
             sel = document.getElementById(selid);
 
+            if (!sel) {
+                return;
+            }
+
             for (i = 0; i < vettab.length; ++i) {
                 option = document.createElement('option');
                 option.value = vettab[i][0];
@@ -57,3 +76,23 @@
                 sel.add(option);
             }
         }
+        function populateCages(selid) {
+            var cages = [ {% for c in TabCages %} ["{{c[0]}}", "{{c[1]}}"], {% endfor %}];
+            var sel, i, option;
+
+            sel = document.getElementById(selid);
+
+            if (!sel) {
+                return;
+            }
+
+            for (i = 0; i < cages.length; ++i) {
+                option = document.createElement('option');
+                option.value = cages[i][0];
+                option.text = cages[i][1];
+                sel.add(option);
+            }
+        }
+
+
+

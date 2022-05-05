@@ -24,13 +24,7 @@
             else return Math.floor(days/365).toString()+"a";
         }
         window.onload=function() {
-            var i, dates = document.querySelectorAll('[id^="bd_"]');
-            var today = new Date().getTime() / 1000;
-
-            for (i = 0; i < dates.length; ++i) {
-                days = Math.floor((today - parseInt(dates[i].innerHTML))/86400);
-                dates[i].innerHTML = readableAge(days);
-            }
+            fixAllDates();
         }
         $(function() {
             $('.pop').on('click', function() {
