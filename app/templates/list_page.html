@@ -33,7 +33,7 @@
         {{ m[1] }}</div>
     {% endfor %}{% endif %}
 
-        {% if catlist %}
+        {% if listtitle %}
             <h2>{{ listtitle }}</h2>
             <p><a href="#" onClick="showHideAll();">Montrer/cacher toutes les commentaires</a></p>
             {% for cat in catlist %}
@@ -41,7 +41,7 @@
                  <div class="col-sm-1">
                     <form action="/cat" method="POST">
                         <input type="hidden" name="catid" value="{{cat.id}}">
-                        <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{{cat.regnum}}</span></strong></button>
+                        <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{% if cat.regnum>0 %}{{cat.regnum}}{% else %}N{{cat.id}}{% endif %}</span></strong></button>
                     </form>
                 </div>
                 <div class="col-sm-2">{{ cat.identif }}</div>

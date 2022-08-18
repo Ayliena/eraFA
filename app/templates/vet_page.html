@@ -75,7 +75,7 @@
             {% for v in visits %}
                 <div class="row" style="margin-top: 8px;">
                     <div class="col-sm-2">
-                        {% if v.validby_id or ((user.FAisADM or user.FAisRF) and viewuser == user) %}
+                        {% if v.validby_id or (viewuser == user and autoauth) %}
                             {% if v.transferred %}<div class="text-success">Visite transferee</div>
                             {% else %}<div class="text-success">Visite autorisee</div>{% endif %}
                         {% elif v.requested %}<div class="text-warning">Demande en cours</div>
@@ -132,7 +132,7 @@
             </div>
             <hr>
             <div class="row">
-                {% if user.FAisADM or user.FAisRF %}<div class="col-sm-3">
+                {% if canauth %}<div class="col-sm-3">
                         <button type="submit" name="action" value="fa_vetauth">Autoriser les visites selectionnees et permettre a la FA l'impression du bon</button>
                     </div>
                     <div class="col-sm-3">
@@ -144,12 +144,12 @@
                 <div class="col-sm-3">
                     <button type="submit" name="action" value="fa_vetbon">Imprimer un bon pour les visites selectionnees</button>
                 </div>
-                {% if not (user.FAisADM or user.FAisRF) %}<div class="col-sm-6">
+                {% if not canauth %}<div class="col-sm-6">
                     Le bon ne peut etre genere que pour des visites qui sont autorisees.  La date utilisee est celle de la premiere visite de la liste.
                 </div>{% endif %}
             </div>
             <hr>
-            {% if user.FAisADM or user.FAisRF %}<div class="row">
+            {% if canauth %}<div class="row">
                 <div class="col-sm-3">
                     <button type="submit" name="action" value="fa_vetadel">Annuller l'autorisation/transmission des visites selectionnees</button>
                 </div>

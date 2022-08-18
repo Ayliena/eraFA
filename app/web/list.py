@@ -1,5 +1,6 @@
 from app import app, db, devel_site
-from app.staticdata import TabColor, TabSex, TabHair, FAidSpecial
+from app.staticdata import TabColor, TabSex, TabHair, FAidSpecial, ACC_NONE, ACC_RO, ACC_MOD, ACC_FULL, ACC_TOTAL
+from app.helpers import accessPrivileges
 from app.models import User, Cat
 from flask import render_template, redirect, request, url_for, session, Response
 from flask_login import login_required, current_user
@@ -15,7 +16,9 @@ def listpage():
 
     cmd = request.form["action"]
 
-    if (cmd == "sv_viewFA" and (current_user.FAisADM or current_user.FAisOV)) or (cmd == "sv_viewFAresp" and (current_user.FAisRF)):
+    catMode, vetMode, searchMode = accessPrivileges(current_user)
+
+    if (cmd == "sv_viewFA" and searchMode >= ACC_FULL) or (cmd == "sv_viewFAresp" and searchMode >= ACC_RO):
         # special FA we want some data from
         REFfa=User.query.filter_by(id=FAidSpecial[3]).first()
         TEMPfa=User.query.filter_by(id=FAidSpecial[4]).first()
@@ -43,12 +46,12 @@ def listpage():
 
 #        return render_template("list_page.html", user=current_user, falist=FAlist, refugfa=REFfa, FAids=FAidSpecial)
 
-    if cmd == "sv_globalTab" and (current_user.FAisADM or current_user.FAisOV):
+    if searchMode >= ACC_FULL and cmd == "sv_globalTab":
         # list of all cats
         session["otherMode"] = "special-all"
         return redirect(url_for('fapage'))
 
-    if cmd == "sv_adoptTab" and (current_user.FAisADM or current_user.FAisOV):
+    if searchMode >= ACC_FULL and cmd == "sv_adoptTab":
         # list of all cats with adoptable=true
         session["otherMode"] = "special-adopt"
         return redirect(url_for('fapage'))
@@ -79,7 +82,9 @@ def exportCSV(catlist):
 @app.route("/listcsv")
 @login_required
 def listdownload():
-    if current_user.FAisADM or current_user.FAisOV:
+    catMode, vetMode, searchMode = accessPrivileges(current_user)
+
+    if searchMode >= ACC_FULL:
         # generate the global table as CSV file
         catlist=Cat.query.all()
 
@@ -101,7 +106,9 @@ def listdownload():
 @app.route("/listcsva")
 @login_required
 def listadownload():
-    if current_user.FAisADM or current_user.FAisOV:
+    catMode, vetMode, searchMode = accessPrivileges(current_user)
+
+    if searchMode >= ACC_FULL:
         # generate the table as CSV file
         catlist=Cat.query.filter_by(adoptable=True).all()
 

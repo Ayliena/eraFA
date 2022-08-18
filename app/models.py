@@ -100,9 +100,6 @@ class Cat(db.Model):
         else:
             return "N{}".format(self.id)
 
-    def canAccess(self, fauser):
-        return self.owner_id == fauser.id or fauser.FAisADM or (fauser.FAisRF and self.owner.FAresp_id == fauser.id)
-
 # --------------- VETINFO CLASS
 
 class VetInfo(db.Model):
@@ -126,3 +123,5 @@ class VetInfo(db.Model):
     validdate = db.Column(db.DateTime)
     comments = db.Column(db.String(1024))
 
+    def __repr__(self):
+        return "<VetInfo {}>".format(self.id)

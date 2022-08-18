@@ -1,7 +1,7 @@
 from app import app, db, devel_site
-from app.staticdata import TabColor, TabSex, TabHair, FAidSpecial
+from app.staticdata import TabColor, TabSex, TabHair, FAidSpecial, ACC_NONE, ACC_RO, ACC_MOD, ACC_FULL, ACC_TOTAL
 from app.models import User, Cat, VetInfo, Event
-from app.helpers import cat_delete, isFATemp, isRefuge
+from app.helpers import cat_delete, isFATemp, isRefuge, getViewUser, accessPrivileges
 from flask import render_template, redirect, request, url_for, session
 from flask_login import login_required, current_user
 from sqlalchemy import and_
@@ -22,40 +22,39 @@ def fapage():
         else:
             message = []
 
+        # display current user pages or alternate user's?
+        FAid, theFA = getViewUser()
+
+        if not theFA:
+            return render_template("error_page.html", user=current_user, errormessage="invalid FA id", FAids=FAidSpecial)
+
+        catMode, vetMode, searchMode = accessPrivileges(theFA)
+
         # decide which type of page to display
         mode = None
         if "otherMode" in session:
             mode = session["otherMode"]
 
             # these are only allowed for SV/ADM
-            if (mode == "special-all" or mode == "special-adopt" or mode == "special-search") and not (current_user.FAisOV or current_user.FAisADM):
+            if (mode == "special-all" or mode == "special-adopt") and searchMode == ACC_NONE:
                 mode = None
 
-        # display current user pages or alternate user's?
-        # we can see pages of other FAs if we are OV/ADM or we are the FA's resp
-        FAid = current_user.id
-        theFA = current_user
-        if "otherFA" in session:
-            FAid = session["otherFA"]
-            theFA = User.query.filter_by(id=FAid).first()
-            faexists = theFA is not None;
+            if mode == "special-search" and searchMode < ACC_FULL:
+                mode = None
 
-            if not faexists:
-                return render_template("error_page.html", user=current_user, errormessage="invalid FA id", FAids=FAidSpecial)
-
-            # permissions: ADM and OV see all
-            # RF can see the ones they manage + adopt/dead/refuge
-            if not (current_user.FAisRF and theFA.FAresp_id != current_user.id) and not (current_user.FAisRF and (FAid == FAidSpecial[0] or
-                        FAid == FAidSpecial[1] or FAid == FAidSpecial[3])) and not (current_user.FAisOV or current_user.FAisADM):
-                FAid = current_user.id
-                theFA = current_user
+            # this is only allowed for VET
+            if mode == "special-vethistory" and not current_user.FAisVET:
+                mode = None
 
         # handle special cases
         if mode == "special-vetplan":
             # query all vetinfo which are planned and associated with cats owned by the FA
             theVisits = VetInfo.query.filter(and_(VetInfo.doneby_id==FAid, VetInfo.planned==True)).order_by(VetInfo.vdate).all()
 
-            return render_template("vet_page.html", devsite=devel_site, user=current_user, viewuser=theFA, visits=theVisits, FAids=FAidSpecial, msg=message)
+            vetAuth = (vetMode >= ACC_FULL)
+
+            return render_template("vet_page.html", devsite=devel_site, user=current_user, viewuser=theFA, visits=theVisits, autoauth=vetAuth, canauth=vetAuth,
+                                   FAids=FAidSpecial, msg=message)
 
         elif mode == "special-all":
             return render_template("list_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
@@ -64,6 +63,13 @@ def fapage():
         elif mode == "special-adopt":
             return render_template("list_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
                 listtitle="Chats disponibles à l'adoption", catlist=Cat.query.filter_by(adoptable=True).order_by(Cat.regnum).all(), FAids=FAidSpecial, msg=message, adoptonly=True)
+
+        elif mode == "special-vethistory":
+            # display the past visits, sorted by date
+            visits = VetInfo.query.filter(and_(VetInfo.vet_id==FAid, and_(VetInfo.planned==False,VetInfo.transferred==True))).order_by(VetInfo.vdate.desc()).all()
+
+            return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                    vvisits=visits, visitmode="history", FAids=FAidSpecial, msg=message)
 
         elif mode == "special-search":
             searchfilter = session["searchFilter"]
@@ -76,7 +82,7 @@ def fapage():
             cats = []
 
             if src_name:
-                cats = cats + Cat.query.filter(Cat.name.contains(src_name)).all()
+                cats = cats + Cat.query.filter(Cat.name.contains(src_name)).order_by(Cat.temp_owner,Cat.regnum).all()
 
             if src_regnum:
                 if src_regnum.find('-') != -1:
@@ -84,18 +90,20 @@ def fapage():
                     rr = src_regnum.split('-')
                     rn = int(rr[0]) + 10000*int(rr[1])
 
-                    cats = cats + Cat.query.filter_by(regnum=rn).all()
+                    cats = cats + Cat.query.filter_by(regnum=rn).order_by(Cat.temp_owner,Cat.regnum).all()
 
                 elif src_regnum.isdigit():
                     # fix number, all years
                     clause = "NOT MOD (regnum-"+src_regnum+",10000)"
-                    cats = cats + Cat.query.filter(clause).all()
+                    cats = cats + Cat.query.filter(clause).order_by(Cat.temp_owner,Cat.regnum).all()
 
             if src_id:
-                cats = cats + Cat.query.filter(Cat.identif.contains(src_id)).all()
+                cats = cats + Cat.query.filter(Cat.identif.contains(src_id)).order_by(Cat.temp_owner,Cat.regnum).all()
 
             if src_FAname:
-                cats = cats + Cat.query.filter(Cat.temp_owner.contains(src_FAname)).all()
+                cats = cats + Cat.query.filter(Cat.temp_owner.contains(src_FAname)).order_by(Cat.temp_owner,Cat.regnum).all()
+
+            # ok, so if multiple rules were provided, the results will NOT be sorted correctly, but it's too annoying to do this right
 
             max_regnum = db.session.query(db.func.max(Cat.regnum)).scalar()
             defaultvalues = [src_regnum, src_name, src_id, src_FAname];
@@ -111,11 +119,10 @@ def fapage():
         # default list, which is not the same for FAs or Vets
         if theFA.FAisVET:
             # display the visits, sorted by FA
-
             visits = VetInfo.query.filter(and_(VetInfo.vet_id==FAid, and_(VetInfo.planned==True,VetInfo.transferred==True))).order_by(VetInfo.doneby_id).all()
 
             return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    vvisits=visits, FAids=FAidSpecial, msg=message)
+                    vvisits=visits, visitmode="planned", FAids=FAidSpecial, msg=message)
 
         elif theFA.FAisFA or theFA.FAisREF or theFA.FAisAD or theFA.FAisDCD or theFA.FAisHIST:
             if isFATemp(FAid) or isRefuge(FAid):
@@ -150,12 +157,14 @@ def fapage():
         return render_template("error_page.html", user=current_user, errormessage="invalid cat id", FAids=FAidSpecial)
         return redirect(url_for('fapage'))
 
+    catMode, vetMode, searchMode = accessPrivileges(theCat.owner)
+
     # check if you can access this
-    if theCat.owner_id != current_user.id and not current_user.FAisADM:
+    if catMode != ACC_TOTAL:
         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data", FAids=FAidSpecial)
 #        return redirect(url_for('fapage'))
 
-    if cmd == "adm_histcat" and current_user.FAisADM:
+    if cmd == "adm_histcat":
         # move the cat to the historical list of cats
         newFA = User.query.filter_by(id=FAidSpecial[2]).first()
         theCat.owner.numcats -= 1
@@ -172,7 +181,7 @@ def fapage():
         current_user.FAlastop = datetime.now()
         db.session.commit()
 
-    if cmd == "adm_deletecat" and current_user.FAisADM:
+    if cmd == "adm_deletecat":
         # erase the cat and all the associated information from the database
         # NOTE THAT THIS IS IRREVERSIBLE AND LEAVES NO TRACE
         session["pendingmessage"] = [ [0, "Chat {} effacé du systeme".format(theCat.asText())] ]

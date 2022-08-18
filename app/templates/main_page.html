@@ -48,7 +48,7 @@
         {% if viewuser.FAisVET %}
             {% if viewuser != user %} <h2>Situation veterinaire : {{ viewuser.FAname }}</h2>{% endif %}
 
-            <h2>Visites prevues a la clinique</h2>
+            <h2>{% if visitmode == "planned" %}Visites prevues a la clinique{% else %}Historique des visites{% endif %}</h2>
             {% if vvisits %}
                 <form action="/vet" method="POST">
                 {% for v in vvisits %}
@@ -56,12 +56,13 @@
                         <div class="col-sm-3">
                             <input class="form-check-input" type="checkbox" name="re_{{v.id}}" id="re_{{v.id}}">
                             <label class="form-check-label" for="re_{{v.id}}">
-                                {{ v.vdate.strftime("%d/%m/%y") }}, {% if v.doneby_id == FAids[4] %}{{ v.cat.temp_owner }}{% else %}{{ v.doneby.FAname }}{% endif %}
+                                {% if visitmode == "planned" %}{{ v.vdate.strftime("%d/%m/%y") }}, {% if v.doneby_id == FAids[4] %}{{ v.cat.temp_owner }}{% else %}{{ v.doneby.FAname }}{% endif %}
+                                {% else %}{% if v.doneby_id == FAids[4] %}{{ v.cat.temp_owner }}{% else %}{{ v.doneby.FAname }} le {{ v.vdate.strftime("%d/%m/%y") }}{% endif %}{% endif %}
                             </label>
                         </div>
                         <div class="col-sm-9">
                             animal {% if v.cat.identif %}{{ v.cat.identif }}{% else %}non identifie{% endif %}
-                            ({% if v.cat.name %}{{ v.cat.name }}{% else %}sans nom{% endif %} / <span id="rn_{{v.cat.id}}">{% if cat.regnum>0 %}{{v.cat.regnum}}{% else %}N{{v.cat.id}}{% endif %}</span>)
+                            ({% if v.cat.name %}{{ v.cat.name }}{% else %}sans nom{% endif %} / <span id="rn_{{v.cat.id}}">{% if v.cat.regnum>0 %}{{v.cat.regnum}}{% else %}N{{v.cat.id}}{% endif %}</span>)
                             pour:
                         </div>
                     </div>
@@ -80,7 +81,7 @@
                     {% if v.comments %}<div class="row"><div class="col-sm-1"></div><div class="col-sm-11">Commentaires: {{ v.comments }}</div></div>{% endif %}
                 {% endfor %}
                 <hr>
-                <div class="row">
+                {% if visitmode == "planned" %}<div class="row">
                     <div class="col-sm-3">
                         <button type="submit" name="action" value="fa_vetbon">Imprimer un bon pour les visites selectionnees</button>
                     </div>
@@ -108,6 +109,11 @@
                         </div>
                     </div>
                 </div>
+                {% else %}<div class="row">
+                    <div class="col-sm-3">
+                        <button type="submit" name="action" value="fa_vetbon">Reimprimer le bon pour les visites selectionnees</button>
+                    </div>
+                </div>{% endif %}
                 </form>
             {% else %}
                 <div class="row"><div class="col-sm-12">Aucune visite prevue</div></div>

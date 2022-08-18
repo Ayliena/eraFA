@@ -62,11 +62,12 @@ TabCage = [
 ]
 
 
-# constants
-ACC_NONE = 0   # no access to data
-ACC_RO = 1     # read-only (view) access
-ACC_FULL = 2   # full access and edit, but not transfer
-ACC_TOTAL = 3  # full access and transfer
+# constants (see helpers.py accessPrivileges)
+ACC_NONE = 0
+ACC_RO = 1
+ACC_MOD  = 2
+ACC_FULL = 3
+ACC_TOTAL = 4
 
 # IMPORTANT: the special FAs are stored statically here, so this must be set with the correct IDs
 # special FA ids (static): AD DCD HIST REF TEMP

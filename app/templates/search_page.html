@@ -68,12 +68,12 @@
             </div>
             <div class="row">
                 <div class="col-sm-2"><button type="submit" name="action" value="adm_search">Rechercher (information)</button></div>
-                {% if user.FAisADM %}<div class="col-sm-2"><button type="submit" name="action" value="adm_searchs">Rechercher (selection)</button></div>{% endif %}
+                {% if user.FAisADM or user.FAisOV %}<div class="col-sm-2"><button type="submit" name="action" value="adm_searchs">Rechercher (selection)</button></div>{% endif %}
             </div>
         </form>
         {% if listtitle %}<hr>
             <h2>{{ listtitle }}</h2>
-            {% if scatlist and user.FAisADM %}
+            {% if scatlist and (user.FAisADM or user.FAisOV) %}
                 <form action="/vet" method="POST">
                 {% for cat in scatlist %}
                     <div class="row">
@@ -127,6 +127,7 @@
                     <div class="col-sm-2">
                         <button type="submit" name="action" value="fa_vetbonfast">Generer le bon</button>
                     </div>
+                    <div class="col-sm-5>">Remplacer la FA par : <input type="text" name="visit_faname"></div>
                 </div>
                 </form>
             {% else %}

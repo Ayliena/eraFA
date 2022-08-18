@@ -189,8 +189,10 @@ def refupage():
                 # make sure that we have the FA, if yes do REF fixes, otherwise indicate a problem
                 if theFA:
                     # fix the temp_owner for a cat arriving in REF
-                    if theFA and isRefuge(theFA.id):
+                    if isRefuge(theFA.id):
                         temp_faname = TabCage[0][0]
+                    else:
+                        temp_faname = theFA.FAname
                 else:
                     # we don't have a FA
                     if editmode:
@@ -335,21 +337,21 @@ def refupage():
                         theCat.owner_id = theFA.id
                         theFA.numcats += 1
 
-                        # if we are moving TO a tempFA, update the name
                         if isFATemp(theFA.id):
+                            # if we are moving TO a tempFA, update the name
                             theCat.temp_owner = temp_faname
-
-                        # if we are moving to refuge, set undefined cage
-                        if isRefuge(theFA.id):
+                        elif isRefuge(theFA.id):
+                            # if we are moving to refuge, set undefined cage
                             theCat.temp_owner = TabCage[0][0]
 
                         # if the destination FA is any of dead/adopted/historical then clear the adopted flag and clear the fa name
-                        if theFA.id == FAidSpecial[0] or theFA.id == FAidSpecial[1] or theFA.id == FAidSpecial[2]:
+                        elif theFA.id == FAidSpecial[0] or theFA.id == FAidSpecial[1] or theFA.id == FAidSpecial[2]:
                             theCat.adoptable = False
                             theCat.temp_owner = ""
                             # the planned vet visits are also deleted
                             VetInfo.query.filter(and_(VetInfo.cat_id == theCat.id, VetInfo.planned == True)).delete()
                         else:
+                            theCat.temp_owner = theFA.FAname
                             # reassociate any planned visit and clear any validation
                             theVisits = VetInfo.query.filter(and_(VetInfo.cat_id == theCat.id, VetInfo.planned == True)).all()
                             for v in theVisits:

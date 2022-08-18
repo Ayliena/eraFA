@@ -14,6 +14,10 @@ def refugepage():
     if request.method == "GET":
         return redirect(url_for('fapage'))
 
+    # refuge actions can only be done by refuge
+    if not current_user.FAisREF:
+       return render_template("error_page.html", user=current_user, errormessage="acion only available for REF", FAids=FAidSpecial)
+
     cmd = request.form["action"]
 
     # prise en charge - request for parameters

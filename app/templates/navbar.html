@@ -31,7 +31,8 @@
                 {% if user.FAisVET %}<li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">Vétérinaire<span class="caret"></span></a>
                     <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/vet" method="POST">
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="vet_vilist">Historique des visites</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="vet_vilist">Visites prevues</button></li>
+                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="vet_vihist">Historique des visites</button></li>
                     </form></ul>
                 </li>{% endif %}
                 {% if user.FAisRF %}<li class="dropdown">

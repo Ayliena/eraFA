@@ -1,7 +1,7 @@
 from app import app, db, devel_site
-from app.staticdata import FAidSpecial
+from app.staticdata import FAidSpecial, DBTabColor, ACC_NONE, ACC_RO, ACC_MOD, ACC_FULL, ACC_TOTAL
 from app.models import  Cat, User, Event, VetInfo
-from app.helpers import cat_delete, decodeRegnum, vetAddStrings
+from app.helpers import cat_delete, decodeRegnum, vetAddStrings, accessPrivileges
 from flask import render_template, redirect, request, url_for, session
 from flask_login import login_required, current_user
 from sqlalchemy import and_
@@ -12,7 +12,9 @@ from datetime import datetime
 @app.route("/search", methods=["GET", "POST"])
 @login_required
 def searchpage():
-    if not current_user.FAisADM and not current_user.FAisOV:
+    catMode, vetMode, searchMode = accessPrivileges(current_user)
+
+    if searchMode < ACC_FULL:
         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges", FAids=FAidSpecial)
 
     max_regnum = db.session.query(db.func.max(Cat.regnum)).scalar()
@@ -122,7 +124,6 @@ def adminpage():
         for c in cats:
             msg += " {}".format(c.regStr())
 
-            c.temp_owner = tempname
 
             # we shift the visits and also kill any authorization, which is useless anyway
             for vv in c.vetvisits:
@@ -136,6 +137,7 @@ def adminpage():
 
             FAtemp.numcats += 1
             c.owner_id = FAtemp.id
+            c.temp_owner = tempname
             c.lastop = datetime.now()
             db.session.commit()
 
@@ -231,7 +233,9 @@ def adminpage():
 @app.route("/unreg", methods=["POST", "GET"])
 @login_required
 def unregpage():
-    if not current_user.FAisADM:
+    catMode, vetMode, searchMode = accessPrivileges(current_user)
+
+    if searchMode != ACC_TOTAL:
         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges", FAids=FAidSpecial)
 
     # handle any message
@@ -244,7 +248,7 @@ def unregpage():
     # get or post adm_unreg are the same
     # generate the unreg management page (for now, only gen bon veto)
     if request.method == "GET" or (request.method == "POST" and request.form["action"] == "adm_unreg"):
-        return render_template("unreg_page.html", devsite=devel_site, user=current_user, msg=message, FAids=FAidSpecial)
+        return render_template("unreg_page.html", devsite=devel_site, user=current_user, msg=message, FAids=FAidSpecial, TabCols=DBTabColor)
 
     cmd = request.form["action"]
 

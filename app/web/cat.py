@@ -1,7 +1,7 @@
 from app import app, db
 from app.staticdata import DBTabColor, TabCage, FAidSpecial, ACC_NONE, ACC_RO, ACC_FULL, ACC_TOTAL
 from app.models import User, Cat, VetInfo, Event
-from app.helpers import vetMapToString, vetAddStrings, isRefuge, isFATemp, cat_associate_to_FA
+from app.helpers import vetMapToString, vetAddStrings, isRefuge, isFATemp, isValidCage, cat_associate_to_FA, accessPrivileges, getViewUser
 from flask import render_template, redirect, request, url_for, session
 from flask_login import login_required, current_user
 from sqlalchemy import or_
@@ -31,90 +31,99 @@ def catpage(catid=-1):
     if cmd == "fa_return":
         return redirect(url_for('fapage'))
 
+    # this is to get the overall power of the user for the initial operations
+    catMode, vetMode, searchMode = accessPrivileges(current_user)
+
     # generate an empty page to add a new cat
-    if cmd == "adm_newcat" and current_user.FAisADM:
-        theCat = Cat(regnum=0,temp_owner="")
-        return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).all(),
-                               FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
+    if cmd == "adm_newcat":
+        if catMode == ACC_TOTAL:
+            theCat = Cat(regnum=0,temp_owner="")
+            return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).all(),
+                                   FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
+        else:
+            return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to add cat (adm)", FAids=FAidSpecial)
 
     # special version for REF user (unregistered cat)
-    if cmd == "adm_newcatref" and current_user.FAisREF:
-        theCat = Cat(regnum=0,owner_id=current_user.id,temp_owner="RXX")
-        return render_template("cat_page.html", user=current_user, cat=theCat,
-                               FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
-
-    if (cmd == "adm_addcathere" and (current_user.FAisADM or current_user.FAisREF)) or (cmd == "adm_addcatputFA" and current_user.FAisADM):
-        # generate the new cat using the form information
-        vetstr = vetMapToString(request.form, "visit")
-
-        try:
-            bdate = datetime.strptime(request.form["c_birthdate"], "%d/%m/%y")
-        except ValueError:
-            bdate = None
-
-        # convert registre, for a NE cat, we just use -1
-        rv = request.form["c_registre"] if "c_registre" in request.form else ""
-        if rv == "":
-            rn = -1
+    if cmd == "adm_newcatref":
+        if catMode >= ACC_FULL:
+            theCat = Cat(regnum=0,owner_id=current_user.id,temp_owner="AXX")
+            return render_template("cat_page.html", user=current_user, cat=theCat,
+                                   FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
         else:
-            rr = rv.split('-')
-            rn = int(rr[0]) + 10000*int(rr[1])
+            return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to add cat (ref)", FAids=FAidSpecial)
 
-        fatemp = request.form["c_cage"] if current_user.FAisREF else request.form["c_fatemp"]
+    # add a cat here or in a specific FA
+    if cmd == "adm_addcathere" or cmd == "adm_addcatputFA":
+        if (cmd == "adm_addcathere" and catMode >= ACC_FULL) or (cmd == "adm_addcatputFA" and catMode == ACC_TOTAL):
+            # generate the new cat using the form information
+            vetstr = vetMapToString(request.form, "visit")
 
-        theCat = Cat(regnum=rn, temp_owner=fatemp, name=request.form["c_name"], sex=request.form["c_sex"], birthdate=bdate,
-                    color=request.form["c_color"], longhair=request.form["c_hlen"], identif=request.form["c_identif"],
-                    description=request.form["c_description"], comments=request.form["c_comments"], vetshort=vetstr,
-                    adoptable=(request.form["c_adoptable"]=="1"))
+            try:
+                bdate = datetime.strptime(request.form["c_birthdate"], "%d/%m/%y")
+            except ValueError:
+                bdate = None
 
-        # for valid regnums, make sure that we're not adding a duplicate
-        if rn > 0:
-            # ensure that registre is unique
-            checkCat = Cat.query.filter_by(regnum=rn).first()
+            # convert registre, for a NE cat, we just use -1
+            rv = request.form["c_registre"] if "c_registre" in request.form else ""
+            if rv == "":
+                rn = -1
+            else:
+                rr = rv.split('-')
+                rn = int(rr[0]) + 10000*int(rr[1])
 
-            if checkCat:
-                # this is bad, we regenerate the page wit the current data
-                message = [ [3, "Le numéro de registre existe déjà!"] ]
-                theCat.regnum = -1
-                return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).all(), msg=message,
-                                       FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
+            fatemp = request.form["c_cage"] if current_user.FAisREF else request.form["c_fatemp"]
 
-        # if for any reason the FA is invalid, then put it here
-        if cmd != "adm_addcathere":
-            FAid = int(request.form["FAid"]);
-            # validate the id
-            newFA = User.query.filter_by(id=FAid).first()
-            faexists = newFA is not None;
+            theCat = Cat(regnum=rn, temp_owner=fatemp, name=request.form["c_name"], sex=request.form["c_sex"], birthdate=bdate,
+                        color=request.form["c_color"], longhair=request.form["c_hlen"], identif=request.form["c_identif"],
+                        description=request.form["c_description"], comments=request.form["c_comments"], vetshort=vetstr,
+                        adoptable=(request.form["c_adoptable"]=="1"))
 
-            if cmd == "adm_addcatputFA" and faexists:
-                cat_associate_to_FA(theCat, newFA)
-#                newFA.numcats += 1
-#                theCat.owner_id = FAid
-#                # only fix this if it's not tempFA or refuge
-#                if not isRefuge(FAid) and not isFATemp(FAid):
-#                    theCat.temp_owner = newFA.FAname
-#            else:
-#                current_user.numcats += 1
-#                theCat.owner_id = current_user.id
-#                theCat.temp_owner = current_user.FAname
+            # for valid regnums, make sure that we're not adding a duplicate
+            if rn > 0:
+                # ensure that registre is unique
+                checkCat = Cat.query.filter_by(regnum=rn).first()
 
-        else: # cmd == "adm_addcathere"
-            cat_associate_to_FA(theCat, current_user)
-#            current_user.numcats += 1
-#            theCat.owner_id = current_user.id
+                if checkCat:
+                    # this is bad, we regenerate the page wit the current data
+                    message = [ [3, "Le numéro de registre existe déjà!"] ]
+                    theCat.regnum = -1
+                    return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).all(), msg=message,
+                                           FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
 
-        db.session.add(theCat)
-        # make sure we have an id
-        db.session.commit()
+            # if for any reason the FA is invalid, then put it here
+            if cmd != "adm_addcathere":
+                FAid = int(request.form["FAid"]);
+                # validate the id
+                newFA = User.query.filter_by(id=FAid).first()
+                faexists = newFA is not None;
 
-        # generate the event
-        session["pendingmessage"] = [ [0, "Chat {} rajouté dans le système".format(theCat.asText())] ]
-        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: rajoute dans le systeme".format(current_user.FAname))
-        db.session.add(theEvent)
+                if cmd == "adm_addcatputFA" and faexists:
+                    cat_associate_to_FA(theCat, newFA)
 
-        current_user.FAlastop = datetime.now()
-        db.session.commit()
-        return redirect(url_for('fapage'))
+            else: # cmd == "adm_addcathere"
+                cat_associate_to_FA(theCat, current_user)
+
+            # problem: cat_associate_to_FA kills temp_owner.... so we reset it with the provided name if any
+            if fatemp:
+                # if adding to refuge, make sure it's a valid cage id
+                # otherwise, update only if adding to FAtemp
+                if (isRefuge(theCat.owner_id) and isValidCage(fatemp)) or isFATemp(theCat.owner_id):
+                    theCat.temp_owner = fatemp
+
+            db.session.add(theCat)
+            # make sure we have an id
+            db.session.commit()
+
+            # generate the event
+            session["pendingmessage"] = [ [0, "Chat {} rajouté dans le système".format(theCat.asText())] ]
+            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: rajoute dans le systeme".format(current_user.FAname))
+            db.session.add(theEvent)
+
+            current_user.FAlastop = datetime.now()
+            db.session.commit()
+            return redirect(url_for('fapage'))
+        else:
+            return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to add cat", FAids=FAidSpecial)
 
     # existing cat, populate the page with the available data
     theCat = Cat.query.filter_by(id=catid).first();
@@ -123,45 +132,22 @@ def catpage(catid=-1):
 #        return redirect(url_for('fapage'))
 
     # if we're working on another user's cats, show the information on top of the page
-    FAid = current_user.id
-    access = ACC_NONE
+    FAid, theFA = getViewUser()
 
-    if "otherFA" in session:
-        FAid = session["otherFA"]
-        theFA = User.query.filter_by(id=FAid).first()
-        faexists = theFA is not None;
+    if FAid == None:
+        return render_template("error_page.html", user=current_user, errormessage="invalid FA id", FAids=FAidSpecial)
 
-        if not faexists:
-            return render_template("error_page.html", user=current_user, errormessage="invalid FA id", FAids=FAidSpecial)
-
-    # upgrade access depending on our status
-    # OV can see anything in RO mode
-    if current_user.FAisOV:
-        access = ACC_RO
-
-    # RF has read-only access to REF also
-    if current_user.FAisRF and theCat.owner_id == FAidSpecial[3]:
-        access = ACC_RO
-
-    # we can always see our cats, and ADM can always see all
-    if current_user.FAisFA and theCat.owner_id == current_user.id:
-        access = ACC_FULL
-
-    # we also have full access to any cat a FA we resp
-    if theCat.owner.FAresp_id == current_user.id:
-        access = ACC_FULL
-
-    if current_user.FAisADM:
-        access = ACC_TOTAL
+    # determine if we can access the data
+    catMode, vetMode, searchMode = accessPrivileges(theCat.owner)
 
     # if no access, no access....
-    if access == ACC_NONE:
+    if catMode == ACC_NONE:
         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data", FAids=FAidSpecial)
 
     # vet list will be needed
     VETlist = User.query.filter_by(FAisVET=True).all()
 
-    if access == ACC_RO:
+    if catMode == ACC_RO:
         # FAid != current_user.id is implied
         return render_template("cat_page.html", user=current_user, otheruser=theFA, cat=theCat, readonly=True,
                                VETids=VETlist, FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
@@ -170,7 +156,7 @@ def catpage(catid=-1):
     # some operations may still be unavailable!
 
     FAlist = []
-    if access == ACC_TOTAL:
+    if catMode == ACC_TOTAL:
         FAlist = User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).order_by(User.FAid).all()
 
     # handle generation of the page
@@ -179,7 +165,7 @@ def catpage(catid=-1):
                                falist=FAlist, VETids=VETlist, FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
 
     # cat commands, except for "cancel" we always process any data change
-    if cmd == "fa_modcat" or cmd == "fa_modcatr" or cmd == "fa_adopted" or cmd == "fa_dead" or (cmd == "adm_putcat" and access == ACC_TOTAL):
+    if cmd == "fa_modcat" or cmd == "fa_modcatr" or cmd == "fa_adopted" or cmd == "fa_anonfa" or cmd == "fa_dead" or (cmd == "adm_putcat" and catMode == ACC_TOTAL):
         # return jsonify(request.form.to_dict())
 
         # update cat information and indicate what was changed
@@ -188,7 +174,7 @@ def catpage(catid=-1):
         # NOTE: we use ident also to deal with registre, by setting it to "R"
 
         # see if a temp cat was given a real regnum
-        if theCat.regnum < 0 and "c_registre" in request.form and request.form["c_registre"] and access == ACC_TOTAL:
+        if theCat.regnum < 0 and "c_registre" in request.form and request.form["c_registre"] and catMode == ACC_TOTAL:
             # validate the regnum
             try:
                 rr = request.form["c_registre"].split('-')
@@ -426,6 +412,11 @@ def catpage(catid=-1):
                 et = "re-planifiee pour le"
 
             if vv_updated:
+                # revoke authorization
+                theVisit.requested = False
+                theVisit.transferred = False
+                theVisit.validby_id = None
+
                 visitupdated += " *{}[{}]".format('P' if theVisit.planned else 'E', VisitType)
 
                 theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} {} {} chez {}".format(current_user.FAname, VisitType, et, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
@@ -455,14 +446,7 @@ def catpage(catid=-1):
         if cmd == "fa_adopted":
             newFA = User.query.filter_by(id=FAidSpecial[0]).first()
             cat_associate_to_FA(theCat, newFA)
-#            newFA.numcats += 1
-#            theCat.owner.numcats -= 1
-#            theCat.owner_id = newFA.id
-#            theCat.temp_owner = ""
-#            theCat.adoptable = False
-#            # erase any planned visit
-#            VetInfo.query.filter_by(cat_id=theCat.id, planned=True).delete()
-#            theCat.lastop = datetime.now()
+
             # generate the event
             message.append([0, "Chat {} transféré dans les adoptés".format(theCat.asText())])
             session["pendingmessage"] = message
@@ -472,17 +456,25 @@ def catpage(catid=-1):
             db.session.commit()
             return redirect(url_for('fapage'))
 
+        if cmd == "fa_anonfa":
+            # move to temp FA, we'll deal with this later
+            newFA = User.query.filter_by(id=FAidSpecial[4]).first()
+            cat_associate_to_FA(theCat, newFA)
+            theCat.temp_owner = "FA INCONNUE"
+
+            # generate the event
+            message.append([0, "Chat {} transféré dans une FA non definie".format(theCat.asText())])
+            session["pendingmessage"] = message
+            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transferé dans une FA non definie".format(current_user.FAname))
+            db.session.add(theEvent)
+            current_user.FAlastop = datetime.now()
+            db.session.commit()
+            return redirect(url_for('fapage'))
+
         if cmd == "fa_dead":
             newFA = User.query.filter_by(id=FAidSpecial[1]).first()
             cat_associate_to_FA(theCat, newFA)
-#            newFA.numcats += 1
-#            theCat.owner.numcats -= 1
-#            theCat.owner_id = newFA.id
-#            theCat.temp_owner = ""
-#            theCat.adoptable = False
-#            # erase any planned visit
-#            VetInfo.query.filter_by(cat_id=theCat.id, planned=True).delete()
-#            theCat.lastop = datetime.now()
+
             # generate the event
             message.append([0, "Chat {} transféré dans les décédés".format(theCat.asText())])
             session["pendingmessage"] = message
@@ -492,7 +484,7 @@ def catpage(catid=-1):
             db.session.commit()
             return redirect(url_for('fapage'))
 
-        if cmd == "adm_putcat" and access == ACC_TOTAL:
+        if cmd == "adm_putcat" and catMode == ACC_TOTAL:
             FAid = int(request.form["FAid"])
             # validate the id
             newFA = User.query.filter_by(id=FAid).first()
