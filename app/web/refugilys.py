@@ -188,10 +188,10 @@ def refupage():
 
                 # make sure that we have the FA, if yes do REF fixes, otherwise indicate a problem
                 if theFA:
-                    # fix the temp_owner for a cat arriving in REF
+                    # fix the temp_owner for a cat arriving in REF, don't touch temp_faname in case of temp FA
                     if isRefuge(theFA.id):
                         temp_faname = TabCage[0][0]
-                    else:
+                    elif not isFATemp(theFA.id):
                         temp_faname = theFA.FAname
                 else:
                     # we don't have a FA
@@ -325,17 +325,20 @@ def refupage():
 
                     # update the FA if modified (note that here theFA is always defined!)
                     if faname:
-                        msg.append([0, "Numéro de registre {} deplace de {} vers {}{}".format(registre, theCat.owner.FAname, theFA.FAname, faname if theFA.id == FAidSpecial[4] else '') ])
+                        msg.append([0, "Numéro de registre {} deplace de {}{} vers {}{}".format(registre,
+                                    theCat.owner.FAname, "["+theCat.temp_owner+"]" if isFATemp(theCat.owner_id) else '',
+                                    theFA.FAname, faname if isFATemp(theFA.id) else '') ])
                         theCat.lastop = datetime.now()
 
                         # generate an event
                         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: FA mise a jour (Refugilys): {} -> {}".format(current_user.FAname, theCat.owner.FAname, theFA.FAname))
                         db.session.add(theEvent)
 
-                        # update the FA by moving the cat
-                        theCat.owner.numcats -= 1
-                        theCat.owner_id = theFA.id
-                        theFA.numcats += 1
+                        # if needed, update the FA by moving the cat
+                        if theCat.owner_id != theFA.id:
+                            theCat.owner.numcats -= 1
+                            theCat.owner_id = theFA.id
+                            theFA.numcats += 1
 
                         if isFATemp(theFA.id):
                             # if we are moving TO a tempFA, update the name
@@ -343,14 +346,14 @@ def refupage():
                         elif isRefuge(theFA.id):
                             # if we are moving to refuge, set undefined cage
                             theCat.temp_owner = TabCage[0][0]
-
-                        # if the destination FA is any of dead/adopted/historical then clear the adopted flag and clear the fa name
                         elif theFA.id == FAidSpecial[0] or theFA.id == FAidSpecial[1] or theFA.id == FAidSpecial[2]:
+                            # if the destination FA is any of dead/adopted/historical then clear the adopted flag and clear the fa name
                             theCat.adoptable = False
                             theCat.temp_owner = ""
                             # the planned vet visits are also deleted
                             VetInfo.query.filter(and_(VetInfo.cat_id == theCat.id, VetInfo.planned == True)).delete()
                         else:
+                            # moving to a "real" FA
                             theCat.temp_owner = theFA.FAname
                             # reassociate any planned visit and clear any validation
                             theVisits = VetInfo.query.filter(and_(VetInfo.cat_id == theCat.id, VetInfo.planned == True)).all()
