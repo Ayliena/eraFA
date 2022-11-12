@@ -5,9 +5,13 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<!---*** Start: JQuery 3.3.1 version. ***--->
+<script language="javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<!---*** End: JQuery 3.3.1 version. ***--->
+<!---*** Start: Bootstrap 3.3.7 version files. ***--->
+<script language="javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<!---*** End: Bootstrap 3.3.7 version files. ***--->
 
 <script language="javascript" src="https://momentjs.com/downloads/moment.js"></script>
 <script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/js/bootstrap-datetimepicker.min.js"></script>
@@ -19,6 +23,11 @@
             fixAllDates();
             fixAllRegnums();
         }
+        $(document).ready(function() {
+          $('.datepick').datetimepicker({
+            format: 'DD/MM/YY'
+        });
+        });
     </script>
     <style>
    hr {
@@ -127,7 +136,7 @@
                     <div class="col-sm-2">
                         <button type="submit" name="action" value="fa_vetbonfast">Generer le bon</button>
                     </div>
-                    <div class="col-sm-5>">Remplacer la FA par : <input type="text" name="visit_faname"></div>
+                    <div class="col-sm-10">Remplacer la FA par : <input type="text" name="visit_faname"> (nom de l'adoptant pour une visite post-adoption)</div>
                 </div>
                 </form>
             {% else %}

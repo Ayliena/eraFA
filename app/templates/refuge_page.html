@@ -15,17 +15,23 @@
     </head>
     <script>
 {% include 'functions.html' %}
-        window.onload=function() {
-            fixAllDates();
-            fixAllRegnums();
-        }
         {% if pagetype==2 %}function checkClipboard() {
             try {
                 navigator.clipboard.readText().then(data => {if (data.startsWith("AD_BSC")) {document.getElementById("bcs_data").value = data; {% if not msg %}document.getElementById("bcs_submit").click();{% endif %}}});
+                navigator.clipboard.writeText("");
             } catch (err) {
                 console.error('Failed to read clipboard contents: ', err);
             }
         }{% endif %}
+        window.onload=function() {
+            populatecolor("bcs_color");
+        {% if pagetype==2 %}checkClipboard();{% endif %}
+        }
+        $(document).ready(function() {
+          $('.datepick').datetimepicker({
+            format: 'DD/MM/YY'
+        });
+        });
     </script>
     <style>
    hr {
@@ -34,7 +40,7 @@
        margin-top:5px !important;
    }
     </style>
-<body {% if pagetype==2 %} onLoad="checkClipboard()"{% endif %}>
+<body>
 {% include 'navbar.html' %}
 
     <div class="container">
@@ -55,10 +61,91 @@
             <h2>Bon de castration/stérilisation post-adoption</h2>
 
             <form action="/refuge" method="POST">
-                <div class="form-group"><label for="bcs_data">Coller ci-dessus le résultat du click sur "Gen BonSteril" fait dans la page de refugilys :</label>
+                <div class="form-group"><label for="bcs_data">Coller ci-dessus le résultat du click sur "Gen BonSteril" fait dans la page de refugilys:</label>
                 <input type="text" class="form-control" id="bcs_data" name="bcs_data"></div>
                 <button type="submit" id="bcs_submit" name="action" value="ref_genbonSter">Générer</button>
             </form>
+            <hr>
+            Alternativement, pour generer un bon pour un contrat papier, remplir les informations suivantes:<br><br>
+            <form class="form-horizontal" action="/refuge" method="POST">
+                <div class="row"><div class="form-group">
+                    <label class="control-label col-sm-2" for="bcs_addate">Date contrat:</label>
+                    <div class="col-sm-4">
+                        <div class="input-group datepick">
+                            <input type="text" class="form-control" name="bcs_addate" id="bcs_addate" required="required">
+                            <div class="input-group-addon">
+                                <span class="glyphicon glyphicon-calendar"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div></div>
+                <div class="row"><div class="form-group">
+                    <label class="control-label col-sm-2" for="bcs_adnp">Nom/Prenom adoptant:</label>
+                    <div class="col-sm-8"><input id="bcs_adnp" name="bcs_adnp" type="text" class="form-control" required="required"></div>
+                </div></div>
+                 <div class="row"><div class="form-group">
+                    <label class="control-label col-sm-2" for="bcs_adad">Adresse adoptant:</label>
+                    <div class="col-sm-8"><input id="bcs_adad" name="bcs_adad" type="text" class="form-control" required="required"></div>
+                </div></div>
+                <div class="row"><div class="form-group">
+                    <label class="control-label col-sm-2" for="bcs_adcp">Code postal:</label>
+                    <div class="col-sm-4"><input id="bcs_adcp" name="bcs_adcp" type="text" class="form-control" required="required"></div>
+                </div></div>
+                <div class="row"><div class="form-group">
+                    <label class="control-label col-sm-2" for="bcs_adcy">Ville:</label>
+                    <div class="col-sm-4"><input id="bcs_adcy" name="bcs_adcy" type="text" class="form-control" required="required"></div>
+                </div></div>
+                <div class="row"><div class="form-group">
+                    <label class="control-label col-sm-2" for="bcs_adtel">Telephone:</label>
+                    <div class="col-sm-4"><input id="bcs_adtel" name="bcs_adtel" type="text" class="form-control" required="required"></div>
+                </div></div>
+                <div class="row"><div class="form-group">
+                    <label class="control-label col-sm-2" for="bcs_name">Nom du chat:</label>
+                    <div class="col-sm-4"><input id="bcs_name" name="bcs_name" type="text" class="form-control" required="required"></div>
+                </div></div>
+                <div class="row"><div class="form-group">
+                    <label class="control-label col-sm-2" for="bcs_regnum">Numero ERA:</label>
+                    <div class="col-sm-4"><input id="bcs_regnum" name="bcs_regnum" type="text" class="form-control" required="required"></div>
+                </div></div>
+                <div class="row"><div class="form-group">
+                    <label class="control-label col-sm-2" for="bcs_id">Identification:</label>
+                    <div class="col-sm-4"><input id="bcs_id" name="bcs_id" type="text" class="form-control" required="required"></div>
+                </div></div>
+                <div class="row"><div class="form-group">
+                    <label class="control-label col-sm-2" for="bcs_race">Race:</label>
+                    <div class="col-sm-4"><input id="bcs_race" name="bcs_race" type="text" class="form-control" required="required" value="EUROPEENNE"></div>
+                </div></div>
+                 <div class="row"><div class="form-group">
+                    <label class="control-label col-sm-2" for="bcs_sex">Sexe:</label>
+                    <div class="col-sm-4"><select id="bcs_sex" name="bcs_sex" class="form-control">
+                        <option value="F">FEMELLE</option>
+                        <option value="M">MALE</option></select></div>
+                </div></div>
+                <div class="row"><div class="form-group">
+                    <label class="control-label col-sm-2" for="bcs_color">Couleur:</label>
+                    <div class="col-sm-4"><select class="form-control" name="bcs_color" id="bcs_color"></select></div>
+                </div></div>
+                <div class="row"><div class="form-group">
+                    <label class="control-label col-sm-2" for="bcs_hlen">Poil:</label>
+                    <div class="col-sm-4"><select class="form-control" name="bcs_hlen" id="bcs_hlen">
+                        <option value="C">COURT</option>
+                        <option value="M">MI-LONG</option>
+                        <option value="L">LONG</option></select></div>
+                </div></div>
+                <div class="row"><div class="form-group">
+                    <label class="control-label col-sm-2" for="bcs_bdate">Date de naissance:</label>
+                    <div class="col-sm-4">
+                        <div class="input-group datepick">
+                            <input type="text" class="form-control" name="bcs_bdate" id="bcs_bdate" required="required">
+                            <div class="input-group-addon">
+                                <span class="glyphicon glyphicon-calendar"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div></div>
+                <button type="submit" id="bcs_submit" name="action" value="ref_genbonSterMan">Générer</button>
+            </form>
+
         {% endif %}
         {% if pagetype==1 %}
             <h2>Document de prise en charge</h2>

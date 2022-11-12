@@ -1,7 +1,7 @@
-from app import app, db
+from app import app, db, devel_site
 from app.staticdata import DBTabColor, TabCage, FAidSpecial, ACC_NONE, ACC_RO, ACC_FULL, ACC_TOTAL
 from app.models import User, Cat, VetInfo, Event
-from app.helpers import vetMapToString, vetAddStrings, isRefuge, isFATemp, isValidCage, cat_associate_to_FA, accessPrivileges, getViewUser
+from app.helpers import vetMapToString, vetAddStrings, isRefuge, isFATemp, isValidCage, cat_associate_to_FA, cat_addVetVisit, cat_updateVetVisit, accessPrivileges, getViewUser
 from flask import render_template, redirect, request, url_for, session
 from flask_login import login_required, current_user
 from sqlalchemy import or_
@@ -38,10 +38,10 @@ def catpage(catid=-1):
     if cmd == "adm_newcat":
         if catMode == ACC_TOTAL:
             theCat = Cat(regnum=0,temp_owner="")
-            return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).all(),
+            return render_template("cat_page.html", devsite=devel_site, user=current_user, cat=theCat, falist=User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).all(),
                                    FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
         else:
-            return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to add cat (adm)", FAids=FAidSpecial)
+            return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage="insufficient privileges to add cat (adm)", FAids=FAidSpecial)
 
     # special version for REF user (unregistered cat)
     if cmd == "adm_newcatref":
@@ -50,7 +50,7 @@ def catpage(catid=-1):
             return render_template("cat_page.html", user=current_user, cat=theCat,
                                    FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
         else:
-            return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to add cat (ref)", FAids=FAidSpecial)
+            return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage="insufficient privileges to add cat (ref)", FAids=FAidSpecial)
 
     # add a cat here or in a specific FA
     if cmd == "adm_addcathere" or cmd == "adm_addcatputFA":
@@ -87,7 +87,7 @@ def catpage(catid=-1):
                     # this is bad, we regenerate the page wit the current data
                     message = [ [3, "Le numéro de registre existe déjà!"] ]
                     theCat.regnum = -1
-                    return render_template("cat_page.html", user=current_user, cat=theCat, falist=User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).all(), msg=message,
+                    return render_template("cat_page.html", devsite=devel_site, user=current_user, cat=theCat, falist=User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).all(), msg=message,
                                            FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
 
             # if for any reason the FA is invalid, then put it here
@@ -128,28 +128,28 @@ def catpage(catid=-1):
     # existing cat, populate the page with the available data
     theCat = Cat.query.filter_by(id=catid).first();
     if theCat == None:
-        return render_template("error_page.html", user=current_user, errormessage="invalid cat id", FAids=FAidSpecial)
+        return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage="invalid cat id", FAids=FAidSpecial)
 #        return redirect(url_for('fapage'))
 
     # if we're working on another user's cats, show the information on top of the page
     FAid, theFA = getViewUser()
 
     if FAid == None:
-        return render_template("error_page.html", user=current_user, errormessage="invalid FA id", FAids=FAidSpecial)
+        return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage="invalid FA id", FAids=FAidSpecial)
 
     # determine if we can access the data
     catMode, vetMode, searchMode = accessPrivileges(theCat.owner)
 
     # if no access, no access....
     if catMode == ACC_NONE:
-        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data", FAids=FAidSpecial)
+        return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage="insufficient privileges to access cat data", FAids=FAidSpecial)
 
     # vet list will be needed
     VETlist = User.query.filter_by(FAisVET=True).all()
 
     if catMode == ACC_RO:
         # FAid != current_user.id is implied
-        return render_template("cat_page.html", user=current_user, otheruser=theFA, cat=theCat, readonly=True,
+        return render_template("cat_page.html", devsite=devel_site, user=current_user, otheruser=theFA, cat=theCat, readonly=True,
                                VETids=VETlist, FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
 
     # if we reach here, we have at least ACC_FULL
@@ -161,7 +161,7 @@ def catpage(catid=-1):
 
     # handle generation of the page
     if cmd == "fa_viewcat":
-        return render_template("cat_page.html", user=current_user, cat=theCat,
+        return render_template("cat_page.html", devsite=devel_site, user=current_user, cat=theCat,
                                falist=FAlist, VETids=VETlist, FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
 
     # cat commands, except for "cancel" we always process any data change
@@ -290,45 +290,24 @@ def catpage(catid=-1):
         else:
             cat_updated = False
 
+        # handle the vet visits
         visitupdated = ""
 
-        # generate the vetinfo record, if any, and the associated event
+        # new vetvisit, if defined: generate the vetinfo record and the associated event
         VisitType = vetMapToString(request.form, "visit")
+        VisitVet = request.form["visit_vet"]
+        VisitDate = request.form["visit_date"]
+        VisitPlanned = (int(request.form["visit_state"]) == 1)
+        VisitComments = request.form["visit_comments"]
 
-        if VisitType != "--------":
-            # validate the vet
-            vet = next((x for x in VETlist if x.id==int(request.form["visit_vet"])), None)
+        vres = cat_addVetVisit(VETlist, theCat, VisitPlanned, VisitType, VisitVet, VisitDate, VisitComments)
 
-            if not vet:
-                return render_template("error_page.html", user=current_user, errormessage="vet id is invalid", FAids=FAidSpecial)
+        if vres:
+            if vres.startswith("visit"):
+                return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage=vres, FAids=FAidSpecial)
             else:
-                vetId = vet.id
-
-            try:
-                VisitDate = datetime.strptime(request.form["visit_date"], "%d/%m/%y")
-            except ValueError:
-                VisitDate = datetime.now()
-
-            VisitPlanned = (int(request.form["visit_state"]) == 1)
-
-            # if executed, then cumulate with the global
-            if not VisitPlanned:
-                theCat.vetshort = vetAddStrings(theCat.vetshort, VisitType)
-                et = "effectuee le"
+                visitupdated += vres
                 cat_updated = True
-            else:
-                et = "planifiee pour le"
-
-            theVisit = VetInfo(cat_id=theCat.id, doneby_id=theCat.owner_id, vet_id=vetId, vtype=VisitType, vdate=VisitDate,
-                planned=VisitPlanned, comments=request.form["visit_comments"])
-            db.session.add(theVisit)
-            db.session.commit()  # needed for vet.FAname
-
-            visitupdated += " +{}[{}]".format('P' if VisitPlanned else 'E', VisitType)
-
-            # add it as event (planned or not)
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} {} {} chez {}".format(current_user.FAname, VisitType, et, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
-            db.session.add(theEvent)
 
         # iterate through all the planned visits and see if they have been updated....
         # extract all planned visits which are now executed
@@ -338,89 +317,24 @@ def catpage(catid=-1):
                 modvisits.append(k)
 
         for mv in modvisits:
-            # extract and validate the id
+            # extract the visit id and information
             mvid = mv[5:-6]
-
-            theVisit = VetInfo.query.filter_by(id=mvid).first();
-            if not theVisit:
-                return render_template("error_page.html", user=current_user, errormessage="planned visit not found (invalid id)", FAids=FAidSpecial)
-
-            # make sure it's related to this cat
-            if theVisit.cat_id != theCat.id:
-                return render_template("error_page.html", user=current_user, errormessage="visit/cat id mismatch", FAids=FAidSpecial)
-
-            # generate the form name prefix
             prefix = "oldv_"+mvid
-            vv_updated = False
-
-            # if deleted, delete immediately
-            if int(request.form[prefix+"_state"]) == 2:
-                visitupdated += " -{}[{}]".format('P' if theVisit.planned else 'E', theVisit.vtype)
-                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} annullée".format(current_user.FAname, theVisit.vtype))
-                db.session.add(theEvent)
-                db.session.delete(theVisit)
-                continue
-
-            # modify the visit with the new data (we'll need to get all of it....)
-            # if all reasons have been removed, erase it
             VisitType = vetMapToString(request.form, prefix)
+            VisitVet = request.form[prefix+"_vet"]
+            VisitDate = request.form[prefix+"_date"]
+            VisitState = int(request.form[prefix+"_state"])
+            VisitComments = request.form[prefix+"_comments"]
 
-            if VisitType == "--------":
-                # all reasons removed, erase this
-                visitupdated += " -{}[{}]".format('P' if theVisit.planned else 'E', theVisit.vtype)
-                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} annullée".format(current_user.FAname, theVisit.vtype))
-                db.session.add(theEvent)
-                db.session.delete(theVisit)
-                continue
+            # perform the update and any associated autoplan
+            vres = cat_updateVetVisit(mvid, VETlist, theCat, VisitState, VisitType, VisitVet, VisitDate, VisitComments)
 
-            # update the record
-            if theVisit.vtype != VisitType:
-                theVisit.vtype = VisitType
-                vv_updated = True
-
-            try:
-                VisitDate = datetime.strptime(request.form[prefix+"_date"], "%d/%m/%y")
-            except ValueError:
-                VisitDate = datetime.now()
-
-            if theVisit.vdate != VisitDate:
-                theVisit.vdate = VisitDate
-                vv_updated = True
-
-            # validate the vet
-            vet = next((x for x in VETlist if x.id==int(request.form[prefix+"_vet"])), None)
-
-            if not vet:
-                return render_template("error_page.html", user=current_user, errormessage="vet id is invalid", FAids=FAidSpecial)
-            else:
-                if theVisit.vet_id != vet.id:
-                    theVisit.vet_id = vet.id
-                    vv_updated = True
-
-            if theVisit.comments != request.form[prefix+"_comments"]:
-                theVisit.comments = request.form[prefix+"_comments"]
-                vv_updated = True
-
-            if int(request.form[prefix+"_state"]) != 1:
-                # means it's not planned anymore
-                theCat.vetshort = vetAddStrings(theCat.vetshort, VisitType)
-                theVisit.planned = False
-                cat_updated = True
-                vv_updated = True
-                et = "effectuee le"
-            else:
-                et = "re-planifiee pour le"
-
-            if vv_updated:
-                # revoke authorization
-                theVisit.requested = False
-                theVisit.transferred = False
-                theVisit.validby_id = None
-
-                visitupdated += " *{}[{}]".format('P' if theVisit.planned else 'E', VisitType)
-
-                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} {} {} chez {}".format(current_user.FAname, VisitType, et, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
-                db.session.add(theEvent)
+            if vres:
+                if vres.startswith("visit"):
+                    return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage=vres, FAids=FAidSpecial)
+                else:
+                    visitupdated += vres
+                    cat_updated = True
 
         # end for mv in modvisits
 
@@ -436,7 +350,7 @@ def catpage(catid=-1):
 
         # if we stay on the page, regenerate it directly
         if cmd == "fa_modcatr":
-            return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist, msg=message,
+            return render_template("cat_page.html", devsite=devel_site, user=current_user, cat=theCat, falist=FAlist, msg=message,
                                    VETids=VETlist, FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
 
         if cmd == "fa_modcat":
@@ -497,23 +411,6 @@ def catpage(catid=-1):
                 db.session.add(theEvent)
                 # modify the FA
                 cat_associate_to_FA(theCat, newFA)
-#                newFA.numcats += 1
-#                theCat.owner.numcats -= 1
-#                theCat.owner_id = FAid
-#                # indicate the FA name in the tempowner so as to allow searches, in case of refuge, indicate no known cage
-#                if isRefuge(FAid):
-#                    theCat.temp_owner = TabCage[0][0]
-#                else:
-#                    theCat.temp_owner = newFA.FAname
-#                theCat.lastop = datetime.now()
-#                # in order to make it easier to list the "planned visits", any visit which is PLANNED is transferred to the new owner
-#                # the idea is than that any VetInfo with planned=True and doneby_id matching the user ALWAYS corresponds to cats he owns
-#                # any validated visit is also reversed back to NON-validated
-#                # this doesn't affect the visits which were performed. and the events will reflect the reality of who planned the visit since they are static
-#                theVisits = VetInfo.query.filter(and_(VetInfo.cat_id == theCat.id, VetInfo.planned == True)).all()
-#                for v in theVisits:
-#                    v.doneby_id = FAid
-#                    v.validby_id = None
 
                 current_user.FAlastop = datetime.now()
                 db.session.commit()
@@ -521,4 +418,4 @@ def catpage(catid=-1):
             return redirect(url_for('fapage'))
 
     # this should never be reached
-    return render_template("error_page.html", user=current_user, errormessage="command error (/cat)", FAids=FAidSpecial)
+    return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage="command error (/cat)", FAids=FAidSpecial)

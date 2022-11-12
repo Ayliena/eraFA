@@ -1,7 +1,8 @@
 from app import app, db, devel_site
-from app.staticdata import TabColor, TabSex, TabHair, FAidSpecial, ACC_NONE, ACC_RO, ACC_MOD, ACC_FULL, ACC_TOTAL
+from app.staticdata import TabColor, TabSex, TabHair, FAidSpecial, ACC_NONE, ACC_RO, ACC_MOD, ACC_FULL, ACC_TOTAL, NO_VISIT, NO_VET, GEN_VET
 from app.models import User, Cat, VetInfo, Event
-from app.helpers import vetMapToString, vetAddStrings, ERAsum, encodeRegnum, accessPrivileges, getViewUser, isFATemp, isRefuge
+from app.helpers import vetMapToString, vetAddStrings, ERAsum, encodeRegnum, accessPrivileges, getViewUser, isFATemp, isRefuge, isAdoptes, isHistorique, \
+    vetIsPrimo, vetIsRappel1, vetIsRappelAnn, vetIsIdent, vetIsTest, vetIsSteril, vetIsSoins, vetIsDepara, cat_executeVetVisit
 from flask import render_template, redirect, request, url_for, session, Markup
 from flask_login import login_required, current_user
 from sqlalchemy import and_
@@ -56,6 +57,7 @@ def vetpage():
     if vetMode >= ACC_MOD and (cmd == "fa_vetmv" or cmd == "fa_vetmvd"):
         # this is just to see if anything was done
         visits_selected = 0
+        msgs = []
 
         # iterate on the checkboxes to see which cats are to be processed
         for key in request.form.keys():
@@ -74,23 +76,32 @@ def vetpage():
                 if current_user.FAisVET and theVisit.vet_id != current_user.id:
                     return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetmv(d): insufficient privileges", FAids=FAidSpecial)
 
+                VisitDate = None
+
                 # convert the visit to "effectuee" and log the event
-                theCat.vetshort = vetAddStrings(theCat.vetshort, theVisit.vtype)
-                theVisit.planned = False
+#                theCat.vetshort = vetAddStrings(theCat.vetshort, theVisit.vtype)
+#                theVisit.planned = False
 
                 if cmd == "fa_vetmvd":
-                    try:
-                        theVisit.vdate = datetime.strptime(request.form["c_vdate"], "%d/%m/%y")
-                    except ValueError:
-                        theVisit.vdate = datetime.now()
+                    VisitDate = request.form["c_vdate"]
+                    if VisitDate == "":
+                        VisitDate = "today"
+
+                vres = cat_executeVetVisit(vvid, theCat, VisitDate)
+
+                if vres:
+                    if vres.startswith("visit"):
+                        msgs.append( [2, vres ] )
+                    else:
+                        msgs.append( [0, "Informations du chat {} mises a jour: {}".format(theCat.regStr(), vres) ] )
 
                 visits_selected += 1
-                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} effectuée le {} chez {}".format(current_user.FAname, theVisit.vtype, theVisit.vdate.strftime("%d/%m/%y"), theVisit.vet.FAname))
-                db.session.add(theEvent)
-                db.session.commit()
 
-        # if nothing was selected, indicate it
-        if not visits_selected:
+        if visits_selected:
+            session["pendingmessage"] = msgs
+            db.session.commit()
+        else:
+            # if nothing was selected, indicate it
             session["pendingmessage"] = [ [ 2, "Aucune visite selectionnee" ] ]
 
         # return to the same page
@@ -148,7 +159,7 @@ def vetpage():
         # generate the vetinfo record, if any, and the associated event
         VisitType = vetMapToString(request.form, "visit")
 
-        if VisitType != "--------":
+        if VisitType != NO_VISIT:
             # validate the vet
             vet = next((x for x in VETlist if x.id==int(request.form["visit_vet"])), None)
 
@@ -239,6 +250,8 @@ def vetpage():
         # iterate on the checkboxes to see which cats are to be processed
         # session["pendingmessage"] = [[1, "Resultats" ]]
 
+        msgs = []
+
         for key in request.form.keys():
             if key[0:3] == 're_':
                 vvid = int(key[3:])
@@ -253,6 +266,11 @@ def vetpage():
                 if theCat.owner_id != FAid:
                     return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetauth: insufficient privileges", FAids=FAidSpecial)
 
+                # transfer is only valid if there's a reasonable vet associated to the visit
+                if cmd == "fa_vettrans" and (theVisit.vet_id == NO_VET or theVisit.vet_id == GEN_VET):
+                    msgs.append([2, "Transfert impossible pour {}, clinique non definie!".format(theCat.regStr())])
+                    continue
+
                 # authorization is useless for FA_temp, but is ok in the case of transfer to vet
                 if isFATemp(theCat.owner_id) and cmd == "fa_vetauth":
                     session["pendingmessage"] = [ [ 3, "Authoriser une visite pour une FA temporaire est inutile".format(theCat.regStr()) ] ]
@@ -264,9 +282,15 @@ def vetpage():
                 theVisit.validdate = datetime.now()
 
                 # indicate as transferred if it's what was asked
-                theVisit.transferred = True if cmd == "fa_vettrans" else False
+                if cmd == "fa_vettrans":
+                    msgs.append([0, "Visite du {} transferee".format(theCat.regStr())])
+                    theVisit.transferred = True
+                else:
+                    msgs.append([0, "Visite du {} autorisee".format(theCat.regStr())])
+                    theVisit.transferred = False
 
         db.session.commit()
+        session["pendingmessage"] = msgs
 
         return redirect(url_for('fapage'))
 
@@ -306,7 +330,7 @@ def vetpage():
         theAuthFA = None
         VETname = None
 
-        # vaccinations, rappels, sterilisations, castrations, identifications, tests fiv/felv, soins
+        # vaccinations, rappels, sterilisations, castrations, identifications, tests fiv/felv, deparasitages
         # if vtype is "soins" then we append the comment as visit description
         vtypes = [0, 0, 0, 0, 0, 0, 0]
         vdate = None
@@ -387,26 +411,25 @@ def vetpage():
                 catregs.append(theCat.regStr())
                 catvtypes.append(theVisit.vtype)
 
-                if theVisit.vtype[0] != '-':
+                if vetIsPrimo(theVisit.vtype):
                     vtypes[0] += 1
-                if theVisit.vtype[1] != '-':
+                if vetIsRappel1(theVisit.vtype):
                     vtypes[1] += 1
-                if theVisit.vtype[2] != '-':
+                if vetIsRappelAnn(theVisit.vtype):
                     vtypes[1] += 1
-                if theVisit.vtype[3] != '-':
+                if vetIsSteril(theVisit.vtype):
                     if theCat.sex == 2:
                         vtypes[3] += 1
                     else:
                         vtypes[2] += 1
-                if theVisit.vtype[4] != '-':
+                if vetIsIdent(theVisit.vtype):
                     vtypes[4] += 1
-                if theVisit.vtype[5] != '-':
+                if vetIsTest(theVisit.vtype):
                     vtypes[5] += 1
-                if theVisit.vtype[6] != '-':
+                if vetIsSoins(theVisit.vtype):
                     comments.append(theVisit.comments)
+                if vetIsDepara(theVisit.vtype):
                     vtypes[6] += 1
-                if theVisit.vtype[7] != '-':
-                    vtypes[1] += 1
 
         # if nothing was selected, stay here
         if not catlist:
@@ -444,8 +467,10 @@ def vetpage():
 
         # the name used will be the one of the first FA (unless overridden)
         FAname = None
+        PostAdoption = 0
 
-        # the count will just be the number of cats (but we keep it split, just in case...)
+        # vaccinations, rappels, sterilisations, castrations, identifications, tests fiv/felv, deparasitages
+        # if vtype is "soins" then we append the comment as visit description
         vtypes = [0, 0, 0, 0, 0, 0, 0]
         comments = []
         # the QR code contains: ERA;<today's date>;<who authorized>;<authorization date>;<FAid>;<visit date>;<cat regs>;<vtypes joined as string>;<check>
@@ -476,12 +501,13 @@ def vetpage():
                 theCat = Cat.query.filter_by(id=catid).first()
 
                 if not FAname:
-                    if theCat.owner_id == FAidSpecial[4]:
+                    if isFATemp(theCat.owner_id):
                         FAname = theCat.temp_owner
                         FAid = "[{}]".format(FAname)
-                    elif theCat.owner_id == FAidSpecial[0] or theCat.owner_id == FAidSpecial[2]:
+                    elif isAdoptes(theCat.owner_id) or isHistorique(theCat.owner_id):
                         FAname = None
                         FAid = "[{}]".format(theCat.owner_id)
+                        PostAdoption = 1
                     else:
                         FAname = theCat.owner.FAname
                         FAid = theCat.owner.FAid
@@ -491,28 +517,27 @@ def vetpage():
                 catregs.append(theCat.regStr())
                 catvtypes.append(VisitType)
 
-                if VisitType[0] != '-':
+                if vetIsPrimo(VisitType):
                     vtypes[0] += 1
-                if VisitType[1] != '-':
+                if vetIsRappel1(VisitType):
                     vtypes[1] += 1
-                if VisitType[2] != '-':
+                if vetIsRappelAnn(VisitType):
                     vtypes[1] += 1
-                if VisitType[3] != '-':
+                if vetIsSteril(VisitType):
                     if theCat.sex == 2:
                         vtypes[3] += 1
                     else:
                         vtypes[2] += 1
-                if VisitType[4] != '-':
+                if vetIsIdent(VisitType):
                     vtypes[4] += 1
-                if VisitType[5] != '-':
+                if vetIsTest(VisitType):
                     vtypes[5] += 1
-                if VisitType[6] != '-':
+                if vetIsSoins(VisitType):
                     if not comments:
                         # we also fix the comments so that newlines are respected
                         comments.append(Markup(escape(request.form["visit_comments"]).replace("\n","<br>")))
+                if vetIsDepara(VisitType):
                     vtypes[6] += 1
-                if VisitType[7] != '-':
-                    vtypes[1] += 1
 
             # if nothing was selected, return an error and stay here
             if not catlist:
@@ -544,7 +569,7 @@ def vetpage():
         qrstr = "ERA;{};{};{};{};{};{};".format(bdate.strftime('%Y%m%d'), theAuthFA.FAid, authdate.strftime('%Y%m%d'), FAid, vdate.strftime('%Y%m%d'), "/".join(catregs), "".join(str(e) for e in vtypes))
         qrstr = qrstr + ERAsum(qrstr)
 
-        return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, authFA=theAuthFA.FAname, cats=catlist, faname=FAname, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
+        return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, authFA=theAuthFA.FAname, cats=catlist, faname=FAname, postAD=PostAdoption, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
 
     # action = generate bonVeto for unregistered cats
     if vetMode == ACC_TOTAL and cmd == "fa_vetbonunreg":
@@ -555,7 +580,8 @@ def vetpage():
         # if the name is empty, no field will appear in the bon
         FAname = request.form["visit_faname"]
 
-        # the count will just be the number of cats (but we keep it split, just in case...)
+        # vaccinations, rappels, sterilisations, castrations, identifications, tests fiv/felv, deparasitages
+        # if vtype is "soins" then we append the comment as visit description
         vtypes = [0, 0, 0, 0, 0, 0, 0]
         comments = []
         # the QR code contains: ERA;<today's date>;<who authorized>;<authorization date>;<FAname>;<visit date>;<cat regs>;<vtypes joined as string>;<check>
@@ -614,28 +640,27 @@ def vetpage():
                 # cumulate the information
                 catlist.append(urcat)
 
-                if VisitType[0] != '-':
+                if vetIsPrimo(VisitType):
                     vtypes[0] += 1
-                if VisitType[1] != '-':
+                if vetIsRappel1(VisitType):
                     vtypes[1] += 1
-                if VisitType[2] != '-':
+                if vetIsRappelAnn(VisitType):
                     vtypes[1] += 1
-                if VisitType[3] != '-':
-                    if int(request.form[ksex]) == 2:
+                if vetIsSteril(VisitType):
+                    if theCat.sex == 2:
                         vtypes[3] += 1
                     else:
                         vtypes[2] += 1
-                if VisitType[4] != '-':
+                if vetIsIdent(VisitType):
                     vtypes[4] += 1
-                if VisitType[5] != '-':
+                if vetIsTest(VisitType):
                     vtypes[5] += 1
-                if VisitType[6] != '-':
+                if vetIsSoins(VisitType):
                     if not comments:
                         # we also fix the comments so that newlines are respected
                         comments.append(Markup(escape(request.form["visit_comments"]).replace("\n","<br>")))
+                if vetIsDepara(VisitType):
                     vtypes[6] += 1
-                if VisitType[7] != '-':
-                    vtypes[1] += 1
 
             # if nothing was selected, return an error and stay here
             if not catlist:

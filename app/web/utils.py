@@ -1,5 +1,5 @@
 from app import app, db, devel_site
-from app.staticdata import FAidSpecial, DBTabColor, ACC_NONE, ACC_RO, ACC_MOD, ACC_FULL, ACC_TOTAL
+from app.staticdata import FAidSpecial, DBTabColor, ACC_NONE, ACC_RO, ACC_MOD, ACC_FULL, ACC_TOTAL, NO_VET, GEN_VET
 from app.models import  Cat, User, Event, VetInfo
 from app.helpers import cat_delete, decodeRegnum, vetAddStrings, accessPrivileges
 from flask import render_template, redirect, request, url_for, session
@@ -81,7 +81,7 @@ def adminpage():
         vets = User.query.filter_by(FAisVET=True).all()
         msg = ''
         for v in vets:
-            msg += "'{}' => {}, ".format('inconnu' if v.username=='genvet' else v.FAid, v.id)
+            msg += "'{}' => {}, ".format('inconnu' if (v.id == NO_VET or v.id == GEN_VET) else v.FAid, v.id)
 
         return render_template("admin_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, admresult=msg)
 
@@ -157,12 +157,23 @@ def adminpage():
         return render_template("admin_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, admresult=msg)
 
     if cmd == "adm_delvisits":
-        rn = decodeRegnum(request.form["c_regnum"])
-        if rn == -1:
-            return render_template("admin_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, admresult="Format du numero de registre incorrect")
+        regnum = request.form["c_regnum"]
+        theCat = None
 
-        # exact match
-        theCat = Cat.query.filter_by(regnum=rn).first()
+        rn = decodeRegnum(regnum)
+        if rn > 0:
+            theCat = Cat.query.filter_by(regnum=rn).first()
+
+        elif regnum.startswith('N'):
+            # check for an unregistered N cat
+            try:
+                catid = int(regnum[1:])
+            except ValueError:
+                catid = -1
+
+            if catid > 0:
+                theCat = Cat.query.filter_by(id=catid).first()
+
         if not theCat:
             return render_template("admin_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, admresult="Chat {} non trouve".format(request.form["c_regnum"]))
 
@@ -182,17 +193,26 @@ def adminpage():
         if rn == -1:
             return render_template("admin_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, admresult="Format du numero de registre incorrect")
 
-        theCat = Cat.query.filter_by(regnum=rn).first()
-        if not theCat:
-            return render_template("admin_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, admresult="Chat {} non trouve".format(request.form["c_regnum"]))
+        # 0-00 is a special request to regen all
+        if rn == 0:
+            catlist = Cat.query.all()
 
-        theCat.vetshort = "--------"
-        for vv in theCat.vetvisits:
-            theCat.vetshort = vetAddStrings(theCat.vetshort, vv.vtype)
+            for theCat in catlist:
+                theCat.vetshort = "--------"
+                for vv in theCat.vetvisits:
+                    theCat.vetshort = vetAddStrings(theCat.vetshort, vv.vtype)
 
-        # note that we add no event
+        else:
+            theCat = Cat.query.filter_by(regnum=rn).first()
+            if not theCat:
+                return render_template("admin_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, admresult="Chat {} non trouve".format(request.form["c_regnum"]))
+
+            theCat.vetshort = "--------"
+            for vv in theCat.vetvisits:
+                theCat.vetshort = vetAddStrings(theCat.vetshort, vv.vtype)
+
+        # note that we add no event, AND the lastop of the cat is not updated, since no data has really changed
         current_user.FAlastop = datetime.now()
-        theCat.lastop = datetime.now()
 
         db.session.commit()
 

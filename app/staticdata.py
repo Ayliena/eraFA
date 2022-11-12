@@ -69,6 +69,13 @@ ACC_MOD  = 2
 ACC_FULL = 3
 ACC_TOTAL = 4
 
-# IMPORTANT: the special FAs are stored statically here, so this must be set with the correct IDs
+# empty vet visit type
+NO_VISIT = '--------'
+
+# database ID of special 'Aucun' and 'Generic' vet
+NO_VET = 114
+GEN_VET = 8
+
+# IMPORTANT: the special FAs are stored statically here, so this must be set with the correct database IDs
 # special FA ids (static): AD DCD HIST REF TEMP
 FAidSpecial = [2, 5, 10, 18, 90]

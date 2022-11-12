@@ -8,6 +8,10 @@
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+<script language="javascript" src="https://momentjs.com/downloads/moment.js"></script>
+<script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/js/bootstrap-datetimepicker.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/css/bootstrap-datetimepicker.min.css">
     </head>
     <script>
 {% include 'functions.html' %}
@@ -83,10 +87,10 @@
                 <hr>
                 {% if visitmode == "planned" %}<div class="row">
                     <div class="col-sm-3">
-                        <button type="submit" name="action" value="fa_vetbon">Imprimer un bon pour les visites selectionnees</button>
+                        <button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_vetbon">Imprimer un bon pour les visites selectionnees</button>
                     </div>
                     <div class="col-sm-3">
-                        <button type="submit" name="action" value="adm_vbver">Verifier le contenu du QRcode de bon veterinaire colle ci-contre</button>
+                        <button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="adm_vbver">Verifier le contenu du QRcode de bon veterinaire colle ci-contre</button>
                     </div>
                     <div class="col-sm-6">
                         <input type="text" class="form-control" name="vb_qrcode" id="iR" style="width: 100%">
@@ -95,9 +99,9 @@
                 <hr>
                 <div class="row">
                     <div class="col-sm-3">
-                        <button type="submit" name="action" value="fa_vetmv">Indiquer que les visites selectionnees ont ete effectuees a la date prevue</button>
+                        <button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_vetmv">Indiquer que les visites selectionnees ont ete effectuees a la date prevue</button>
                     </div>
-                    <div class="col-sm-3"><button type="submit" name="action" value="fa_vetmvd">Indiquer que les visites selectionnees ont ete effectuees a la date indiquee ci-contre</button></div>
+                    <div class="col-sm-3"><button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_vetmvd">Indiquer que les visites selectionnees ont ete effectuees a la date indiquee ci-contre</button></div>
                     <div class="col-sm-2">
                         <div class="form-group">
                             <div class="input-group datepick">
@@ -111,12 +115,12 @@
                 </div>
                 {% else %}<div class="row">
                     <div class="col-sm-3">
-                        <button type="submit" name="action" value="fa_vetbon">Reimprimer le bon pour les visites selectionnees</button>
+                        <button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_vetbon">Reimprimer le bon pour les visites selectionnees</button>
                     </div>
                 </div>{% endif %}
                 </form>
             {% else %}
-                <div class="row"><div class="col-sm-12">Aucune visite prevue</div></div>
+                <div class="row"><div class="col-sm-12">Aucune visite enregistree</div></div>
             {% endif %}
         {% elif viewuser.FAisREF %}
             {% set ns=namespace(curcage="",curroom="") %}

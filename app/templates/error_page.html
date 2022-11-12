@@ -17,6 +17,11 @@
     {% include 'navbar.html' %}
 
     <div class="container">
+    {% if devsite %}<div class="row">
+	<div class="alert alert-danger">ATTENTION: ce site est la version en developpement du logiciel FA, les informations sur les chats de ce site ne correspondent
+        pas a la realite.  Le site officiel est
+        <a href="https://erafa.pythonanywhere.com/fa">https://erafa.pythonanywhere.com/fa</a></div>
+    </div>{% endif %}
 
     <h2>Error</h2>
 
