@@ -330,9 +330,9 @@ def vetpage():
         theAuthFA = None
         VETname = None
 
-        # vaccinations, rappels, sterilisations, castrations, identifications, tests fiv/felv, deparasitages
+        # vaccinations, rappels, sterilisations, castrations, identifications, tests fiv/felv, soins, deparasitages
         # if vtype is "soins" then we append the comment as visit description
-        vtypes = [0, 0, 0, 0, 0, 0, 0]
+        vtypes = [0, 0, 0, 0, 0, 0, 0, 0]
         vdate = None
         comments = []
         # the QR code contains: ERA;<today's date>;<who authorized>;<authorization date>;<FAid>;<visit date>;<cat regs>;<vtypes joined as string>;<check>
@@ -427,9 +427,10 @@ def vetpage():
                 if vetIsTest(theVisit.vtype):
                     vtypes[5] += 1
                 if vetIsSoins(theVisit.vtype):
+                    vtypes[6] += 1
                     comments.append(theVisit.comments)
                 if vetIsDepara(theVisit.vtype):
-                    vtypes[6] += 1
+                    vtypes[7] += 1
 
         # if nothing was selected, stay here
         if not catlist:
@@ -469,9 +470,9 @@ def vetpage():
         FAname = None
         PostAdoption = 0
 
-        # vaccinations, rappels, sterilisations, castrations, identifications, tests fiv/felv, deparasitages
+        # vaccinations, rappels, sterilisations, castrations, identifications, tests fiv/felv, soins, deparasitages
         # if vtype is "soins" then we append the comment as visit description
-        vtypes = [0, 0, 0, 0, 0, 0, 0]
+        vtypes = [0, 0, 0, 0, 0, 0, 0, 0]
         comments = []
         # the QR code contains: ERA;<today's date>;<who authorized>;<authorization date>;<FAid>;<visit date>;<cat regs>;<vtypes joined as string>;<check>
         # check is a 12-byte string obtained by md5sum of previous part + some random junk + base64_encode + cut in half
@@ -533,11 +534,12 @@ def vetpage():
                 if vetIsTest(VisitType):
                     vtypes[5] += 1
                 if vetIsSoins(VisitType):
+                    vtypes[6] += 1
                     if not comments:
                         # we also fix the comments so that newlines are respected
                         comments.append(Markup(escape(request.form["visit_comments"]).replace("\n","<br>")))
                 if vetIsDepara(VisitType):
-                    vtypes[6] += 1
+                    vtypes[7] += 1
 
             # if nothing was selected, return an error and stay here
             if not catlist:
@@ -580,9 +582,9 @@ def vetpage():
         # if the name is empty, no field will appear in the bon
         FAname = request.form["visit_faname"]
 
-        # vaccinations, rappels, sterilisations, castrations, identifications, tests fiv/felv, deparasitages
+        # vaccinations, rappels, sterilisations, castrations, identifications, tests fiv/felv, soins, deparasitages
         # if vtype is "soins" then we append the comment as visit description
-        vtypes = [0, 0, 0, 0, 0, 0, 0]
+        vtypes = [0, 0, 0, 0, 0, 0, 0, 0]
         comments = []
         # the QR code contains: ERA;<today's date>;<who authorized>;<authorization date>;<FAname>;<visit date>;<cat regs>;<vtypes joined as string>;<check>
         # check is a 12-byte string obtained by md5sum of previous part + some random junk + base64_encode + cut in half
@@ -656,11 +658,12 @@ def vetpage():
                 if vetIsTest(VisitType):
                     vtypes[5] += 1
                 if vetIsSoins(VisitType):
+                    vtypes[6] += 1
                     if not comments:
                         # we also fix the comments so that newlines are respected
                         comments.append(Markup(escape(request.form["visit_comments"]).replace("\n","<br>")))
                 if vetIsDepara(VisitType):
-                    vtypes[6] += 1
+                    vtypes[7] += 1
 
             # if nothing was selected, return an error and stay here
             if not catlist:
