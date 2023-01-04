@@ -1,7 +1,8 @@
 from app import app, db, devel_site
 from app.staticdata import TabColor, TabSex, TabHair, TabCage, DBTabColor, DBTabSex, DBTabHair, FAidSpecial
 from app.models import User, Cat, VetInfo, Event
-from app.helpers import vetAddStrings, isRefuge, isFATemp
+from app.helpers import isRefuge, isFATemp
+from app.vetvisits import vetAddStrings
 from flask import render_template, redirect, request, url_for, session, Response
 from flask_login import login_required, current_user
 from sqlalchemy import and_, or_
@@ -31,55 +32,6 @@ def refupage():
         cats = Cat.query.filter(Cat.lastop>=mdate).order_by(Cat.lastop.desc()).all()
         return render_template("refu_page.html", devsite=devel_site, user=current_user, mdate=mdate, modcats=cats, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair)
 
-    if cmd == "adm_refuexport":
-#        return jsonify(request.form.to_dict())
-
-        # this is potentially dangerous, if someone messes with the date, does not filter and then exports
-        # but the only consequence is missing data, so I don't care
-        try:
-            mdate = datetime.strptime(request.form["mod_date"], "%d/%m/%y")
-        except ValueError:
-            mdate = datetime.now()
-
-        cats = Cat.query.filter(Cat.lastop>=mdate).order_by(Cat.regnum).all()
-
-        datfile = []
-
-        for cat in cats:
-            if "re_{}".format(cat.id) in request.form:
-                comments = cat.comments.replace("\r",'')
-                comments = comments.replace("\n","<EOL>")
-
-                if isFATemp(cat.owner_id):
-                    faname = "[{}]".format(cat.temp_owner)
-                elif isRefuge(cat.owner_id):
-                    faname = "({})".format(cat.temp_owner)
-                else:
-                    faname = cat.owner.username
-
-                datline = [ cat.regStr(), faname, cat.name, cat.identif, DBTabSex[cat.sex],
-                            ("" if not cat.birthdate else cat.birthdate.strftime('%d/%m/%y') ),
-                            DBTabHair[cat.longhair], DBTabColor[cat.color], comments]
-
-                for vv in cat.vetvisits:
-                    vcomments = vv.comments
-                    if vcomments:
-                        vcomments = vcomments.replace("\r", '')
-                        vcomments = vcomments.replace("\n","<EOL>")
-                    else:
-                        vcomments = ''
-                    datline.extend([ ("VP" if vv.planned else "VE"), vv.vtype, vcomments, vv.vdate.strftime('%d/%m/%y'), str(vv.vet_id), vv.doneby.username ])
-
-                datline.append("EOD")
-
-                datfile.append(";".join(datline))
-
-        return Response(
-            "\n".join(datfile),
-            mimetype="text/csv",
-            headers={"Content-disposition":
-                     "attachment; filename=faweb-export.dat"})
-
     if cmd == "adm_refuexpall":
         # filter out --historique--???
         cats = Cat.query.order_by(Cat.regnum).all()
@@ -97,7 +49,7 @@ def refupage():
             else:
                 faname = cat.owner.username
 
-            datline = [ cat.regStr(), faname, cat.name, cat.identif, DBTabSex[cat.sex],
+            datline = [ cat.regStr(), faname, cat.name, cat.vetshort, cat.identif, DBTabSex[cat.sex],
                         ("" if not cat.birthdate else cat.birthdate.strftime('%d/%m/%y') ),
                         DBTabHair[cat.longhair], DBTabColor[cat.color], comments]
 
@@ -134,7 +86,7 @@ def refupage():
             for l in lines:
                 v = l.split(';')
 
-                if len(v) < 9:
+                if len(v) < 10:
                     msg.append([3, "Format erroné: {} (len={})".format(l, len(v)) ])
                     continue
 
@@ -153,22 +105,23 @@ def refupage():
 
                 # extract all the non-vet info so that we can update empty fields
                 r_name = v[2]
-                r_id = v[3]
+                r_vetshort = v[3]
+                r_id = v[4]
 
                 # convert fields to DB format (sex/hairlength/color)
-                r = [index for index, value in enumerate(DBTabSex) if value == v[4]]
+                r = [index for index, value in enumerate(DBTabSex) if value == v[5]]
                 if r:
                     r_sex = r[0]
                 else:
                     r_sex = 0
 
-                r = [index for index, value in enumerate(DBTabHair) if value == v[6]]
+                r = [index for index, value in enumerate(DBTabHair) if value == v[7]]
                 if r:
                     r_hl = r[0]
                 else:
                     r_hl = 0
 
-                r = [index for index, value in enumerate(DBTabColor) if value == v[7]]
+                r = [index for index, value in enumerate(DBTabColor) if value == v[8]]
                 if r:
                     r_col = r[0]
                 else:
@@ -176,11 +129,11 @@ def refupage():
 
                 # convert birthdate
                 try:
-                    r_bd = datetime.strptime(v[5], "%d/%m/%y")
+                    r_bd = datetime.strptime(v[6], "%d/%m/%y")
                 except ValueError:
                     r_bd = None
 
-                r_comm = v[8].replace("<EOL>", "\n")
+                r_comm = v[9].replace("<EOL>", "\n")
 
                 # see if we already have this
                 theCat = Cat.query.filter_by(regnum=rn).first();
@@ -224,10 +177,11 @@ def refupage():
                         theFA = current_user
 
                 # decode the table of vet visits
-                offs = 9
+                offs = 10
                 vvisits = []
                 formaterror = False
-                r_vetshort = '--------'
+                # this is now provided by the import, but any existing visit will be ADDED to it
+                # r_vetshort = '--------'
 
                 while (v[offs] and v[offs] != 'EOD'):
                     if offs+6 > len(v):
@@ -453,7 +407,7 @@ def refupage():
                     db.session.add(vv)
 
                 # generate the event
-                msg.append( [0, "Chat {} importé de Refugilys chez {}".format(registre, theFA.FAname) ] )
+                msg.append( [0, "Chat {} importé de Refugilys chez {}{}".format(registre, theFA.FAname, "[{}]".format(theCat.temp_owner) if isFATemp(theFA.id) else "") ] )
                 theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: importé de Refugilys".format(current_user.FAname))
                 db.session.add(theEvent)
 

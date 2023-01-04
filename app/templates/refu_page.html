@@ -46,7 +46,7 @@
         <h3>Importer des dossiers</h3>
         <form action="/refu" method="POST">
             <div class="form-group"><textarea class="form-control" rows=8 name="r_dossier" required></textarea></div>
-            <button type="submit" name="action" value="adm_refuimport">Importer</button>
+            <button class="btn btn-secondary" type="submit" name="action" value="adm_refuimport">Importer</button>
         </form>
 
         <h3>Exporter des dossiers</h3>
@@ -54,11 +54,10 @@
             <div class="row form-group">
                 <div class="col-sm-2">Chats modifiés depuis:</div>
                 <div class="col-sm-2"><input type="text" name="mod_date" id="mod_date" value="{{ mdate.strftime('%d/%m/%y') }}"></div>
-                <div class="col-sm-2"><button type="submit" name="action" value="adm_modfilter">Filtrer</button></div>
+                <div class="col-sm-2"><button class="btn btn-secondary" type="submit" name="action" value="adm_modfilter">Filtrer</button></div>
             </div>
             <div class="row form-group">
-                <div class="col-sm-3"><button type="submit" name="action" value="adm_refuexport">Exporter les chats selectionnes</button></div>
-                <div class="col-sm-3"><button type="submit" name="action" value="adm_refuexpall">Exporter tous les chats</button></div>
+                <div class="col-sm-3"><button class="btn btn-secondary" type="submit" name="action" value="adm_refuexpall">Exporter tous les chats</button></div>
             </div>
             {% if modcats %}{% for cat in modcats %}
             <hr>

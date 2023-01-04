@@ -69,10 +69,10 @@ def vetStringToMap(vetstr, prefix):
 def vetAddStrings(vetstr1, vetstr2):
     res = ""
     for i in range(0,8):
-        if str[i] == '-':
+        if vetstr1[i] == '-':
             res = res + vetstr2[i]
         else:
-            res = res + str[i]
+            res = res + vetstr1[i]
 
     return res
 
@@ -80,10 +80,10 @@ def vetAddStrings(vetstr1, vetstr2):
 def vetSubStrings(vetstr1, vetstr2):
     res = ""
     for i in range(0,8):
-        if str[i] != "-" and vetstr2[i] != "-":
+        if vetstr1[i] != "-" and vetstr2[i] != "-":
             res = res + "-"
         else:
-            res = res + str[i]
+            res = res + vetstr1[i]
 
     return res
 
@@ -183,18 +183,20 @@ def cat_plannedCleanup(theCat, vtype):
     vetvisits = VetInfo.query.filter_by(cat_id=theCat.id)
 
     for vv in vetvisits:
-        # remove any duplicate
-        newvtype = vetSubString(vv.vtype, unique_vtype)
+        if vv.planned:
+            # remove any duplicate
+            newvtype = vetSubStrings(vv.vtype, unique_vtype)
 
-        if newvtype == NO_VISIT:
-            # nothing left, we can remove this
-            vres += " aD[{}]".format(vv.vtype)
-            cat_deleteVisit(theCat, vv)
-        else:
-            # keep anything which is still applicable
-            vv.vtype = newvtype
+            if newvtype == NO_VISIT:
+                # nothing left, we can remove this
+                vres += " aD[{}]".format(vv.vtype)
+                cat_deleteVisit(theCat, vv, True)
+            else:
+                # keep anything which is still applicable
+                vv.vtype = newvtype
 
     return vres
+
 
 def cat_addVetVisit(VETlist, theCat, vplan, vtype, vvet, vdate, vcomm):
     # do we actually have anything to add?
@@ -223,7 +225,7 @@ def cat_addVetVisit(VETlist, theCat, vplan, vtype, vvet, vdate, vcomm):
     # two completely different approaches for planned or executed
     if vplan:
         # start with a cleanup of any duplicate unique visit
-        cat_plannedCleanup(theCat, vtype)
+        vres = vres + cat_plannedCleanup(theCat, vtype)
 
         et = "planifiée pour le"
         # default state = not authorized
@@ -240,26 +242,29 @@ def cat_addVetVisit(VETlist, theCat, vplan, vtype, vvet, vdate, vcomm):
             match = repeatREstar.search(vcomm)
             if match:
                 vnum = int(match.group(1))
-                vmax = match.group(2)
+                vmax = int(match.group(2))
                 ddays = int(match.group(3))
 
                 # in the planned visits, remove the anything after the *
-                vcomm = vcomm[:vcomm.rindex("*")]
+                basecomm = vcomm[:vcomm.rindex("*")]
+                # update the first visit
+                theVisit.comments = basecomm
+                vdate = theVisit.vdate
 
-                # iterate and generate all the visits
-                for vn in range(vnum,vmax+1):
+                # iterate and generate all the remaining visits
+                for vn in range(vnum+1,vmax+1):
                     # define the new date and prepare the new comment
-                    vdate = vvisit.vdate + timedelta(days=ddays)
-                    vcomm = vcomm.replace("{}/{}".format(vnum, vmax), "{}/{}".format(vnum+1,vmax))
+                    vdate = vdate + timedelta(days=ddays)
+                    vcomm = basecomm.replace("{}/{}".format(vnum, vmax), "{}/{}".format(vn,vmax))
                     # kill any non-X non-D
                     vtype = '------' + vtype[-2:]
 
-                # generate the record (but no event?)
-                apVisit = VetInfo(cat_id=theCat.id, doneby_id=theCat.owner_id, vet_id=vvisit.vet_id, vtype=vtype,
-                    vdate=vdate, planned=True, requested=False, transferred=False, validby_id=None, comments=vcomm)
-                db.session.add(apVisit)
+                    # generate the record (but no event?)
+                    apVisit = VetInfo(cat_id=theCat.id, doneby_id=theCat.owner_id, vet_id=theVisit.vet_id, vtype=vtype,
+                        vdate=vdate, planned=True, requested=False, transferred=False, validby_id=None, comments=vcomm)
+                    db.session.add(apVisit)
 
-                vres = vres + " +aP[{}]".format(vtype)
+                    vres = vres + " +aP[{}]".format(vtype)
 
     else:
         # if executed, then cumulate with the global and auto-plan next visit if needed
@@ -410,9 +415,6 @@ def cat_executedPostProcess(theCat, vvisit):
     if vvisit.planned:
         return vres
 
-    # prepare the pattern for <n/m> and <xx>j
-    repeatRE = re.compile(r'([0-9]+)/([0-9]+|[nN]) +([0-9]+)j')
-
     vdate = None
     vtype = vvisit.vtype
     vcomm = vvisit.comments
@@ -446,6 +448,9 @@ def cat_executedPostProcess(theCat, vvisit):
     vcomm = vvisit.comments
 
     if vetIsSoins(vtype) or vetIsDepara(vtype):
+        # prepare the pattern for <n/m> and <xx>j
+        repeatRE = re.compile(r'([0-9]+)/([0-9]+|[nN]) +([0-9]+)j')
+
         match = repeatRE.search(vcomm)
         if match:
             vnum = int(match.group(1))

@@ -1,7 +1,8 @@
 from app import app, db, devel_site
 from app.staticdata import DBTabColor, TabCage, FAidSpecial, ACC_NONE, ACC_RO, ACC_FULL, ACC_TOTAL
 from app.models import User, Cat, VetInfo, Event
-from app.helpers import vetMapToString, vetAddStrings, isRefuge, isFATemp, isValidCage, cat_associate_to_FA, cat_addVetVisit, cat_updateVetVisit, accessPrivileges, getViewUser
+from app.helpers import isRefuge, isFATemp, isValidCage, cat_associate_to_FA, accessPrivileges, getViewUser
+from app.vetvisits import vetMapToString, cat_addVetVisit, cat_updateVetVisit
 from flask import render_template, redirect, request, url_for, session
 from flask_login import login_required, current_user
 from sqlalchemy import or_
@@ -293,22 +294,6 @@ def catpage(catid=-1):
         # handle the vet visits
         visitupdated = ""
 
-        # new vetvisit, if defined: generate the vetinfo record and the associated event
-        VisitType = vetMapToString(request.form, "visit")
-        VisitVet = request.form["visit_vet"]
-        VisitDate = request.form["visit_date"]
-        VisitPlanned = (int(request.form["visit_state"]) == 1)
-        VisitComments = request.form["visit_comments"]
-
-        vres = cat_addVetVisit(VETlist, theCat, VisitPlanned, VisitType, VisitVet, VisitDate, VisitComments)
-
-        if vres:
-            if vres.startswith("visit"):
-                return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage=vres, FAids=FAidSpecial)
-            else:
-                visitupdated += vres
-                cat_updated = True
-
         # iterate through all the planned visits and see if they have been updated....
         # extract all planned visits which are now executed
         modvisits = []
@@ -337,6 +322,23 @@ def catpage(catid=-1):
                     cat_updated = True
 
         # end for mv in modvisits
+
+        # new vetvisit, if defined: generate the vetinfo record and the associated event
+        VisitType = vetMapToString(request.form, "visit")
+        VisitVet = request.form["visit_vet"]
+        VisitDate = request.form["visit_date"]
+        VisitPlanned = (int(request.form["visit_state"]) == 1)
+        VisitComments = request.form["visit_comments"]
+
+        vres = cat_addVetVisit(VETlist, theCat, VisitPlanned, VisitType, VisitVet, VisitDate, VisitComments)
+
+        if vres:
+            if vres.startswith("visit"):
+                # should we do an explicit rollback?
+                return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage=vres, FAids=FAidSpecial)
+            else:
+                visitupdated += vres
+                cat_updated = True
 
         message = []
 

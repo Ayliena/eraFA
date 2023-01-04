@@ -1,8 +1,9 @@
 from app import app, db, devel_site
 from app.staticdata import TabColor, TabSex, TabHair, FAidSpecial, ACC_NONE, ACC_RO, ACC_MOD, ACC_FULL, ACC_TOTAL, NO_VISIT, NO_VET, GEN_VET
 from app.models import User, Cat, VetInfo, Event
-from app.helpers import vetMapToString, vetAddStrings, ERAsum, encodeRegnum, accessPrivileges, getViewUser, isFATemp, isRefuge, isAdoptes, isHistorique, \
-    vetIsPrimo, vetIsRappel1, vetIsRappelAnn, vetIsIdent, vetIsTest, vetIsSteril, vetIsSoins, vetIsDepara, cat_executeVetVisit
+from app.helpers import ERAsum, encodeRegnum, accessPrivileges, getViewUser, isFATemp, isRefuge, isAdoptes, isHistorique
+from app.vetvisits import vetMapToString, vetIsPrimo, vetIsRappel1, vetIsRappelAnn, vetIsIdent, vetIsTest, vetIsSteril, \
+    vetIsSoins, vetIsDepara, cat_addVetVisit, cat_executeVetVisit, cat_deleteVisit
 from flask import render_template, redirect, request, url_for, session, Markup
 from flask_login import login_required, current_user
 from sqlalchemy import and_
@@ -127,9 +128,7 @@ def vetpage():
                     return render_template("error_page.html", user=current_user, errormessage="/vet:fa_vetareq: insufficient privileges", FAids=FAidSpecial)
 
                 # you can access this, delete the visit
-                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} annullée".format(current_user.FAname, theVisit.vtype))
-                db.session.add(theEvent)
-                db.session.delete(theVisit)
+                cat_deleteVisit(theCat, theVisit, False)
                 catregs.append(theCat.regStr())
 
         db.session.commit()
@@ -158,34 +157,18 @@ def vetpage():
         # start by decoding the visit data
         # generate the vetinfo record, if any, and the associated event
         VisitType = vetMapToString(request.form, "visit")
+        VisitVet = request.form["visit_vet"]
+        VisitDate = request.form["visit_date"]
+        VisitPlanned = (int(request.form["visit_state"]) == 1)
+        VisitComments = request.form["visit_comments"]
 
-        if VisitType != NO_VISIT:
-            # validate the vet
-            vet = next((x for x in VETlist if x.id==int(request.form["visit_vet"])), None)
-
-            if not vet:
-                return render_template("error_page.html", user=current_user, errormessage="vet id is invalid", FAids=FAidSpecial)
-            else:
-                vetId = vet.id
-
-            try:
-                VisitDate = datetime.strptime(request.form["visit_date"], "%d/%m/%y")
-            except ValueError:
-                VisitDate = datetime.now()
-
-            VisitPlanned = (int(request.form["visit_state"]) == 1)
-
-            # if executed, then cumulate with the global
-            if not VisitPlanned:
-                et = "effectuee le"
-            else:
-                et = "planifiee pour le"
-        else:
+        if VisitType == NO_VISIT:
             session["pendingmessage"] = [ [ 2, "Aucun soin indique" ] ]
             return redirect(url_for('fapage'))
 
         # now iterate on all cats and add the visit
         catregs = []
+        vres = ""
 
         for key in request.form.keys():
             if key[0:3] == 're_':
@@ -203,16 +186,7 @@ def vetpage():
                 catregs.append(theCat.regStr())
 
                 # generate the visit and the event
-                # we always associate the visit to the current owner
-                theVisit = VetInfo(cat_id=theCat.id, doneby_id=theCat.owner_id, vet_id=vetId, vtype=VisitType, vdate=VisitDate,
-                    planned=VisitPlanned, comments=request.form["visit_comments"])
-                db.session.add(theVisit)
-                db.session.commit()  # needed for vet.FAname
-
-                # add it as event (planned or not)
-                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} {} {} chez {}".format(current_user.FAname, VisitType, et, VisitDate.strftime("%d/%m/%y"), theVisit.vet.FAname))
-                db.session.add(theEvent)
-                db.session.commit()
+                vres = vres + " " + theCat.regStr() + "{" + cat_addVetVisit(VETlist, theCat, VisitPlanned, VisitType, VisitVet, VisitDate, VisitComments) + "}"
 
         if not catregs:
             session["pendingmessage"] = [ [ 2, "Aucun chat selectionne" ] ]
