@@ -86,7 +86,7 @@ def refupage():
             for l in lines:
                 v = l.split(';')
 
-                if len(v) < 10:
+                if len(v) < 11:
                     msg.append([3, "Format erroné: {} (len={})".format(l, len(v)) ])
                     continue
 
@@ -181,7 +181,9 @@ def refupage():
                 vvisits = []
                 formaterror = False
                 # this is now provided by the import, but any existing visit will be ADDED to it
-                # r_vetshort = '--------'
+                # just make sure this thing is defined!
+                if not r_vetshort:
+                    r_vetshort = '--------'
 
                 while (v[offs] and v[offs] != 'EOD'):
                     if offs+6 > len(v):
