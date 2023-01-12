@@ -2,7 +2,7 @@ from app import app, db, devel_site
 from app.staticdata import TabColor, TabSex, TabHair, FAidSpecial, ACC_NONE, ACC_RO, ACC_MOD, ACC_FULL, ACC_TOTAL, NO_VISIT, NO_VET, GEN_VET
 from app.models import User, Cat, VetInfo, Event
 from app.helpers import ERAsum, encodeRegnum, accessPrivileges, getViewUser, isFATemp, isRefuge, isAdoptes, isHistorique
-from app.vetvisits import vetMapToString, vetIsPrimo, vetIsRappel1, vetIsRappelAnn, vetIsIdent, vetIsTest, vetIsSteril, \
+from app.vetvisits import vetMapToString, vetAddStrings, vetIsPrimo, vetIsRappel1, vetIsRappelAnn, vetIsIdent, vetIsTest, vetIsSteril, \
     vetIsSoins, vetIsDepara, cat_addVetVisit, cat_executeVetVisit, cat_deleteVisit
 from flask import render_template, redirect, request, url_for, session, Markup
 from flask_login import login_required, current_user
@@ -656,6 +656,61 @@ def vetpage():
         qrstr = qrstr + ERAsum(qrstr)
 
         return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, authFA=theAuthFA.FAname, ucats=catlist, faname=FAname, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
+
+    # action = edit the vetvisits, deleting stuff etc. etc.
+    if cmd == "fa_modvetdo" and catMode >= ACC_FULL:
+        # get the cat
+        catid = int(request.form["catid"])
+
+        theCat = Cat.query.filter_by(id=catid).first();
+        if theCat == None:
+            return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage="invalid cat id", FAids=FAidSpecial)
+
+        vres = ""
+
+        # start by deleting the selected visits
+        for key in request.form.keys():
+            if key[0:3] == 're_':
+                vvid = int(key[3:])
+
+                theVisit = VetInfo.query.filter_by(id=vvid).first()
+                if theVisit == None:
+                    return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage="invalid vetvisit id", FAids=FAidSpecial)
+
+                # paranoia check
+                if theVisit.cat_id != theCat.id:
+                    return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage="vetivisit/cat mismatch", FAids=FAidSpecial)
+
+                vres += " -E[{}]".format(theVisit.vtype)
+
+                # we don't use deletevisit because the event message is completely wrong
+                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} du {} effacée".format(current_user.FAname, theVisit.vtype, theVisit.vdate.strftime('%d/%m/%y')))
+                db.session.add(theEvent)
+                db.session.delete(theVisit)
+
+        # we now rebuild the vetshort by adding any preexisting info we were given
+        # note that all old info is lost!
+        vetstr = vetMapToString(request.form, "visit")
+
+        # now iterate on the visits and cumulate
+        for vv in theCat.vetvisits:
+            if not vv.planned:
+                vetstr = vetAddStrings(vetstr, vv.vtype)
+
+        vres += " vs={}".format(vetstr)
+
+        theCat.vetshort = vetstr
+        db.session.commit()
+
+        message = [ [0, "Informations mises a jour: {}".format(vres)] ]
+        session["pendingmessage"] = message
+
+        # return to cat page with update message
+        return redirect(url_for('catpage') + "/" + request.form["catid"])
+
+    # action = do nothing and return to cat page
+    if cmd == "fa_modvetcancel":
+        return redirect(url_for('catpage') + "/" + request.form["catid"])
 
     # action = validate QR code
     if cmd == "adm_vbver":

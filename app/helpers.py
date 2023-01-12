@@ -159,7 +159,7 @@ def accessPrivileges(fauser):
 
     if current_user.FAisOV:
         # almost total access, except new reg and move around
-        catMode = updatePrivilege(catMode, ACC_MOD)
+        catMode = updatePrivilege(catMode, ACC_FULL)
         vetMode = updatePrivilege(vetMode, ACC_TOTAL)
         searchMode = updatePrivilege(searchMode, ACC_TOTAL)
 

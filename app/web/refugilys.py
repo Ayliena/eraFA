@@ -284,14 +284,19 @@ def refupage():
                         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: informations mises a jour (Refugilys): {}".format(current_user.FAname, updated))
                         db.session.add(theEvent)
 
-                    # associate the vet visits
+                    # cumulate any provided vetshort to the current one
+                    r_vetshort = vetAddStrings(r_vetshort, theCat.vetshort)
+
+                    # associate the vet visits and cumulate them with the vetshort
                     for vv in vvisits:
                         vv.cat_id = theCat.id
+                        r_vetshort = vetAddStrings(r_vetshort, vv.vtype)
                         db.session.add(vv)
 
-                    if r_vetshort != '--------':
+                    # this may hide some visits which were added, but are of the same type of the preexisting ones
+                    if r_vetshort != theCat.vetshort:
                         msg.append([0, "Numéro de registre {} mis a jour: visites {}".format(registre, r_vetshort)])
-                        theCat.vetshort = vetAddStrings(theCat.vetshort, r_vetshort)
+                        theCat.vetshort = r_vetshort
                         theCat.lastop = datetime.now()
                         # generate an event
                         theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: Visites mises a jour (Refugilys): {}".format(current_user.FAname, r_vetshort))
@@ -392,7 +397,6 @@ def refupage():
                             msg.append([3, "Numéro de registre {} déjà présent mais dans une autre FA (il est chez {}, on veut le rajouter chez {})!".format(registre, theCat.owner.FAname, theFA.FAname) ])
                     continue
 
-                # now take care of the vetvisits
                 # create the cat
                 theCat = Cat(regnum=rn, owner_id=theFA.id, temp_owner=temp_faname, name=r_name, sex=r_sex, birthdate=r_bd, color=r_col, longhair=r_hl, identif=r_id,
                         vetshort=r_vetshort, comments=r_comm, description='', adoptable=False)
@@ -403,10 +407,13 @@ def refupage():
                 # make sure we have an id
                 db.session.commit()
 
-                # associate the vet visits
+                # associate the vet visits and fix the vetshort
                 for vv in vvisits:
                     vv.cat_id = theCat.id
+                    r_vetshort = vetAddStrings(r_vetshort, vv.vtype)
                     db.session.add(vv)
+
+                theCat.vetshort = r_vetshort
 
                 # generate the event
                 msg.append( [0, "Chat {} importé de Refugilys chez {}{}".format(registre, theFA.FAname, "[{}]".format(theCat.temp_owner) if isFATemp(theFA.id) else "") ] )

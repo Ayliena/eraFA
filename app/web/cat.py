@@ -2,7 +2,7 @@ from app import app, db, devel_site
 from app.staticdata import DBTabColor, TabCage, FAidSpecial, ACC_NONE, ACC_RO, ACC_FULL, ACC_TOTAL
 from app.models import User, Cat, VetInfo, Event
 from app.helpers import isRefuge, isFATemp, isValidCage, cat_associate_to_FA, accessPrivileges, getViewUser
-from app.vetvisits import vetMapToString, cat_addVetVisit, cat_updateVetVisit
+from app.vetvisits import vetMapToString, vetSubStrings, cat_addVetVisit, cat_updateVetVisit
 from flask import render_template, redirect, request, url_for, session
 from flask_login import login_required, current_user
 from sqlalchemy import or_
@@ -162,7 +162,13 @@ def catpage(catid=-1):
 
     # handle generation of the page
     if cmd == "fa_viewcat":
-        return render_template("cat_page.html", devsite=devel_site, user=current_user, cat=theCat,
+        if "pendingmessage" in session:
+            message = session["pendingmessage"]
+            session.pop("pendingmessage")
+        else:
+            message = []
+
+        return render_template("cat_page.html", devsite=devel_site, user=current_user, cat=theCat, msg=message,
                                falist=FAlist, VETids=VETlist, FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
 
     # cat commands, except for "cancel" we always process any data change
@@ -418,6 +424,18 @@ def catpage(catid=-1):
                 db.session.commit()
 
             return redirect(url_for('fapage'))
+
+    # modify the cat's vet visits
+    if cmd == "fa_modvet" and catMode >= ACC_FULL:
+        # prepare the list of preexisting vet visits by subtracting all the executed from the cat's vetshort
+        vshort = theCat.vetshort
+
+        for vv in theCat.vetvisits:
+            if not vv.planned:
+                vshort = vetSubStrings(vshort, vv.vtype)
+
+        return render_template("vet_page.html", devsite=devel_site, user=current_user, catVet=theCat,
+                               prevtype=vshort, VETids=VETlist, FAids=FAidSpecial, TabCols=DBTabColor)
 
     # this should never be reached
     return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage="command error (/cat)", FAids=FAidSpecial)

@@ -9,7 +9,6 @@
 <script language="javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <!---*** End: JQuery 3.3.1 version. ***--->
 <!---*** Start: Bootstrap 3.3.7 version files. ***--->
-<script language="javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 <!---*** End: Bootstrap 3.3.7 version files. ***--->
 
@@ -189,7 +188,41 @@
 
         {% if cat.regnum %}
             <hr>
-            <h3>Visites vétérinaires</h3>
+            <div class="row">
+                <div class="col-sm-9">
+                    <h3>Visites vétérinaires</h3>
+                    {% for vv in cat.vetvisits %}
+                        {% if not vv.planned %}
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    {{ vv.doneby.FAname }}:
+                                    effectuée le {{ vv.vdate.strftime("%d/%m/%y") }} auprès de {{ vv.vet.FAname }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-1"></div>
+                                {% if vv.vtype[0] != '-' %}- Primo Vaccination {% endif %}
+                                {% if vv.vtype[1] != '-' %}- 1er rappel {% endif %}
+                                {% if vv.vtype[2] != '-' %}- Rappel annuel {% endif %}
+                                {% if vv.vtype[3] != '-' %}- Identification {% endif %}
+                                {% if vv.vtype[4] != '-' %}- Test FIV/FelV {% endif %}
+                                {% if vv.vtype[5] != '-' %}- Stérilisation/Castration {% endif %}
+                                {% if vv.vtype[6] != '-' %}- Soins / autre {% endif %}
+                                {% if vv.vtype[7] != '-' %}- Déparasitage {% endif %}
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-1"></div>
+                                {% if vv.comments %} <div class="col-sm-10">Commentaires: {{ vv.comments }}</div> {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="col-sm-3">
+                    <div class="row form-group">
+                        {% if not readonly %}<br><button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_modvet">Modifier l'historique des visites</button>{% endif %}
+                    </div>
+                </div>
+            </div>
             {% for vv in cat.vetvisits %}
                 {% if vv.planned %}
                 <hr>
@@ -224,30 +257,8 @@
                 <div class="row form-group">
                     <div class="col-sm-12">
                     {% if vv.comments %}<textarea class="form-control" name="oldv_{{vv.id}}_comments" {% if readonly %}disabled{% endif %}>{{ vv.comments }}</textarea>
-                    {% else %}<textarea class="form-control" name="oldv_{{vv.id}}_comments" placeholder="Commentaires / informations additionnelles" {% if readonly %}disabled{% endif %}></textarea>{% endif %}
+                    {% else %}<textarea class="form-control" name="oldv_{{vv.id}}_comments" placeholder="Commentaires / informations additionnelles / pour Deparasitage indiquer si antipuces ou vermifuge" {% if readonly %}disabled{% endif %}></textarea>{% endif %}
                     </div>
-                </div>
-                {% else %}
-                <div class="row">
-                    <div class="col-sm-12">
-                        {{ vv.doneby.FAname }}:
-                        effectuée le {{ vv.vdate.strftime("%d/%m/%y") }} auprès de {{ vv.vet.FAname }}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-sm-1"></div>
-                    {% if vv.vtype[0] != '-' %}- Primo Vaccination {% endif %}
-                    {% if vv.vtype[1] != '-' %}- 1er rappel {% endif %}
-                    {% if vv.vtype[2] != '-' %}- Rappel annuel {% endif %}
-                    {% if vv.vtype[3] != '-' %}- Identification {% endif %}
-                    {% if vv.vtype[4] != '-' %}- Test FIV/FelV {% endif %}
-                    {% if vv.vtype[5] != '-' %}- Stérilisation/Castration {% endif %}
-                    {% if vv.vtype[6] != '-' %}- Soins / autre {% endif %}
-                    {% if vv.vtype[7] != '-' %}- Déparasitage {% endif %}
-                </div>
-                <div class="row">
-                    <div class="col-sm-1"></div>
-                    {% if vv.comments %} <div class="col-sm-10">Commentaires: {{ vv.comments }}</div> {% endif %}
                 </div>
                 {% endif %}
             {% else %}
@@ -256,7 +267,7 @@
             {% if not readonly %}
                 <hr>
                 <div class="row form-group">
-                    <label class="col-sm-2 control-label" for="visit_state">Nouvelle visite</label>
+                    <label class="col-sm-2 control-label" for="visit_state">NOUVELLE VISITE</label>
                     <div class="col-sm-2"><select class="form-control" name="visit_state" id="visit_state"><option value="0">Effectuée</option><option value="1" selected>Planifiée</option></select></div>
                     <label class="col-sm-1 control-label" for="visit_date">en date</label>
                     <div class="col-sm-2">
@@ -285,7 +296,7 @@
                 </div>
                 <div class="row form-group">
                     <div class="col-sm-12">
-                    <textarea class="form-control" name="visit_comments" placeholder="Commentaires / informations additionnelles"></textarea>
+                    <textarea class="form-control" name="visit_comments" placeholder="Commentaires / informations additionnelles / pour Deparasitage indiquer si antipuces ou vermifuge"></textarea>
                     </div>
                 </div>
             {% endif %}
@@ -329,7 +340,7 @@
         {% endif %}
         {% else %}
         <div class="row">
-            Indication rapide des visites vétérinaires sans spécifier des détails:
+            Indication de visites effectuées avant l'arrivée chez nous, donc sans spécifier de date:
         </div>
         <div class="row form-group">
             <label class="checkbox-inline"><input type="checkbox" name="visit_pv">Primo vaccination</label>
