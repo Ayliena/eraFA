@@ -8,6 +8,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import and_
 from sqlalchemy.sql import text
 from datetime import datetime
+import string
 
 
 @app.route("/search", methods=["GET", "POST"])
@@ -42,9 +43,11 @@ def searchpage():
         while src_regnum.endswith('-'):
             src_regnum = src_regnum[:-1]
 
-        if src_regnum.startswith('-'):
-            message = [ [3, "Le numero de registre ne peut pas commencer par '-'!" ] ]
-            return render_template("search_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, msg=message, maxreg=max_regnum)
+        # if the regnum is not empty, then it can start with "N" or a number, anything else is wrong
+        if src_regnum:
+            if not src_regnum.startswith(tuple(string.digits+'N')):
+                message = [ [3, "Le numero de registre doit commencer par un chiffre ou une 'N'" ] ]
+                return render_template("search_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, msg=message, maxreg=max_regnum)
 
         session["otherMode"] = "special-search"
         session["searchFilter"] = src_name+";"+src_regnum+";"+src_id+";"+src_FAname+";"+src_mode

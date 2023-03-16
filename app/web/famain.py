@@ -5,8 +5,8 @@ from app.helpers import cat_delete, isFATemp, isRefuge, getViewUser, accessPrivi
 from flask import render_template, redirect, request, url_for, session
 from flask_login import login_required, current_user
 from sqlalchemy import and_
+from sqlalchemy.sql import text
 from datetime import datetime
-
 
 @app.route('/fa', methods=["GET", "POST"])
 def fapage():
@@ -95,7 +95,11 @@ def fapage():
                 elif src_regnum.isdigit():
                     # fix number, all years
                     clause = "NOT MOD (regnum-"+src_regnum+",10000)"
-                    cats = cats + Cat.query.filter(clause).order_by(Cat.temp_owner,Cat.regnum).all()
+                    cats = cats + Cat.query.filter(text(clause)).order_by(Cat.temp_owner,Cat.regnum).all()
+
+                elif src_regnum.startswith('N'):
+                    # search for unreg cats
+                    cats = cats + Cat.query.filter_by(regnum=-1).order_by(Cat.id).all()
 
             if src_id:
                 cats = cats + Cat.query.filter(Cat.identif.contains(src_id)).order_by(Cat.temp_owner,Cat.regnum).all()
@@ -105,6 +109,8 @@ def fapage():
 
             # ok, so if multiple rules were provided, the results will NOT be sorted correctly, but it's too annoying to do this right
 
+            # TODO: this has become problematic or even useless, I need to find a better solution since now unreg cats can be manually
+            # assigned a regnum
             max_regnum = db.session.query(db.func.max(Cat.regnum)).scalar()
             defaultvalues = [src_regnum, src_name, src_id, src_FAname];
 
