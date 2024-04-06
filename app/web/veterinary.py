@@ -658,7 +658,7 @@ def vetpage():
         return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, authFA=theAuthFA.FAname, ucats=catlist, faname=FAname, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
 
     # action = edit the vetvisits, deleting stuff etc. etc.
-    if cmd == "fa_modvetdo" and catMode >= ACC_FULL:
+    if cmd == "fa_modvetdo" and vetMode >= ACC_FULL:
         # get the cat
         catid = int(request.form["catid"])
 

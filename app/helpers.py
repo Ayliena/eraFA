@@ -164,12 +164,12 @@ def accessPrivileges(fauser):
         searchMode = updatePrivilege(searchMode, ACC_TOTAL)
 
     if current_user.FAisRF:
-        # RF can access own and own FAs cats + auth  + access r/o AD/DCD/Refuge)
-        if current_user.id == fauser.id or current_user.id == fauser.FAresp_id:
+        # RF can access own and own FAs cats + auth + access r/o AD/DCD)
+        if current_user.id == fauser.id or current_user.id == fauser.FAresp_id or isRefuge(fauser.id):
             catMode = updatePrivilege(catMode, ACC_MOD)
             vetMode = updatePrivilege(vetMode, ACC_FULL)
 
-        elif isAdoptes(fauser.id) or isDecedes(fauser.id) or isRefuge(fauser.id) or isFATemp(fauser.id):
+        elif isAdoptes(fauser.id) or isDecedes(fauser.id) or isFATemp(fauser.id):
             catMode = updatePrivilege(catMode, ACC_RO)
             vetMode = updatePrivilege(vetMode, ACC_RO)
 

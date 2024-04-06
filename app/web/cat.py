@@ -8,7 +8,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import or_
 from datetime import datetime
 import os
-from PIL import Image
+from PIL import Image, ImageOps
 from werkzeug.utils import secure_filename
 
 
@@ -283,6 +283,7 @@ def catpage(catid=-1):
 
                     # now rename the file and strip metadata (resize also???)
                     theImage = Image.open(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    theImage = ImageOps.exif_transpose(theImage)
                     theImage.save(os.path.join(app.config['UPLOAD_FOLDER'], "{}.jpg".format(theCat.regnum)))
                     os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                     updated[9] = 'P'
