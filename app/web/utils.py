@@ -212,7 +212,7 @@ def unregpage():
     if request.method == "GET" or (request.method == "POST" and request.form["action"] == "adm_unreg"):
         return render_template("unreg_page.html", devsite=devel_site, user=current_user, msg=message, FAids=FAidSpecial, TabCols=DBTabColor)
 
-    cmd = request.form["action"]
+#    cmd = request.form["action"]
 
     return render_template("error_page.html", user=current_user, errormessage="command error (/unreg)", FAids=FAidSpecial)
 

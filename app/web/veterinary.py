@@ -584,7 +584,6 @@ def vetpage():
             VisitType = VisitType[:6] + "X" + VisitType[7:]
 
         # iterate on the table to see how many cats to add
-
         for key in ("c1", "c2", "c3", "c4", "c5"):
             kage = key + "_age";
             age = int(request.form[kage])
@@ -623,7 +622,7 @@ def vetpage():
                 if vetIsRappelAnn(VisitType):
                     vtypes[1] += 1
                 if vetIsSteril(VisitType):
-                    if theCat.sex == 2:
+                    if int(request.form[ksex]) == 2:
                         vtypes[3] += 1
                     else:
                         vtypes[2] += 1

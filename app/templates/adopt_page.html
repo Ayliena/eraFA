@@ -14,15 +14,7 @@
 <!---*** End: Bootstrap 3.3.7 version files. ***--->
     </head>
     <script>
-        function readableAge(days) {
-            if (days < 12*7)  return Math.floor(days/7).toString()+"s";
-            else if (days < 365) return Math.floor(days/30.42).toString()+"m";
-            else if (days < 1095) {
-                var sm = Math.floor((days % 365) / 183) * 6;
-                return Math.floor(days/365).toString()+"a"+ ((sm==0)? "" : sm.toString()+"m");
-            }
-            else return Math.floor(days/365).toString()+"a";
-        }
+{% include 'functions.html' %}
         window.onload=function() {
             fixAllDates();
         }
