@@ -1,0 +1,63 @@
+<html>
+    <head>
+        <title>Familles d'accueil ERA</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    </head>
+    <script>
+{% include 'functions.html' %}
+    function confirmDialog() {
+        return confirm("Effectuer l'annulation?");
+    }
+   </script>
+<body>
+    {% include 'navbar.html' %}
+
+    <div class="container">
+    {% if devsite %}<div class="row">
+	<div class="alert alert-danger">ATTENTION: ce site est la version en developpement du logiciel FA, les informations sur les chats de ce site ne correspondent
+        pas a la realite.  Le site officiel est
+        <a href="https://erafa.pythonanywhere.com/fa">https://erafa.pythonanywhere.com/fa</a></div>
+    </div>{% endif %}
+    {% if msg %}{% for m in  msg %}
+        {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
+        {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
+        {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
+        {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
+        {{ m[1] }}</div>
+    {% endfor %}{% endif %}
+
+    <h2>Factures ({{ cumulative }}&nbsp;€)</h2>
+
+    {% for fac in factures %}
+        <div class="row">
+            <div class="col-sm-2">
+                {{ fac.fdate.strftime("%Y-%m-%d")}} :
+            </div>
+            <div class="col-sm-3">
+                <b>{{ fac.clinic }} {{ fac.facnumber }}</b>
+            </div>
+            <div class="col-sm-1">
+                <i>{{ fac.total }}&nbsp;€</i>
+            </div>
+            <div class="col-sm-3"><form action="/factures" {% if fac.paid %}onsubmit="return confirmDialog()"{% endif %} method="POST">
+                <input type="hidden" name="factid" value="{{fac.id}}">
+                {% if fac.paid %}<span class="alert-success"><i>réglée le {{ fac.pdate.strftime("%Y-%m-%d %H:%M") }}</i></span> <button class="btn btn-danger btn-sm" type="submit" name="action" value="fact_unpaid">Annuler</button>
+                {% else %}<button class="btn btn-warning btn-sm" type="submit" name="action" value="fact_paid">Indiquer réglée</button>{% endif %}
+                </form>
+            </div>
+            <div class="col-sm-3">
+                &nbsp;
+            </div>
+        </div>
+    {% endfor %}
+
+    {% include 'bottom.html' %}
+    </div><!-- /.container -->
+</body>
+</html>

@@ -55,6 +55,12 @@
                         <li><button class="btn btn-link navbar-btn" type="submit">Recherche de chats</button></li>
                     </form></ul>
                 </li>{% endif %}
+                {% if user.PrivCOMPTA %}<li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Comptabilité<span class="caret"></span></a>
+                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/factures" method="GET">
+                        <li><button class="btn btn-link navbar-btn" type="submit">Factures</button></li>
+                    </form></ul>
+                </li>{% endif %}
                 {% if user.FAisADM %}<li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">Gest. Registre<span class="caret"></span></a>
                     <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">

@@ -27,6 +27,7 @@ class User(UserMixin, db.Model):
     FAisHIST = db.Column(db.Boolean, default=False)
     FAisREF = db.Column(db.Boolean, default=False)
     FAisTEMP = db.Column(db.Boolean, default=False)
+    PrivCOMPTA = db.Column(db.Boolean, default=False)
 #    cats = db.relationship('Cat', backref='owner_id', lazy='dynamic')
 #    icats = db.relationship('Cat', backref='nextowner_id', lazy='dynamic')
 
@@ -125,3 +126,15 @@ class VetInfo(db.Model):
 
     def __repr__(self):
         return "<VetInfo {}>".format(self.id)
+
+class Facture(db.Model):
+
+    __tablename__ = "factures"
+
+    id = db.Column(db.Integer, primary_key=True)
+    fdate = db.Column(db.DateTime)
+    clinic = db.Column(db.String(32))
+    facnumber = db.Column(db.String(64))
+    total = db.Column(db.Numeric(6,2))
+    paid = db.Column(db.Boolean)
+    pdate = db.Column(db.DateTime)

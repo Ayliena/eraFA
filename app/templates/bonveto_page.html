@@ -64,7 +64,7 @@ Web: www.assocera.com</td>
     </tr>
     {% if faname %}<tr><td>&nbsp;</td></tr>
     <tr>
-        <td>{% if postAD %}Adoptant(e){% else %}Famille d'accueil{% endif %} :</td>
+        <td>{% if postAD %}Adoptant(e){% else %}Famille d'accueil{% endif %}:</td>
         <td>{{ faname }}</td>
     </tr>
     {% if not postAD %}<tr>
@@ -111,15 +111,15 @@ Web: www.assocera.com</td>
 <table>
     <tr><td>&nbsp;</td></tr>
     <tr>
-        <td> siret 80894688300010</td>
+        <td>Association ERA siret 80894688300010</td>
     </tr>
     <tr><td>&nbsp;</td></tr>
-    <tr>
-        <td>Pour les castrations, prise en charge de l'association : 36 €</td>
+{% if postAD %}<tr>
+        <td>Ce bon vétérinaire engage l'association à prendre en charge les frais associées aux</td>
     </tr>
     <tr>
-        <td>Pour les stérilisations, prise en charge de l'association : 70 €</td>
-    </tr>
+        <td>actes indiqués, tout frais annexe ou acte additionnel reste à la charge de l'adoptant.</td>
+    </tr>{% endif %}
     <tr><td>&nbsp;</td></tr>
 </table>
 
