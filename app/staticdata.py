@@ -73,7 +73,7 @@ ACC_TOTAL = 4
 NO_VISIT = '--------'
 
 # database ID of special 'Aucun' and 'Generic' vet
-NO_VET = 114
+NO_VET = 115
 GEN_VET = 8
 
 # IMPORTANT: the special FAs are stored statically here, so this must be set with the correct database IDs

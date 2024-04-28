@@ -49,6 +49,11 @@ if __name__ == '__main__':
         newuserVETG = User(username="genvet", password_hash="nologin-genvet", FAname="Autre (commentaires)", FAid="Veto", FAemail="invalid@invalid", FAisVET=True)
         db.session.add(newuserVETG)
 
+    userNOVET = User.query.filter_by(username="novet").first()
+    if not userNOVET:
+        newuserNOVET = User(username="novet", password_hash="nologin-genvet", FAname="Fait au refuge ou FA", FAid="REFUGE/FA", FAemail="invalid@invalid", FAisVET=True)
+        db.session.add(newuserNOVET)
+
     # add myself as admin with a password
     userADM = User.query.filter_by(username="alberto").first()
     if not userADM:
