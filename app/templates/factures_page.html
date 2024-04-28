@@ -32,7 +32,18 @@
         {{ m[1] }}</div>
     {% endfor %}{% endif %}
 
-    <h2>Factures ({{ cumulative }}&nbsp;€)</h2>
+    <h2>Factures (impayees {{ cumulative }}&nbsp;€)</h2>
+
+    <div class="row">
+        <div class="col-sm-12">
+            <form action="/factures" method="POST">
+                <label class="checkbox-inline"><input type="checkbox" name="opt_unpaid"{% if facfilter[0] %} checked{% endif %}>Impayees</label>
+                <label class="checkbox-inline"><input type="checkbox" name="opt_paid"{% if facfilter[1] %} checked{% endif %}>Payees</label>
+                <label class="checkbox-inline"><input type="checkbox" name="opt_reconciled"{% if facfilter[2] %} checked{% endif %}>Rapprochees</label>
+                <button class="btn btn-sm" type="submit" name="action" value="fact_filter">Filtrer</button>
+            </form>
+        </div>
+    </div>
 
     {% for fac in factures %}
         <div class="row">
@@ -40,14 +51,15 @@
                 {{ fac.fdate.strftime("%Y-%m-%d")}} :
             </div>
             <div class="col-sm-3">
-                <b>{{ fac.clinic }} {{ fac.facnumber }}</b>
+                <b>{{ fac.clinic }} {{ fac.facnumber }}{% if fac.duplicata %} [{{ fac.duplicata }}]{% endif %}</b>
             </div>
             <div class="col-sm-1">
                 <i>{{ fac.total }}&nbsp;€</i>
             </div>
             <div class="col-sm-3"><form action="/factures" {% if fac.paid %}onsubmit="return confirmDialog()"{% endif %} method="POST">
                 <input type="hidden" name="factid" value="{{fac.id}}">
-                {% if fac.paid %}<span class="alert-success"><i>réglée le {{ fac.pdate.strftime("%Y-%m-%d %H:%M") }}</i></span> <button class="btn btn-danger btn-sm" type="submit" name="action" value="fact_unpaid">Annuler</button>
+                {% if fac.reconciled %}<span class="alert-success"><i>OK BANQUE le {{ fac.rdate.strftime("%Y-%m-%d %H:%M") }}</i></span>
+                {% elif fac.paid %}<span class="alert-success"><i>réglée le {{ fac.pdate.strftime("%Y-%m-%d %H:%M") }}</i></span> <button class="btn btn-danger btn-sm" type="submit" name="action" value="fact_unpaid">Annuler</button>
                 {% else %}<button class="btn btn-warning btn-sm" type="submit" name="action" value="fact_paid">Indiquer réglée</button>{% endif %}
                 </form>
             </div>

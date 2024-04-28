@@ -57,9 +57,10 @@ def userpage():
             session["pendingmessage"] = [ [3, "Nom d'utilisateur '{}' déjà utilisé!".format(uname) ] ]
             return redirect(url_for('userpage'))
 
+        # TODO: sanity check on compatible/incompatible privileges
         theFA = User(username=uname, password_hash="nologin", FAname=request.form["u_iname"], FAid=request.form["u_pname"], FAemail=request.form["u_email"],
                      numcats=0, FAisFA=("u_isFA" in request.form), FAisRF=("u_isRF" in request.form),
-                     FAisOV=("u_isOV" in request.form), FAisVET=("u_isVET" in request.form) )
+                     FAisOV=("u_isOV" in request.form), FAisVET=("u_isVET" in request.form), PrivCOMPTA=("p_COMPTA" in request.form) )
 
         theFA.FAresp_id = int(request.form["u_resp"])
         # sanity check
@@ -114,10 +115,18 @@ def userpage():
         theFA.FAisRF = "u_isRF" in request.form;
         theFA.FAisOV = "u_isOV" in request.form;
         theFA.FAisVET = "u_isVET" in request.form;
+        theFA.PrivCOMPTA = "p_COMPTA" in request.form;
 
         # sanity check
         if not theFA.FAresp_id or theFA.FAisRF or theFA.FAisADM:
             theFA.FAresp_id = None
+
+        if theFA.FAisVET:
+            # no other privilege possible
+            theFA.FAisFA = False
+            theFA.FAisRF = False
+            theFA.FAisOV = False
+            theFA.PrivCOMPTA = False
 
         # update the temp_owner for all the cats owned by this user, except for refuge
         if not isRefuge(theFA.id):

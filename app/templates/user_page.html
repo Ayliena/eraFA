@@ -52,11 +52,12 @@
             {% for fa in falist %}
                 <div class="row">
                     <div class="col-sm-2"><button class="btn btn-default" name="FAid" value="{{fa.id}}">{{ fa.username }}</button> :</div>
-                    <div class="col-sm-4">{% if fa.password_hash == 'nologin' %}<i>{{ fa.FAid }} ({{ fa.FAname }})</i>{% else %}{{ fa.FAid }} ({{ fa.FAname }}){% endif %} <b>[
+                    <div class="col-sm-5">{% if fa.password_hash == 'nologin' %}<i>{{ fa.FAid }} ({{ fa.FAname }})</i>{% else %}{{ fa.FAid }} ({{ fa.FAname }}){% endif %} <b>[
                     {% if fa.FAisFA %} FA {% endif %}
                     {% if fa.FAisRF %} RF {% endif %}
                     {% if fa.FAisOV %} SV {% endif %}
                     {% if fa.FAisADM %} GR {% endif %}
+                    {% if fa.PrivCOMPTA %} COMPTA {% endif %}
 
                     {% if fa.FAisREF %} Refuge {% endif %}
                     {% if fa.FAisTEMP %} S:TempFA {% endif %}
@@ -68,7 +69,7 @@
                     <div class="col-sm-3">
                         {% if fa.FAlastop %}Dernière activité: {{ fa.FAlastop.strftime("%d/%m/%Y %H:%M") }}{% endif %}
                     </div>
-                    <div class="col-sm-3">
+                    <div class="col-sm-2">
                         {% if rftab and fa.FAresp_id %}(resp. {{ rftab[fa.FAresp_id] }}){% endif %}
                     </div>
                 </div>
@@ -131,6 +132,7 @@
         </div>
         <div class="row form-group">
             <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isVET"{% if fauser.FAisVET %} checked{% endif %}>Veterinaire</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="p_COMPTA"{% if fauser.PrivCOMPTA %} checked{% endif %}>Acces Comptailite</label></div>
         </div>
         <div class="row form-group">
             <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isAD"{% if fauser.FAisAD %} checked{% endif %} disabled>Special: chats adoptes</label></div>
@@ -151,6 +153,7 @@
         </div>
 
         {% endif %}
+        {% include 'bottom.html' %}
     </div><!-- /.container -->
 </body>
 </html>
