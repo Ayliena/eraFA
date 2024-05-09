@@ -116,6 +116,7 @@ def userpage():
         theFA.FAisOV = "u_isOV" in request.form;
         theFA.FAisVET = "u_isVET" in request.form;
         theFA.PrivCOMPTA = "p_COMPTA" in request.form;
+        theFA.PrivCOMPTAMOD = "p_COMPTAMOD" in request.form;
 
         # sanity check
         if not theFA.FAresp_id or theFA.FAisRF or theFA.FAisADM:
@@ -127,6 +128,7 @@ def userpage():
             theFA.FAisRF = False
             theFA.FAisOV = False
             theFA.PrivCOMPTA = False
+            theFA.PrivCOMPTAMOD = False
 
         # update the temp_owner for all the cats owned by this user, except for refuge
         if not isRefuge(theFA.id):

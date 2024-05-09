@@ -58,7 +58,7 @@
                     {% if fa.FAisOV %} SV {% endif %}
                     {% if fa.FAisADM %} GR {% endif %}
                     {% if fa.PrivCOMPTA %} COMPTA {% endif %}
-
+                    {% if fa.PrivCOMPTAMOD %} COMPTA+MOD {% endif %}
                     {% if fa.FAisREF %} Refuge {% endif %}
                     {% if fa.FAisTEMP %} S:TempFA {% endif %}
                     {% if fa.FAisAD %} S:Adopt {% endif %}
@@ -132,7 +132,10 @@
         </div>
         <div class="row form-group">
             <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isVET"{% if fauser.FAisVET %} checked{% endif %}>Veterinaire</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="p_COMPTA"{% if fauser.PrivCOMPTA %} checked{% endif %}>Acces Comptailite</label></div>
+        </div>
+        <div class="row form-group">
+            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="p_COMPTA"{% if fauser.PrivCOMPTA %} checked{% endif %}>Vue Comptabilité</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="p_COMPTAMOD"{% if fauser.PrivCOMPTAMOD %} checked{% endif %}>Accès Comptabilité</label></div>
         </div>
         <div class="row form-group">
             <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isAD"{% if fauser.FAisAD %} checked{% endif %} disabled>Special: chats adoptes</label></div>

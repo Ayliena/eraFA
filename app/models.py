@@ -28,6 +28,7 @@ class User(UserMixin, db.Model):
     FAisREF = db.Column(db.Boolean, default=False)
     FAisTEMP = db.Column(db.Boolean, default=False)
     PrivCOMPTA = db.Column(db.Boolean, default=False)
+    PrivCOMPTAMOD = db.Column(db.Boolean, default=False)
 #    cats = db.relationship('Cat', backref='owner_id', lazy='dynamic')
 #    icats = db.relationship('Cat', backref='nextowner_id', lazy='dynamic')
 

@@ -34,16 +34,20 @@
 
     <h2>Factures (impayees {{ cumulative }}&nbsp;€)</h2>
 
-    <div class="row">
-        <div class="col-sm-12">
-            <form action="/factures" method="POST">
+    <form action="/factures" method="POST">
+        <div class="row form-group">
+            <div class="col-sm-10">
                 <label class="checkbox-inline"><input type="checkbox" name="opt_unpaid"{% if facfilter[0] %} checked{% endif %}>Impayees</label>
                 <label class="checkbox-inline"><input type="checkbox" name="opt_paid"{% if facfilter[1] %} checked{% endif %}>Payees</label>
                 <label class="checkbox-inline"><input type="checkbox" name="opt_reconciled"{% if facfilter[2] %} checked{% endif %}>Rapprochees</label>
+                | Clinique: <input type="text" name="opt_clinic"{% if facfilter[3] %} value="{{facfilter[3]}}"{% endif %}>
                 <button class="btn btn-sm" type="submit" name="action" value="fact_filter">Filtrer</button>
-            </form>
+            </div>
+            <div class="col-sm-2">
+                <button class="btn btn-sm" type="submit" name="action" value="fact_export">Export CSV</button>
+            </div>
         </div>
-    </div>
+    </form>
 
     {% for fac in factures %}
         <div class="row">
@@ -58,13 +62,12 @@
             </div>
             <div class="col-sm-3"><form action="/factures" {% if fac.paid %}onsubmit="return confirmDialog()"{% endif %} method="POST">
                 <input type="hidden" name="factid" value="{{fac.id}}">
-                {% if fac.reconciled %}<span class="alert-success"><i>OK BANQUE le {{ fac.rdate.strftime("%Y-%m-%d %H:%M") }}</i></span>
-                {% elif fac.paid %}<span class="alert-success"><i>réglée le {{ fac.pdate.strftime("%Y-%m-%d %H:%M") }}</i></span> <button class="btn btn-danger btn-sm" type="submit" name="action" value="fact_unpaid">Annuler</button>
-                {% else %}<button class="btn btn-warning btn-sm" type="submit" name="action" value="fact_paid">Indiquer réglée</button>{% endif %}
+                {% if fac.paid %}<span class="alert-success"><i>réglée le {{ fac.pdate.strftime("%Y-%m-%d %H:%M") }}</i></span>{% if user.PrivCOMPTAMOD and not fac.reconciled %} <button class="btn btn-danger btn-sm" type="submit" name="action" value="fact_unpaid">Annuler</button>{% endif %}
+                {% elif not fac.reconciled %}{% if user.PrivCOMPTAMOD %}<button class="btn btn-warning btn-sm" type="submit" name="action" value="fact_paid">Indiquer réglée</button>{% else %}<span class="alert-warninig">A payer</span>{% endif %}{% endif %}
                 </form>
             </div>
             <div class="col-sm-3">
-                &nbsp;
+                {% if fac.reconciled %}<span class="alert-success"><i>OK BANQUE le {{ fac.rdate.strftime("%Y-%m-%d") }}</i></span>{% endif %}
             </div>
         </div>
     {% endfor %}
