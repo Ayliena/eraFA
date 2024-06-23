@@ -1,6 +1,6 @@
 from app import app, db, devel_site
 from app.staticdata import FAidSpecial
-from app.models import Facture
+from app.models import Facture, User
 from flask import render_template, request, redirect, url_for, jsonify, session, Response
 from flask_login import login_required, current_user
 from datetime import datetime
@@ -61,7 +61,13 @@ def factures_upload():
 
                 continue
             else:
-                theFact = Facture(fdate=facdate, clinic=val[1], facnumber=val[2], total=val[3], duplicata=dupnum, paid=False, reconciled=False)
+                # see if we can associate to a clinic
+                theClinicId = None
+                theClinic = User.query.filter_by(FAid=val[1]).first()
+                if theClinic:
+                    theClinicId = theClinic.id
+
+                theFact = Facture(fdate=facdate, clinic=val[1], clinic_id=theClinicId, facnumber=val[2], total=val[3], duplicata=dupnum, paid=False, reconciled=False)
                 db.session.add(theFact)
                 rv[datline] = "success"
 
@@ -206,7 +212,7 @@ def factures_page():
         showUnpaid = ("opt_unpaid" in request.form)
         showPaid = ("opt_paid" in request.form)
         showReconciled = ("opt_reconciled" in request.form)
-        filtClinic = request.form["opt_clinic"]
+        filtClinic = request.form["opt_clinic"] if "opt_clinic" in request.form else ""
 
         # save for the future
         session["optCOMPTA"] = ("1;" if showUnpaid else "0;")+("1;" if showPaid else "0;")+("1;" if showReconciled else "0;")+filtClinic
@@ -232,6 +238,9 @@ def factures_page():
         filtClinic = ""
 
     fquery = Facture.query
+
+    if current_user.PrivCOMPTASELF:
+        fquery = fquery.filter(Facture.clinic_id==current_user.id)
 
     # I have no idea how to do this cleanly with a query....
     if showUnpaid:
@@ -274,7 +283,7 @@ def factures_page():
     if cmd == "fact_export":
         # generate the CSV instead of the page
         datfile = []
-        datfile.append("Date,Clinique,N.Facture,Total TTC,Reglee le,Rapprochee le")
+        datfile.append("Date,Clinique,N.Facture,Total TTC,Réglée le,Rapprochée le")
 
         for f in facs:
             datline = [ f.fdate.strftime("%Y-%m-%d"), '"'+f.clinic+'"', '"'+f.facnumber+'"',str(f.total),("" if not f.paid else f.pdate.strftime('%Y-%m-%d')),("" if not f.reconciled else f.rdate.strftime('%Y-%m-%d')) ]

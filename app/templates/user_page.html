@@ -136,6 +136,7 @@
         <div class="row form-group">
             <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="p_COMPTA"{% if fauser.PrivCOMPTA %} checked{% endif %}>Vue Comptabilité</label></div>
             <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="p_COMPTAMOD"{% if fauser.PrivCOMPTAMOD %} checked{% endif %}>Accès Comptabilité</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="p_COMPTASELF"{% if fauser.PrivCOMPTASELF %} checked{% endif %}>Comptabilité: que ses factures</label></div>
         </div>
         <div class="row form-group">
             <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isAD"{% if fauser.FAisAD %} checked{% endif %} disabled>Special: chats adoptes</label></div>

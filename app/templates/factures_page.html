@@ -40,7 +40,7 @@
                 <label class="checkbox-inline"><input type="checkbox" name="opt_unpaid"{% if facfilter[0] %} checked{% endif %}>Impayees</label>
                 <label class="checkbox-inline"><input type="checkbox" name="opt_paid"{% if facfilter[1] %} checked{% endif %}>Payees</label>
                 <label class="checkbox-inline"><input type="checkbox" name="opt_reconciled"{% if facfilter[2] %} checked{% endif %}>Rapprochees</label>
-                | Clinique: <input type="text" name="opt_clinic"{% if facfilter[3] %} value="{{facfilter[3]}}"{% endif %}>
+                {% if not current_user.PrivCOMPTASELF %} | Clinique: <input type="text" name="opt_clinic"{% if facfilter[3] %} value="{{facfilter[3]}}"{% endif %}>{% endif %}
                 <button class="btn btn-sm" type="submit" name="action" value="fact_filter">Filtrer</button>
             </div>
             <div class="col-sm-2">
@@ -54,8 +54,8 @@
             <div class="col-sm-2">
                 {{ fac.fdate.strftime("%Y-%m-%d")}} :
             </div>
-            <div class="col-sm-3">
-                <b>{{ fac.clinic }} {{ fac.facnumber }}{% if fac.duplicata %} [{{ fac.duplicata }}]{% endif %}</b>
+            <div class="col-sm-3">{% if fac.clinic_id %}<span class="bg-success">{% endif %}
+                <b>{{ fac.clinic }} {{ fac.facnumber }}{% if fac.duplicata %} [{{ fac.duplicata }}]{% endif %}</b>{% if fac.clinic_id %}</span>{% endif %}
             </div>
             <div class="col-sm-1">
                 <i>{{ fac.total }}&nbsp;€</i>
@@ -63,7 +63,7 @@
             <div class="col-sm-3"><form action="/factures" {% if fac.paid %}onsubmit="return confirmDialog()"{% endif %} method="POST">
                 <input type="hidden" name="factid" value="{{fac.id}}">
                 {% if fac.paid %}<span class="alert-success"><i>réglée le {{ fac.pdate.strftime("%Y-%m-%d %H:%M") }}</i></span>{% if user.PrivCOMPTAMOD and not fac.reconciled %} <button class="btn btn-danger btn-sm" type="submit" name="action" value="fact_unpaid">Annuler</button>{% endif %}
-                {% elif not fac.reconciled %}{% if user.PrivCOMPTAMOD %}<button class="btn btn-warning btn-sm" type="submit" name="action" value="fact_paid">Indiquer réglée</button>{% else %}<span class="alert-warninig">A payer</span>{% endif %}{% endif %}
+                {% elif not fac.reconciled %}{% if user.PrivCOMPTAMOD %}<button class="btn btn-warning btn-sm" type="submit" name="action" value="fact_paid">Indiquer réglée</button>{% else %}A payer{% endif %}{% endif %}
                 </form>
             </div>
             <div class="col-sm-3">

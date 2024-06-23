@@ -29,6 +29,7 @@ class User(UserMixin, db.Model):
     FAisTEMP = db.Column(db.Boolean, default=False)
     PrivCOMPTA = db.Column(db.Boolean, default=False)
     PrivCOMPTAMOD = db.Column(db.Boolean, default=False)
+    PrivCOMPTASELF = db.Column(db.Boolean, default=False)
 #    cats = db.relationship('Cat', backref='owner_id', lazy='dynamic')
 #    icats = db.relationship('Cat', backref='nextowner_id', lazy='dynamic')
 
@@ -135,6 +136,7 @@ class Facture(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     fdate = db.Column(db.DateTime)
     clinic = db.Column(db.String(32))
+    clinic_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     facnumber = db.Column(db.String(64))
     duplicata = db.Column(db.Integer)
     total = db.Column(db.Numeric(6,2))
