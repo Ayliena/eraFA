@@ -56,7 +56,7 @@ def refugepage():
                 return render_template("refuge_page.html", devsite=devel_site, user=current_user, msg=message, pagetype=2, FAids=FAidSpecial, TabCols=DBTabColor)
 
             prop = vals[10].split("/")
-            if len(prop) != 7:
+            if len(prop) < 7:
                 message = [ [3, "Donnees proprietaire non valables! {}/7".format(len(prop))] ]
                 return render_template("refuge_page.html", devsite=devel_site, user=current_user, msg=message, pagetype=2, FAids=FAidSpecial, TabCols=DBTabColor)
 
@@ -83,6 +83,11 @@ def refugepage():
             prop[4] = request.form["bcs_adcp"] + " " + request.form["bcs_adcy"].upper()
             prop[5] = request.form["bcs_adtel"]
             prop[6] = ""
+
+        # check that puce is defined...
+        if not vals[8]:
+            message = [ [3, "Identification du chat non indiquee!"] ]
+            return render_template("refuge_page.html", devsite=devel_site, user=current_user, msg=message, pagetype=2, FAids=FAidSpecial)
 
         # adapt according to sex
         if vals[4] == "F":

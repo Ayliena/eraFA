@@ -4,16 +4,62 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
 
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+<script language="javascript" src="https://momentjs.com/downloads/moment.js"></script>
+<script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/js/bootstrap-datetimepicker.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/css/bootstrap-datetimepicker.min.css">
     </head>
     <script>
 {% include 'functions.html' %}
-    function confirmDialog() {
-        return confirm("Effectuer l'annulation?");
-    }
+        window.onload=function() {
+            var ddiv = document.getElementById("DATES0");
+            ddiv.style.display = {% if facfilter[4] or facfilter[5] or facfilter[6] or facfilter[7] or facfilter[8] or facfilter[9] %}"block"{% else %}"none"{% endif %};
+            datesShowHide();
+        }
+        function confirmDialog() {
+            return confirm("Effectuer l'annulation?");
+        }
+        function datesShowHide() {
+            var ddivs = [document.getElementById("DATES0"),
+                         document.getElementById("DATES1"),
+                         document.getElementById("DATES2"),
+                         document.getElementById("DATES3")];
+
+            if (ddivs[0].style.display == "none")
+            {
+                ddivs[0].style.display = "block";
+                ddivs[1].style.display = "none";
+                ddivs[2].style.display = "none";
+                ddivs[3].style.display = "none";
+            }
+            else
+            {
+                ddivs[0].style.display = "none";
+                ddivs[1].style.display = "block";
+                ddivs[2].style.display = "block";
+                ddivs[3].style.display = "block";
+            }
+        }
+        function clearFilter() {
+            document.getElementById("opt_unpaid").checked = true;
+            document.getElementById("opt_paid").checked = true;
+            document.getElementById("opt_reconciled").checked = false;
+            var dateids = ["d_comp0", "d_comp1", "d_reg0", "d_reg1", "d_rapp0", "d_rapp1"];
+            for (var i = 0; i < dateids.length; ++i) {
+                document.getElementById(dateids[i]).value = "";
+            }
+            {% if not current_user.PrivCOMPTASELF %}document.getElementById("opt_clinic").value = "";{% endif %}
+        }
+        $(document).ready(function() {
+          $('.datepick').datetimepicker({
+            format: 'DD/MM/YY'
+        });
+        });
    </script>
 <body>
     {% include 'navbar.html' %}
@@ -36,15 +82,89 @@
 
     <form action="/factures" method="POST">
         <div class="row form-group">
-            <div class="col-sm-10">
-                <label class="checkbox-inline"><input type="checkbox" name="opt_unpaid"{% if facfilter[0] %} checked{% endif %}>Impayees</label>
-                <label class="checkbox-inline"><input type="checkbox" name="opt_paid"{% if facfilter[1] %} checked{% endif %}>Payees</label>
-                <label class="checkbox-inline"><input type="checkbox" name="opt_reconciled"{% if facfilter[2] %} checked{% endif %}>Rapprochees</label>
-                {% if not current_user.PrivCOMPTASELF %} | Clinique: <input type="text" name="opt_clinic"{% if facfilter[3] %} value="{{facfilter[3]}}"{% endif %}>{% endif %}
+            <div class="col-sm-1">
                 <button class="btn btn-sm" type="submit" name="action" value="fact_filter">Filtrer</button>
+            </div>
+            <div class="col-sm-8">
+                <label class="checkbox-inline"><input type="checkbox" id="opt_unpaid" name="opt_unpaid"{% if facfilter[0] %} checked{% endif %}>Impayees</label>
+                <label class="checkbox-inline"><input type="checkbox" id="opt_paid" name="opt_paid"{% if facfilter[1] %} checked{% endif %}>Payees</label>
+                <label class="checkbox-inline"><input type="checkbox" id="opt_reconciled" name="opt_reconciled"{% if facfilter[2] %} checked{% endif %}>Rapprochees</label>
+                {% if not current_user.PrivCOMPTASELF %} | Clinique: <input type="text" id="opt_clinic" name="opt_clinic"{% if facfilter[3] %} value="{{facfilter[3]}}"{% endif %}>{% endif %}
+            </div>
+            <div class="col-sm-1">
+                <button class="btn btn-sm" type="button" onClick="clearFilter()">RAZ</button>
             </div>
             <div class="col-sm-2">
                 <button class="btn btn-sm" type="submit" name="action" value="fact_export">Export CSV</button>
+            </div>
+        </div>
+        <div class="row form-group" id="DATES0">
+            <div class="col-sm-1">
+                <button class="btn btn-sm" type="button" onClick="datesShowHide()">Dates</button>
+            </div>
+        </div>
+        <div class="row form-group" id="DATES1">
+            <div class="col-sm-1">
+                <button class="btn btn-sm" type="button" onClick="datesShowHide()">Dates</button>
+            </div>
+            <label class="col-sm-2 control-label" for="d_comp0">Emission :</label>
+            <div class="col-sm-2">
+                <div class="input-group datepick">
+                    <input type="text" class="form-control" name="d_comp0" id="d_comp0" {% if facfilter[4] %}value="{{ facfilter[4] }}"{% else %}placeholder="debut"{% endif %}>
+                    <div class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-2">
+                <div class="input-group datepick">
+                    <input type="text" class="form-control" name="d_comp1" id="d_comp1" {% if facfilter[5] %}value="{{ facfilter[5] }}"{% else %}placeholder="fin"{% endif %}>
+                    <div class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row form-group" id="DATES2">
+            <div class="col-sm-1">
+            </div>
+            <label class="col-sm-2 control-label" for="d_reg0">Reglement :</label>
+            <div class="col-sm-2">
+                <div class="input-group datepick">
+                    <input type="text" class="form-control" name="d_reg0" id="d_reg0" {% if facfilter[6] %}value="{{ facfilter[6] }}"{% else %}placeholder="debut"{% endif %}>
+                    <div class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-2">
+                <div class="input-group datepick">
+                    <input type="text" class="form-control" name="d_reg1" id="d_reg1" {% if facfilter[7] %}value="{{ facfilter[7] }}"{% else %}placeholder="fin"{% endif %}>
+                    <div class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row form-group" id="DATES3">
+            <div class="col-sm-1">
+            </div>
+            <label class="col-sm-2 control-label" for="d_rapp0">Rapprochement :</label>
+            <div class="col-sm-2">
+                <div class="input-group datepick">
+                    <input type="text" class="form-control" name="d_rapp0" id="d_rapp0" {% if facfilter[8] %}value="{{ facfilter[8] }}"{% else %}placeholder="debut"{% endif %}>
+                    <div class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-2">
+                <div class="input-group datepick">
+                    <input type="text" class="form-control" name="d_rapp1" id="d_rapp1" {% if facfilter[9] %}value="{{ facfilter[9] }}"{% else %}placeholder="fin"{% endif %}>
+                    <div class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar"></span>
+                    </div>
+                </div>
             </div>
         </div>
     </form>

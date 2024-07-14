@@ -102,7 +102,13 @@ def factures_upload():
                     theFact.rdate = bankdate
                     rv[datline] = "success"
                 else:
-                    rv[datline] = "already reconciled"
+                    rv[datline] = "already reconciled: " + theFact.rdate.strftime("%Y-%m-%d")
+
+                # also force indication of paid if it wasn't done (and report it)
+                if not theFact.paid:
+                    theFact.paid = True
+                    theFact.pdate = bankdate
+                    rv[datline] = rv[datline] + ", force-marked paid: " + bankdate.strftime("%Y-%m-%d")
 
             else:
                 rv[datline] = "facture not found"
@@ -213,9 +219,10 @@ def factures_page():
         showPaid = ("opt_paid" in request.form)
         showReconciled = ("opt_reconciled" in request.form)
         filtClinic = request.form["opt_clinic"] if "opt_clinic" in request.form else ""
+        filtDates = [request.form[did] for did in ["d_comp0", "d_comp1", "d_reg0", "d_reg1", "d_rapp0", "d_rapp1"]]
 
         # save for the future
-        session["optCOMPTA"] = ("1;" if showUnpaid else "0;")+("1;" if showPaid else "0;")+("1;" if showReconciled else "0;")+filtClinic
+        session["optCOMPTA"] = ("1;" if showUnpaid else "0;")+("1;" if showPaid else "0;")+("1;" if showReconciled else "0;")+filtClinic+";"+";".join(filtDates)
 
     elif cmd == "fact_export":
         # will process at the end
@@ -231,11 +238,13 @@ def factures_page():
         showPaid = (opt[1] == '1')
         showReconciled = (opt[2] == '1')
         filtClinic = opt[3]
+        filtDates = opt[4:]
     else:
         showUnpaid = True
         showPaid = True
         showReconciled = False
         filtClinic = ""
+        filtDates = ["","","","","",""]
 
     fquery = Facture.query
 
@@ -267,9 +276,33 @@ def factures_page():
                 fquery = None
 
     if fquery:
+        # add filtering by clinic
         if filtClinic:
             fquery = fquery.filter(Facture.clinic.contains(filtClinic))
 
+        # add filtering by date (dates are stored as dd/mm/yy, so we need to convert)
+        for i in range(0,6):
+            if filtDates[i]:
+                try:
+                    dv = datetime.strptime(filtDates[i], "%d/%m/%y")
+                except ValueError:
+                    dv = None
+
+                if dv:
+                    if i == 0:
+                        fquery = fquery.filter(Facture.fdate>=dv)
+                    elif i == 1:
+                        fquery = fquery.filter(Facture.fdate<=dv)
+                    elif i == 2:
+                        fquery = fquery.filter(Facture.pdate>=dv)
+                    elif i == 3:
+                        fquery = fquery.filter(Facture.pdate<=dv)
+                    elif i == 4:
+                        fquery = fquery.filter(Facture.rdate>=dv)
+                    elif i == 5:
+                        fquery = fquery.filter(Facture.rdate<=dv)
+
+        # order by date
         facs = fquery.order_by(Facture.fdate).all()
     else:
         facs = []
@@ -295,4 +328,4 @@ def factures_page():
             headers={"Content-disposition":
                      "attachment; filename=facturesERA.csv"})
 
-    return render_template("factures_page.html", devsite=devel_site, user=current_user, msg=message, FAids=FAidSpecial, cumulative=ftotal, factures=facs, facfilter=[showUnpaid, showPaid, showReconciled, filtClinic])
+    return render_template("factures_page.html", devsite=devel_site, user=current_user, msg=message, FAids=FAidSpecial, cumulative=ftotal, factures=facs, facfilter=[showUnpaid, showPaid, showReconciled, filtClinic]+filtDates)
