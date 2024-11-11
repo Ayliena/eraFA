@@ -22,7 +22,7 @@
 {% include 'functions.html' %}
         window.onload=function() {
             fixAllDates();
-            fixAllRegnums();
+            //fixAllRegnums();
         }
         $(document).ready(function() {
           $('.datepick').datetimepicker({
@@ -41,8 +41,8 @@
 
     <div class="container">
     {% if devsite %}<div class="row">
-	<div class="alert alert-danger">ATTENTION: ce site est la version en developpement du logiciel FA, les informations sur les chats de ce site ne correspondent
-        pas a la realite.  Le site officiel est
+	<div class="alert alert-danger">ATTENTION: ce site est la version en développement du logiciel FA, les informations sur les chats de ce site ne correspondent
+        pas à la réalité.  Le site officiel est
         <a href="https://erafa.pythonanywhere.com/fa">https://erafa.pythonanywhere.com/fa</a></div>
     </div>{% endif %}
     {% if msg %}{% for m in  msg %}
@@ -55,8 +55,8 @@
 
         <h2>Recherche de chats</h2>
 
-        <p>Le resultat est la liste de tous les chats qui verifient au moins un des criteres.</p>
-        <p>Pour le registre "nnn-yy" cherche un chat precis, "nnn" cherche le numero independemment de l'annee.</p>
+        <p>Le résultat est la liste de tous les chats qui vérifient au moins un des critères.</p>
+        <p>Pour le registre "nnn-yy" cherche un chat précis, "nnn" cherche le numéro indépendemment de l'année, 'N' cherche les chats non-enregistrés et 'P' les chats privés.</p>
 
         <form action="/search" method="POST">
             <div class="row">
@@ -90,7 +90,7 @@
                         <div class="col-sm-1">
                             <input class="form-check-input" type="checkbox" name="re_{{cat.id}}" id="re_{{cat.id}}">
                                 <label class="form-check-label" for="re_{{cat.id}}">
-                                    <span id="rn_{{cat.id}}">{% if cat.regnum>0 %}{{cat.regnum}}{% else %}N{{cat.id}}{% endif %}</span>
+                                    <span id="rn_{{cat.id}}">{{ cat.regStr() }}</span>
                                 </label>
                         </div>
                         <div class="col-sm-2">{{ cat.identif }}</div>
@@ -147,7 +147,7 @@
                      <div class="col-sm-1">
                         <form action="/cat" method="POST">
                             <input type="hidden" name="catid" value="{{cat.id}}">
-                            <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{% if cat.regnum>0 %}{{cat.regnum}}{% else %}N{{cat.id}}{% endif %}</span></strong></button>
+                            <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{{ cat.regStr() }}</span></strong></button>
                         </form>
                     </div>
                     <div class="col-sm-2">{{ cat.identif }}</div>

@@ -43,10 +43,12 @@ def searchpage():
         while src_regnum.endswith('-'):
             src_regnum = src_regnum[:-1]
 
-        # if the regnum is not empty, then it can start with "N" or a number, anything else is wrong
+        # if the regnum is not empty, then it can start with "N", "P" or a number, anything else is wrong
         if src_regnum:
-            if not src_regnum.startswith(tuple(string.digits+'N')):
-                message = [ [3, "Le numero de registre doit commencer par un chiffre ou une 'N'" ] ]
+            src_regnum = src_regnum.upper()
+
+            if not src_regnum.startswith(tuple(string.digits+'NP')):
+                message = [ [3, "Le numero de registre doit commencer par un chiffre, une 'N' ou un 'P'" ] ]
                 return render_template("search_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, msg=message, maxreg=max_regnum)
 
         session["otherMode"] = "special-search"

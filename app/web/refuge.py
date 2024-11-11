@@ -114,7 +114,9 @@ def refugepage():
         # header datlim regnum puce bdate sex propname addate
         data = "ERA;AD_BSC;" + datlim + ";" + vals[1] + ";" + vals[8] + ";" + vals[7] + ";" + vals[4] + ";" + prop[0] + ";" + vals[9] + ";"
         qrstr = data + ERAsum(data)
-        return render_template("bonsteril_page.html", user=current_user, opupper=optype.upper(), qrdata=qrstr, propr=prop,
+
+        pdfname = "bon-steril-{}".format(prop[0])
+        return render_template("bonsteril_page.html", user=current_user, bvtitle=pdfname, opupper=optype.upper(), qrdata=qrstr, propr=prop,
                                     datcont=vals[9], nom=vals[2], race=vals[3], sexe=vals[4], couleur=vals[5], hlen=vals[6],
                                     datnaiss=vals[7], regnum=vals[1], puce=vals[8],
                                     dprov=datpro, dlimit=datlim, optype=optype, opcost=opcost)

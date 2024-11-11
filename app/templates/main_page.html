@@ -18,7 +18,7 @@
 {% include 'functions.html' %}
         window.onload=function() {
             fixAllDates();
-            fixAllRegnums();
+            //fixAllRegnums();
         }
         $(document).ready(function() {
           $('.datepick').datetimepicker({
@@ -67,7 +67,7 @@
                         </div>
                         <div class="col-sm-9">
                             animal {% if v.cat.identif %}{{ v.cat.identif }}{% else %}non identifie{% endif %}
-                            ({% if v.cat.name %}{{ v.cat.name }}{% else %}sans nom{% endif %} / <span id="rn_{{v.cat.id}}">{% if v.cat.regnum>0 %}{{v.cat.regnum}}{% else %}N{{v.cat.id}}{% endif %}</span>)
+                            ({% if v.cat.name %}{{ v.cat.name }}{% else %}sans nom{% endif %} / <span id="rn_{{v.cat.id}}">{{ cat.regStr() }}</span>)
                             pour:
                         </div>
                     </div>
@@ -144,7 +144,7 @@
                 <form action="/cat" method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
                 <div class="row">
                     <div class="col-sm-1">
-                        <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{% if cat.regnum>0 %}{{cat.regnum}}{% else %}N{{cat.id}}{% endif %}</span></strong></button>
+                        <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{{ cat.regStr() }}</span></strong></button>
                     </div>
                     <div class="col-sm-2">{{ cat.identif }}</div>
                     <div class="col-sm-4">
@@ -172,7 +172,7 @@
                 <form action="/cat" method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
                 <div class="row">
                     <div class="col-sm-1">
-                        <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{% if cat.regnum>0 %}{{cat.regnum}}{% else %}N{{cat.id}}{% endif %}</span></strong></button>
+                        <button class="btn btn-default btn-sm" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{{ cat.regStr() }}</span></strong></button>
                     </div>
                     <div class="col-sm-2">{{ cat.identif }}</div>
                     <div class="col-sm-4">

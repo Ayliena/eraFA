@@ -307,7 +307,7 @@ def apicallcats():
                 if faname:
                     retstatus.append("0/Numéro de registre {} deplace de {}{} vers {}{}".format(registre,
                                 theCat.owner.FAname, "["+theCat.temp_owner+"]" if isFATemp(theCat.owner_id) else '',
-                                theFA.FAname, "["+faname+"]" if isFATemp(theFA.id) else ''))
+                                theFA.FAname, faname if isFATemp(theFA.id) else ''))
                     theCat.lastop = datetime.now()
 
                     # generate an event

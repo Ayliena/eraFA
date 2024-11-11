@@ -85,7 +85,38 @@ def fapage():
                 cats = cats + Cat.query.filter(Cat.name.contains(src_name)).order_by(Cat.temp_owner,Cat.regnum).all()
 
             if src_regnum:
-                if src_regnum.find('-') != -1:
+                if src_regnum.startswith('N'):
+                    # search for unreg cats
+                    # no number provided: search for all
+                    if src_regnum == 'N':
+                        cid = -1
+                    else:
+                        try:
+                            cid = int(src_regnum[1:])
+                        except ValueError:
+                            cid = -1
+
+                    if cid < 0:
+                        cats = cats + Cat.query.filter_by(regnum=cid).order_by(Cat.id).all()
+                    else:
+                        cats = cats + Cat.query.filter_by(id=cid).order_by(Cat.id).all()
+
+                elif src_regnum.startswith('P'):
+                    # search for private cats, same approach as above
+                    if src_regnum == "P":
+                        cid = -2
+                    else:
+                        try:
+                            cid = int(src_regnum[1:])
+                        except ValueError:
+                            cid = -2
+
+                    if cid < 0:
+                        cats = cats + Cat.query.filter_by(regnum=cid).order_by(Cat.id).all()
+                    else:
+                        cats = cats + Cat.query.filter_by(id=cid).order_by(Cat.id).all()
+
+                elif src_regnum.find('-') != -1:
                     # exact match
                     rr = src_regnum.split('-')
                     rn = int(rr[0]) + 10000*int(rr[1])
@@ -96,10 +127,6 @@ def fapage():
                     # fix number, all years
                     clause = "NOT MOD (regnum-"+src_regnum+",10000)"
                     cats = cats + Cat.query.filter(text(clause)).order_by(Cat.temp_owner,Cat.regnum).all()
-
-                elif src_regnum.startswith('N'):
-                    # search for unreg cats
-                    cats = cats + Cat.query.filter_by(regnum=-1).order_by(Cat.id).all()
 
             if src_id:
                 cats = cats + Cat.query.filter(Cat.identif.contains(src_id)).order_by(Cat.temp_owner,Cat.regnum).all()

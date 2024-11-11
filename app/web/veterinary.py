@@ -430,7 +430,8 @@ def vetpage():
         qrstr = "ERA;{};{};{};{};{};{};".format(bdate.strftime('%Y%m%d'), theAuthFA.FAid, authdate.strftime('%Y%m%d'), FAid, vdate.strftime('%Y%m%d'), "/".join(catregs), "".join(str(e) for e in vtypes))
         qrstr = qrstr + ERAsum(qrstr)
 
-        return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, authFA=theAuthFA.FAname, cats=catlist, faname=FAname, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
+        pdfname = "bon-veto-{}".format(FAname)
+        return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, bvtitle=pdfname, authFA=theAuthFA.FAname, cats=catlist, faname=FAname, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
 
     # action = generate bonVeto WITHOUT planned visit (from search page, usually)
     if vetMode == ACC_TOTAL and cmd == "fa_vetbonfast":
@@ -545,7 +546,8 @@ def vetpage():
         qrstr = "ERA;{};{};{};{};{};{};".format(bdate.strftime('%Y%m%d'), theAuthFA.FAid, authdate.strftime('%Y%m%d'), FAid, vdate.strftime('%Y%m%d'), "/".join(catregs), "".join(str(e) for e in vtypes))
         qrstr = qrstr + ERAsum(qrstr)
 
-        return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, authFA=theAuthFA.FAname, cats=catlist, faname=FAname, postAD=PostAdoption, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
+        pdfname = "bon-veto-{}".format(FAname)
+        return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, bvtitle=pdfname, authFA=theAuthFA.FAname, cats=catlist, faname=FAname, postAD=PostAdoption, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
 
     # action = generate bonVeto for unregistered cats
     if vetMode == ACC_TOTAL and cmd == "fa_vetbonunreg":
@@ -654,7 +656,8 @@ def vetpage():
         qrstr = "ERA;{};{};{};{};{};{};".format(bdate.strftime('%Y%m%d'), theAuthFA.FAid, authdate.strftime('%Y%m%d'), FAname, vdate.strftime('%Y%m%d'), "/".join(catregs), "".join(str(e) for e in vtypes))
         qrstr = qrstr + ERAsum(qrstr)
 
-        return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, authFA=theAuthFA.FAname, ucats=catlist, faname=FAname, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
+        pdfname = "bon-veto-{}".format(FAname)
+        return render_template("bonveto_page.html", user=current_user, FAids=FAidSpecial, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, bvtitle=pdfname, authFA=theAuthFA.FAname, ucats=catlist, faname=FAname, bdate=vdate, vtype=vtypes, comments=comments, qrdata=qrstr)
 
     # action = edit the vetvisits, deleting stuff etc. etc.
     if cmd == "fa_modvetdo" and vetMode >= ACC_FULL:

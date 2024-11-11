@@ -100,8 +100,10 @@ class Cat(db.Model):
     def regStr(self):
         if self.regnum > 0:
             return "{}-{}".format(self.regnum%10000, int(self.regnum/10000))
-        else:
+        elif self.regnum == -1:
             return "N{}".format(self.id)
+        else:
+            return "P{}".format(self.id)
 
 # --------------- VETINFO CLASS
 
