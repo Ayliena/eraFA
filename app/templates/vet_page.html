@@ -34,7 +34,7 @@
         }
         window.onload=function() {
             fixAllDates();
-            fixAllRegnums();
+            //fixAllRegnums();
             populatevets('visit_vet');
         }
         $(document).ready(function() {
@@ -86,7 +86,7 @@
                         <input class="form-check-input" type="checkbox" name="re_{{v.id}}" id="re_{{v.id}}">
                         <label class="form-check-label" for="re_{{v.id}}">
                             {{ v.vdate.strftime("%d/%m/%y") }} {% if v.cat.owner_id == FAids[4] %}[{{ v.cat.temp_owner }}]{% endif %}
-                            visite de <a href="{{ url_for('catpage') }}/{{ v.cat.id }}"><span id="rn_{{v.cat.id}}">{% if v.cat.regnum>0 %}{{v.cat.regnum}}{% else %}N{{v.cat.id}}{% endif %}</span></a>
+                            visite de <a href="{{ url_for('catpage') }}/{{ v.cat.id }}"><span id="rn_{{v.cat.id}}">{{ v.cat.regStr() }}</span></a>
                         </label>
                             ( {{ v.cat.name }} / {{ v.cat.identif }} ) chez {{ v.vet.FAname }} pour:
                     </div>
@@ -185,7 +185,7 @@
                     <div class="col-sm-1">
                         <input class="form-check-input" type="checkbox" name="re_{{cat.id}}" id="re_{{cat.id}}">
                             <label class="form-check-label" for="re_{{cat.id}}">
-                                <span id="rn_{{cat.id}}">{% if cat.regnum>0 %}{{cat.regnum}}{% else %}N{{cat.id}}{% endif %}</span>
+                                <span id="rn_{{cat.id}}">{{ cat.regStr() }}</span>
                             </label>
                     </div>
                     <div class="col-sm-2">{{ cat.identif }}</div>
