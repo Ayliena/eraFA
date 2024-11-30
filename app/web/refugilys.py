@@ -1,6 +1,6 @@
 from app import app, db, devel_site
 from app.staticdata import TabColor, TabSex, TabHair, TabCage, DBTabColor, DBTabSex, DBTabHair, FAidSpecial
-from app.models import User, Cat, VetInfo, Event
+from app.models import GlobalData, User, Cat, VetInfo, Event
 from app.helpers import isRefuge, isFATemp
 from app.vetvisits import vetAddStrings
 from flask import render_template, redirect, request, url_for, session, jsonify, Response
@@ -66,6 +66,8 @@ def apicallcats():
     elif cmd == "upload":
         rv = { "code": 1, "message": "data processed" }
 
+        globaldata = GlobalData.query.filter_by(id=1).first()
+
         # iterate on all the lines one by one
         # if a registre already exists, skip it (no update)
 
@@ -96,11 +98,19 @@ def apicallcats():
             registre = v[0]
             if registre[0] == '*':
                 editmode = True
+                # edit mode means that we're doing a sync, store the date
+                globaldata.LastSyncDate = datetime.now()
                 registre = registre[1:]
 
             # decode regnum
             rr = registre.split('-')
             rn = int(rr[0]) + 10000*int(rr[1])
+
+            # if not editing, this is an import, update the last registre if the one we have is higher
+            if not editmode:
+                if rn > globaldata.LastImportReg:
+                    globaldata.LastImportReg = rn
+                    globaldata.LastImportDate = datetime.now()
 
             # extract all the non-vet info so that we can update empty fields
             r_name = v[2]
@@ -497,6 +507,9 @@ def refupage():
                      "attachment; filename=faweb-dbase.dat"})
 
     if cmd == "adm_refuimport":
+
+        globaldata = GlobalData.query.filter_by(id=1).first()
+
         # iterate on all the lines one by one
         # if a registre already exists, skip it (no update)
 
@@ -521,11 +534,19 @@ def refupage():
                 registre = v[0]
                 if registre[0] == '*':
                     editmode = True
+                    # edit mode means that we're doing a sync, store the date
+                    globaldata.LastSyncDate = datetime.now()
                     registre = registre[1:]
 
                 # check if registre exists
                 rr = registre.split('-')
                 rn = int(rr[0]) + 10000*int(rr[1])
+
+                # if not editing, this is an import, update the last registre if the one we have is higher
+                if not editmode:
+                    if rn > globaldata.LastImportReg:
+                        globaldata.LastImportReg = rn
+                        globaldata.LastImportDate = datetime.now()
 
                 # extract all the non-vet info so that we can update empty fields
                 r_name = v[2]

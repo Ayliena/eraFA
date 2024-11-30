@@ -1,6 +1,6 @@
 from app import app, db, devel_site
 from app.staticdata import TabColor, TabSex, TabHair, FAidSpecial, ACC_NONE, ACC_RO, ACC_MOD, ACC_FULL, ACC_TOTAL
-from app.models import User, Cat, VetInfo, Event
+from app.models import GlobalData, User, Cat, VetInfo, Event
 from app.helpers import cat_delete, isFATemp, isRefuge, getViewUser, accessPrivileges
 from flask import render_template, redirect, request, url_for, session
 from flask_login import login_required, current_user
@@ -135,19 +135,17 @@ def fapage():
                 cats = cats + Cat.query.filter(Cat.temp_owner.contains(src_FAname)).order_by(Cat.temp_owner,Cat.regnum).all()
 
             # ok, so if multiple rules were provided, the results will NOT be sorted correctly, but it's too annoying to do this right
-
-            # TODO: this has become problematic or even useless, I need to find a better solution since now unreg cats can be manually
-            # assigned a regnum
-            max_regnum = db.session.query(db.func.max(Cat.regnum)).scalar()
+            globaldata = GlobalData.query.filter_by(id=1).first()
+            max_regnum = "{}-{}".format(globaldata.LastImportReg%10000, int(globaldata.LastImportReg/10000))
             defaultvalues = [src_regnum, src_name, src_id, src_FAname];
 
             # we reuse the search page to display the list
             if src_mode == "select":
                 return render_template("search_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    listtitle="Résultat de la recherche", scatlist=cats, FAids=FAidSpecial, msg=message, defval=defaultvalues, maxreg=max_regnum)
+                    listtitle="Résultat de la recherche", scatlist=cats, FAids=FAidSpecial, msg=message, defval=defaultvalues, lastreg=max_regnum, lastdate=globaldata.LastImportDate, syncdate=globaldata.LastSyncDate)
             else:
                 return render_template("search_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    listtitle="Résultat de la recherche", catlist=cats, FAids=FAidSpecial, msg=message, defval=defaultvalues, maxreg=max_regnum)
+                    listtitle="Résultat de la recherche", catlist=cats, FAids=FAidSpecial, msg=message, defval=defaultvalues, lastreg=max_regnum, lastdate=globaldata.LastImportDate, syncdate=globaldata.LastSyncDate)
 
         # default list, which is not the same for FAs or Vets
         if theFA.FAisVET:

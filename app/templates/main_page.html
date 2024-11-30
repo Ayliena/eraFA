@@ -67,7 +67,7 @@
                         </div>
                         <div class="col-sm-9">
                             animal {% if v.cat.identif %}{{ v.cat.identif }}{% else %}non identifie{% endif %}
-                            ({% if v.cat.name %}{{ v.cat.name }}{% else %}sans nom{% endif %} / <span id="rn_{{v.cat.id}}">{{ cat.regStr() }}</span>)
+                            ({% if v.cat.name %}{{ v.cat.name }}{% else %}sans nom{% endif %} / <span id="rn_{{v.cat.id}}">{{ v.cat.regStr() }}</span>)
                             pour:
                         </div>
                     </div>
@@ -75,12 +75,12 @@
                         <div class="col-sm-10">
                             {% if v.vtype[0] != '-' %}- Primo vaccination{% endif %}
                             {% if v.vtype[1] != '-' %}- 1er rappel{% endif %}
-                            {% if v.vtype[2] != '-' %}- 2eme rappel{% endif %}
-                            {% if v.vtype[3] != '-' %}- Stérilisation/Castration{% endif %}
-                            {% if v.vtype[4] != '-' %}- Identification{% endif %}
-                            {% if v.vtype[5] != '-' %}- Test FIV/FelV{% endif %}
-                            {% if v.vtype[6] != '-' %}- Soins / autre{% endif %}
-                            {% if v.vtype[7] != '-' %}- Rappel annuel{% endif %}
+                            {% if v.vtype[2] != '-' %}- Rappel annuel{% endif %}
+                            {% if v.vtype[3] != '-' %}- Identification{% endif %}
+                            {% if v.vtype[4] != '-' %}- Test FIV/FelV{% endif %}
+                            {% if v.vtype[5] != '-' %}- {% if v.cat.sex == 2 %}Castration{% else %}Stérilisation{% endif %}{% endif %}
+                            {% if v.vtype[6] != '-' %}- Consultation / Soins{% endif %}
+                            {% if v.vtype[7] != '-' %}- Déparasitage{% endif %}
                         </div>
                     </div>
                     {% if v.comments %}<div class="row"><div class="col-sm-1"></div><div class="col-sm-11">Commentaires: {{ v.comments }}</div></div>{% endif %}

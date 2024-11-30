@@ -77,10 +77,10 @@
                 <div class="row" style="margin-top: 8px;">
                     <div class="col-sm-2">
                         {% if v.validby_id or (viewuser == user and autoauth) %}
-                            {% if v.transferred %}<div class="text-success">Visite transferee</div>
-                            {% else %}<div class="text-success">Visite autorisee</div>{% endif %}
+                            {% if v.transferred %}<div class="text-info">Visite transferée</div>
+                            {% else %}<div class="text-success">Visite autorisée</div>{% endif %}
                         {% elif v.requested %}<div class="text-warning">Demande en cours</div>
-                        {% else %}<div class="text-danger">Demande a effectuer</div>{% endif %}
+                        {% else %}<div class="text-danger">Demande à effectuer</div>{% endif %}
                     </div>
                     <div class="col-sm-10">
                         <input class="form-check-input" type="checkbox" name="re_{{v.id}}" id="re_{{v.id}}">

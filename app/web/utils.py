@@ -1,8 +1,7 @@
 from app import app, db, devel_site
 from app.staticdata import FAidSpecial, DBTabColor, ACC_NONE, ACC_RO, ACC_MOD, ACC_FULL, ACC_TOTAL, NO_VET, GEN_VET
-from app.models import  Cat, User, Event, VetInfo
-from app.helpers import cat_delete, decodeRegnum, accessPrivileges
-from app.vetvisits import vetAddStrings
+from app.models import  GlobalData, Cat, User, Event, VetInfo
+from app.helpers import cat_delete, accessPrivileges
 from flask import render_template, redirect, request, url_for, session
 from flask_login import login_required, current_user
 from sqlalchemy import and_
@@ -19,11 +18,12 @@ def searchpage():
     if searchMode < ACC_FULL:
         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges", FAids=FAidSpecial)
 
-    max_regnum = db.session.query(db.func.max(Cat.regnum)).scalar()
+    globaldata = GlobalData.query.filter_by(id=1).first()
+    max_regnum = "{}-{}".format(globaldata.LastImportReg%10000, int(globaldata.LastImportReg/10000))
 
     if request.method == "GET":
         # generate the search page
-        return render_template("search_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, maxreg=max_regnum)
+        return render_template("search_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, lastreg=max_regnum, lastdate=globaldata.LastImportDate, syncdate=globaldata.LastSyncDate)
 
     cmd = request.form["action"]
 
@@ -37,7 +37,7 @@ def searchpage():
         # if they are all empty => complain
         if not src_name and not src_regnum and not src_id and not src_FAname:
             message = [ [3, "Il faut indiquer au moins un critere de recherche!" ] ]
-            return render_template("search_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, msg=message, maxreg=max_regnum)
+            return render_template("search_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, msg=message, lastreg=max_regnum, lastdate=globaldata.LastImportDate, syncdate=globaldata.LastSyncDate)
 
         # if regnum ends with '-', remove it, if it starts with '-', refuse it
         while src_regnum.endswith('-'):
@@ -49,7 +49,7 @@ def searchpage():
 
             if not src_regnum.startswith(tuple(string.digits+'NP')):
                 message = [ [3, "Le numero de registre doit commencer par un chiffre, une 'N' ou un 'P'" ] ]
-                return render_template("search_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, msg=message, maxreg=max_regnum)
+                return render_template("search_page.html", devsite=devel_site, user=current_user, FAids=FAidSpecial, msg=message, lastreg=max_regnum, lastdate=globaldata.LastImportDate, syncdate=globaldata.LastSyncDate)
 
         session["otherMode"] = "special-search"
         session["searchFilter"] = src_name+";"+src_regnum+";"+src_id+";"+src_FAname+";"+src_mode
@@ -194,29 +194,29 @@ def adminpage():
     return render_template("error_page.html", user=current_user, errormessage="command error (/admin)", FAids=FAidSpecial)
 
 
-@app.route("/unreg", methods=["POST", "GET"])
-@login_required
-def unregpage():
-    catMode, vetMode, searchMode = accessPrivileges(current_user)
-
-    if searchMode != ACC_TOTAL:
-        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges", FAids=FAidSpecial)
-
-    # handle any message
-    if "pendingmessage" in session:
-        message = session["pendingmessage"]
-        session.pop("pendingmessage")
-    else:
-        message = []
-
-    # get or post adm_unreg are the same
-    # generate the unreg management page (for now, only gen bon veto)
-    if request.method == "GET" or (request.method == "POST" and request.form["action"] == "adm_unreg"):
-        return render_template("unreg_page.html", devsite=devel_site, user=current_user, msg=message, FAids=FAidSpecial, TabCols=DBTabColor)
-
-#    cmd = request.form["action"]
-
-    return render_template("error_page.html", user=current_user, errormessage="command error (/unreg)", FAids=FAidSpecial)
+# @app.route("/unreg", methods=["POST", "GET"])
+# @login_required
+# def unregpage():
+#     catMode, vetMode, searchMode = accessPrivileges(current_user)
+#
+#     if searchMode != ACC_TOTAL:
+#         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges", FAids=FAidSpecial)
+#
+#     # handle any message
+#     if "pendingmessage" in session:
+#         message = session["pendingmessage"]
+#         session.pop("pendingmessage")
+#     else:
+#         message = []
+#
+#     # get or post adm_unreg are the same
+#     # generate the unreg management page (for now, only gen bon veto)
+#     if request.method == "GET" or (request.method == "POST" and request.form["action"] == "adm_unreg"):
+#         return render_template("unreg_page.html", devsite=devel_site, user=current_user, msg=message, FAids=FAidSpecial, TabCols=DBTabColor)
+#
+# #    cmd = request.form["action"]
+#
+#     return render_template("error_page.html", user=current_user, errormessage="command error (/unreg)", FAids=FAidSpecial)
 
 
 @app.route("/help")

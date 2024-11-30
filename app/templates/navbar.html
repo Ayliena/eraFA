@@ -36,7 +36,7 @@
                     </form></ul>
                 </li>{% endif %}
                 {% if user.FAisRF %}<li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Resp. FA<span class="caret"></span></a>
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Réfèrent<span class="caret"></span></a>
                     <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/list" method="POST">
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_viewFAresp">FA sous ma responsabilité</button></li>
                     </form><form class="form-inline" action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
@@ -67,8 +67,6 @@
                         <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[2]}}">Historique</button></li>
                     </form><form class="form-inline" action="/cat" method="POST">
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_newcat">Rajouter un chat</button></li>
-                    </form><form class="form-inline" action="/unreg" method="GET">
-                        <li><button class="btn btn-link navbar-btn" type="submit">Chats non enregistres</button></li>
                     </form><form class="form-inline" action="/user" method="POST">
                         <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_listusers">Gestion utilisateurs</button></li>
                     </form><form class="form-inline" action="/admin" method="POST">

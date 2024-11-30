@@ -57,12 +57,12 @@
 
         <p>Le résultat est la liste de tous les chats qui vérifient au moins un des critères.</p>
         <p>Pour le registre "nnn-yy" cherche un chat précis, "nnn" cherche le numéro indépendemment de l'année, 'N' cherche les chats non-enregistrés et 'P' les chats privés.</p>
+        <p>(Dernier import: <span id="rn_1">{{ lastreg }}</span> le {{ lastdate.strftime("%Y-%m-%d") }}, dernier synch {{ syncdate.strftime("%Y-%m-%d") }})</p>
 
         <form action="/search" method="POST">
             <div class="row">
                 <div class="col-sm-2">Registre:</div>
                 <div class="col-sm-3"><input type="text" name="src_regnum"{% if defval and defval[0] %} value="{{defval[0]}}"{% endif %}></div>
-                <div class="col-sm-3">(dernier <span id="rn_1">{{maxreg}}</span>)</div>
             </div>
             <div class="row">
                 <div class="col-sm-2">Nom:</div>

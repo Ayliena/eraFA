@@ -3,6 +3,17 @@ from werkzeug.security import check_password_hash
 from flask_login import UserMixin
 from datetime import datetime
 
+
+class GlobalData(db.Model):
+
+    __tablename__ = "globaldata"
+
+    id = db.Column(db.Integer, primary_key=True)
+    LastImportReg = db.Column(db.Integer)
+    LastImportDate = db.Column(db.DateTime)
+    LastSyncDate = db.Column(db.DateTime)
+
+
 class User(UserMixin, db.Model):
 
     __tablename__ = "users"

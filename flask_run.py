@@ -1,10 +1,10 @@
 from app import app, db
-from app.models import User
+from app.models import GlobalData, User
 #from socket import gethostname
 from werkzeug.security import generate_password_hash
 import string
 import secrets
-#from datetime import datetime
+from datetime import datetime
 
 if __name__ == '__main__':
 #    file = open("testfile.txt", "w")
@@ -14,6 +14,12 @@ if __name__ == '__main__':
     print("--- command-line exec mode ---")
     print("Generating db....")
     db.create_all()
+
+    print("Initializing GlobalData....");
+    globaldata = GlobalData.query.filter_by(id=1).first()
+    if not globaldata:
+        globaldata = GlobalData(id=1, LastImportReg=200001, LastImportDate=datetime.now(), LastSyncDate=datetime())
+
     print("Populating with default users....");
 
     userAD = User.query.filter_by(FAisAD=True).first()

@@ -323,7 +323,7 @@
             <div class="col-sm-2"><button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_return">Annuler les changements et revenir à la liste</button></div>
             <div class="col-sm-2">{% if cat.owner.FAisREF %}<button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_anonfa">FA: chat parti en famille d'accueil</button>{% endif %}</div>
             {% if cat.owner_id != FAids[2] %}
-            <div class="col-sm-2">{% if cat.owner_id != FAids[0] %}<button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_adopted">Adoption: indiquer que le chat a été adopté</button>{% endif %}</div>
+            <div class="col-sm-2">{% if cat.regnum != -2 and cat.owner_id != FAids[0] %}<button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_adopted">Adoption: indiquer que le chat a été adopté</button>{% endif %}</div>
             <div class="col-sm-2">{% if cat.owner_id != FAids[1] %}<button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_dead">Décès: Indiquer que le chat est décédé</button>{% endif %}</div>
             {% endif %}
             {% endif %}

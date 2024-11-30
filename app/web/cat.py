@@ -146,7 +146,7 @@ def catpage(catid=-1):
         return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage="insufficient privileges to access cat data", FAids=FAidSpecial)
 
     # vet list will be needed
-    VETlist = User.query.filter_by(FAisVET=True).all()
+    VETlist = User.query.filter_by(FAisVET=True).order_by(User.FAname).all()
 
     if catMode == ACC_RO:
         # FAid != current_user.id is implied
