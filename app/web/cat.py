@@ -1,5 +1,5 @@
 from app import app, db, devel_site
-from app.staticdata import DBTabColor, TabCage, FAidSpecial, ACC_NONE, ACC_RO, ACC_FULL, ACC_TOTAL
+from app.staticdata import DBTabColor, TabCage, FAidSpecial, ACC_NONE, ACC_RO, ACC_FULL, ACC_TOTAL, DEFAULT_VET
 from app.models import User, Cat, VetInfo, Event
 from app.helpers import isRefuge, isFATemp, isValidCage, cat_associate_to_FA, accessPrivileges, getViewUser
 from app.vetvisits import vetMapToString, vetSubStrings, cat_addVetVisit, cat_updateVetVisit
@@ -39,7 +39,7 @@ def catpage(catid=-1):
     if cmd == "adm_newcat":
         if catMode == ACC_TOTAL:
             theCat = Cat(regnum=0,temp_owner="")
-            return render_template("cat_page.html", devsite=devel_site, user=current_user, cat=theCat, falist=User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).all(),
+            return render_template("cat_page.html", devsite=devel_site, user=current_user, cat=theCat, falist=User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).order_by(User.FAid).all(),
                                    FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
         else:
             return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage="insufficient privileges to add cat (adm)", FAids=FAidSpecial)
@@ -60,7 +60,7 @@ def catpage(catid=-1):
             vetstr = vetMapToString(request.form, "visit")
 
             try:
-                bdate = datetime.strptime(request.form["c_birthdate"], "%d/%m/%y")
+                bdate = datetime.strptime(request.form["c_birthdate"], "%Y-%m-%d")
             except ValueError:
                 bdate = None
 
@@ -88,7 +88,7 @@ def catpage(catid=-1):
                     # this is bad, we regenerate the page wit the current data
                     message = [ [3, "Le numéro de registre existe déjà!"] ]
                     theCat.regnum = -1
-                    return render_template("cat_page.html", devsite=devel_site, user=current_user, cat=theCat, falist=User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).all(), msg=message,
+                    return render_template("cat_page.html", devsite=devel_site, user=current_user, cat=theCat, falist=User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).order_by(User.FAid).all(), msg=message,
                                            FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
 
             # if for any reason the FA is invalid, then put it here
@@ -151,7 +151,7 @@ def catpage(catid=-1):
     if catMode == ACC_RO:
         # FAid != current_user.id is implied
         return render_template("cat_page.html", devsite=devel_site, user=current_user, otheruser=theFA, cat=theCat, readonly=True,
-                               VETids=VETlist, FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
+                               VETids=VETlist, VETdef=DEFAULT_VET, FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
 
     # if we reach here, we have at least ACC_FULL
     # some operations may still be unavailable!
@@ -169,7 +169,7 @@ def catpage(catid=-1):
             message = []
 
         return render_template("cat_page.html", devsite=devel_site, user=current_user, cat=theCat, msg=message,
-                               falist=FAlist, VETids=VETlist, FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
+                               falist=FAlist, VETids=VETlist, VETdef=DEFAULT_VET, FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
 
     # cat commands, except for "cancel" we always process any data change
     if cmd == "fa_modcat" or cmd == "fa_modcatr" or cmd == "fa_adopted" or cmd == "fa_anonfa" or cmd == "fa_dead" or (cmd == "adm_putcat" and catMode == ACC_TOTAL):
@@ -198,7 +198,7 @@ def catpage(catid=-1):
                     message = [ [3, "Le numéro de registre existe déjà!"] ]
                     theCat.regnum = -1
                     return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist, msg=message,
-                                           VETids=VETlist, FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
+                                           VETids=VETlist, VETdef=DEFAULT_VET, FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
 
                 theCat.regnum = rn
                 # we indicate this as a separate event
@@ -208,7 +208,7 @@ def catpage(catid=-1):
             else: # invalid regnum
                 message = [ [3, "Numéro de registre non valable!"] ]
                 return render_template("cat_page.html", user=current_user, cat=theCat, falist=FAlist, msg=message,
-                                       VETids=VETlist, FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
+                                       VETids=VETlist, VETdef=DEFAULT_VET, FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
 
         if theCat.name != request.form["c_name"]:
             theCat.name = request.form["c_name"]
@@ -236,7 +236,7 @@ def catpage(catid=-1):
             updated[3] = 'S'
 
         try:
-            bd = datetime.strptime(request.form["c_birthdate"], "%d/%m/%y")
+            bd = datetime.strptime(request.form["c_birthdate"], "%Y-%m-%d")
         except ValueError:
             bd = None
 
@@ -360,7 +360,7 @@ def catpage(catid=-1):
         # if we stay on the page, regenerate it directly
         if cmd == "fa_modcatr":
             return render_template("cat_page.html", devsite=devel_site, user=current_user, cat=theCat, falist=FAlist, msg=message,
-                                   VETids=VETlist, FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
+                                   VETids=VETlist, VETdef=DEFAULT_VET, FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
 
         if cmd == "fa_modcat":
             session["pendingmessage"] = message
@@ -436,7 +436,7 @@ def catpage(catid=-1):
                 vshort = vetSubStrings(vshort, vv.vtype)
 
         return render_template("vet_page.html", devsite=devel_site, user=current_user, catVet=theCat,
-                               prevtype=vshort, VETids=VETlist, FAids=FAidSpecial, TabCols=DBTabColor)
+                               prevtype=vshort, VETids=VETlist, VETdef=DEFAULT_VET, FAids=FAidSpecial, TabCols=DBTabColor)
 
     # this should never be reached
     return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage="command error (/cat)", FAids=FAidSpecial)

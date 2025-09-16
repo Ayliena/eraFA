@@ -39,15 +39,6 @@
                 dates[i].innerHTML = readableAge(days);
             }
         }
-        function fixAllRegnums() {
-            var i, regnums = document.querySelectorAll('[id^="rn_"]');
-            for (i = 0; i < regnums.length; ++i) {
-                var regnum = regnums[i].innerHTML;
-                if (!regnum.startsWith("N")) {
-                    regnums[i].innerHTML = readableRegistre(parseInt(regnum));
-                }
-            }
-        }
         function populatecolor(selid) {
             var cols = [ {% for c in TabCols %} "{{c|safe}}", {% endfor %}];
             var sel, i, option;
@@ -61,7 +52,7 @@
             }
         }
         function populatevets(selid) {
-            var vettab = [ {% for v in VETids %} [{{v.id}}, "{{v.FAname|safe}}"], {% endfor %}]
+            var vettab = [ {% for v in VETids %} [{{v.id}}, "{{v.FAname|safe}}"], {% endfor %}];
             var sel, i, option;
             sel = document.getElementById(selid);
 
@@ -75,6 +66,7 @@
                 option.text = vettab[i][1];
                 sel.add(option);
             }
+            {% if VETdef %}sel.value = {{ VETdef }};{% endif %}
         }
         function populateCages(selid) {
             var cages = [ {% for c in TabCages %} ["{{c[0]}}", "{{c[1]}}"], {% endfor %}];
@@ -85,7 +77,6 @@
             if (!sel) {
                 return;
             }
-
             for (i = 0; i < cages.length; ++i) {
                 option = document.createElement('option');
                 option.value = cages[i][0];

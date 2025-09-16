@@ -1,5 +1,6 @@
 from app import db
 from werkzeug.security import check_password_hash
+from app.permissions import hasPrivilege, UT_MANAGER, UT_FA, UT_REFUGE, UT_ADOPTES, UT_DECEDES, UT_HIST, UT_FATEMP, UT_VETO, PRIV_ADMIN, PRIV_RFA, PRIV_REF, PRIV_ADDCD, PRIV_HIST, PRIV_SEARCH, PRIV_BSC, PRIV_RVETO, PRIV_RPLAN, PRIV_REGNUM, PRIV_APIR, PRIV_APIW, PRIV_ADDUNR
 from flask_login import UserMixin
 from datetime import datetime
 
@@ -21,6 +22,8 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(128), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
+    usertype = db.Column(db.Integer)
+    PrivStr = db.Column(db.String(64))
     FAname = db.Column(db.String(128), nullable=False)
     FAid = db.Column(db.String(64))
     FAemail = db.Column(db.String(128))
@@ -52,6 +55,54 @@ class User(UserMixin, db.Model):
 
     def get_id(self):
         return self.username
+
+    # there does not seem to be an easy way to use constants in the templates without passing them
+    # one by one as variables, so this utility functions "translate" the permissions into accessors
+    def typeManager(self):
+        return self.usertype == UT_MANAGER
+    def typeFA(self):
+        return self.usertype == UT_FA
+    def typeRefuge(self):
+        return self.usertype == UT_REFUGE
+    def typeAdoptes(self):
+        return self.usertype == UT_ADOPTES
+    def typeDecedes(self):
+        return self.usertype == UT_DECEDES
+    def typeHistorique(self):
+        return self.usertype == UT_HIST
+    def typeFAtemp(self):
+        return self.usertype == UT_FATEMP
+    def typeVetoerinaire(self):
+        return self.usertype == UT_VETO
+
+    # same as above, but for permissions and menus
+    def hasAdmin(self):
+        return hasPrivilege(self, PRIV_ADMIN)
+    def hasReferent(self):
+        return hasPrivilege(self, PRIV_RFA)
+    def hasRefuge(self):
+        return hasPrivilege(self, PRIV_REF)
+    def hasAdDcd(self):
+        return hasPrivilege(self, PRIV_ADDCD)
+    def hasHist(self):
+        return hasPrivilege(self, PRIV_HIST)
+    def hasSearch(self):
+        return hasPrivilege(self, PRIV_SEARCH)
+    def hasBonSteril(self):
+        return hasPrivilege(self, PRIV_BSC)
+    def hasRefugeVeto(self):
+        return hasPrivilege(self, PRIV_RVETO)
+    def hasRefugePlanVeto(self):
+        return hasPrivilege(self, PRIV_RPLAN)
+    def hasRegistre(self):
+        return hasPrivilege(self, PRIV_REGNUM)
+    def hasAPIread(self):
+        return hasPrivilege(self, PRIV_APIR)
+    def hasAPIwrite(self):
+        return hasPrivilege(self, PRIV_APIW)
+    def hasAddUnreg(self):
+        return hasPrivilege(self, PRIV_ADDUNR)
+
 
 # --------------- EVENT CLASS
 

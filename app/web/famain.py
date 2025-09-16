@@ -82,7 +82,7 @@ def fapage():
             cats = []
 
             if src_name:
-                cats = cats + Cat.query.filter(Cat.name.contains(src_name)).order_by(Cat.temp_owner,Cat.regnum).all()
+                cats = cats + Cat.query.filter(Cat.name.contains(src_name)).order_by(Cat.regnum).all()
 
             if src_regnum:
                 if src_regnum.startswith('N'):

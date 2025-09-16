@@ -211,7 +211,7 @@ def cat_addVetVisit(VETlist, theCat, vplan, vtype, vvet, vdate, vcomm):
 
     # validate the date (empty = today)
     try:
-        vdate = datetime.strptime(vdate, "%d/%m/%y")
+        vdate = datetime.strptime(vdate, "%Y-%m-%d")
     except ValueError:
         vdate = datetime.now()
 
@@ -314,7 +314,7 @@ def cat_updateVetVisit(vvid, VETlist, theCat, vstate, vtype, vvet, vdate, vcomm)
         vv_updated = True
 
     try:
-        vdate = datetime.strptime(vdate, "%d/%m/%y")
+        vdate = datetime.strptime(vdate, "%Y-%m-%d")
     except ValueError:
         vdate = datetime.now()
 
@@ -386,7 +386,7 @@ def cat_executeVetVisit(vvid, theCat, vdate):
     # only update the date if requested
     if vdate:
         try:
-            vdate = datetime.strptime(vdate, "%d/%m/%y")
+            vdate = datetime.strptime(vdate, "%Y-%m-%d")
         except ValueError:
             vdate = datetime.now()
 

@@ -1,86 +1,80 @@
-<nav class="navbar navbar-inverse">
+<nav class="navbar navbar-expand-lg bg-body-tertiary bg-dark border-bottom border-body" data-bs-theme="dark">
     <div class="container-fluid">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="nav navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }})</a>
-        </div>
-        <div id="navbar" class="navbar-collapse collapse">
-             <ul class="nav navbar-nav">
-                {% if user.FAisFA %}<li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Famille<span class="caret"></span></a>
-                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/vet" method="POST">
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_catlist">Chats en FA</button></li>
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_vetplan">Visites vétérinaires</button></li>
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="fa_vetreg">Registre des Soins</button></li>
+        <a class="nav navbar-brand" href="/self">{{ user.FAid }} ({{ user.FAname }})</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                {% if user.FAisFA %}<li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Famille</a>
+                    <ul class="dropdown-menu"><form class="form-inline" action="/vet" method="POST">
+                        <li><button class="dropdown-item" type="submit" name="action" value="fa_catlist">Chats en FA</button></li>
+                        <li><button class="dropdown-item" type="submit" name="action" value="fa_vetplan">Visites vétérinaires</button></li>
+                        <li><button class="dropdown-item" type="submit" name="action" value="fa_vetreg">Registre des Soins</button></li>
                     </form></ul>
                 </li>{% endif %}
-                {% if user.FAisREF %}<li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Opérations refuge<span class="caret"></span></a>
-                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/refuge" method="POST">
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="ref_prise">Prise en charge</button></li>
-                        <li><a class="btn btn-link navbar-btn" href="/refbsc">Bon de stérilisation</a></li>
+                {% if user.FAisREF %}<li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Opérations refuge</a>
+                    <ul class="dropdown-menu"><form class="form-inline" action="/refuge" method="POST">
+                        <li><button class="dropdown-item" type="submit" name="action" value="ref_prise">Prise en charge</button></li>
+                        <li><a class="dropdown-item" href="/refbsc">Bon de stérilisation</a></li>
                     </form><form class="form-inline" action="/cat" method="POST">
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_newcatref">Arrivee d'un chat</button></li>
+                        <li><button class="dropdown-item" type="submit" name="action" value="adm_newcatref">Arrivee d'un chat</button></li>
                     </form></ul>
                 </li>{% endif %}
-                {% if user.FAisVET %}<li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Vétérinaire<span class="caret"></span></a>
-                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/vet" method="POST">
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="vet_vilist">Visites prevues</button></li>
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="vet_vihist">Historique des visites</button></li>
+                {% if user.FAisVET %}<li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Vétérinaire</a>
+                    <ul class="dropdown-menu"><form class="form-inline" action="/vet" method="POST">
+                        <li><button class="dropdown-item" type="submit" name="action" value="vet_vilist">Visites prevues</button></li>
+                        <li><button class="dropdown-item" type="submit" name="action" value="vet_vihist">Historique des visites</button></li>
                     </form></ul>
                 </li>{% endif %}
-                {% if user.FAisRF %}<li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Réfèrent<span class="caret"></span></a>
-                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/list" method="POST">
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_viewFAresp">FA sous ma responsabilité</button></li>
+                {% if user.FAisRF %}<li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Réfèrent</a>
+                    <ul class="dropdown-menu"><form class="form-inline" action="/list" method="POST">
+                        <li><button class="dropdown-item" type="submit" name="action" value="sv_viewFAresp">FA sous ma responsabilité</button></li>
                     </form><form class="form-inline" action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
-                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[3]}}">Chats au refuge</button></li>
-                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[0]}}">Chats adoptes</button></li>
-                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[1]}}">Chats décédés</button></li>
+                        <li><button class="dropdown-item" name="FAid" value="{{FAids[3]}}">Chats au refuge</button></li>
+                        <li><button class="dropdown-item" name="FAid" value="{{FAids[0]}}">Chats adoptes</button></li>
+                        <li><button class="dropdown-item" name="FAid" value="{{FAids[1]}}">Chats décédés</button></li>
                     </form></ul>
                 </li>{% endif %}
-                {% if user.FAisOV %}<li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Superviseur<span class="caret"></span></a>
-                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/list" method="POST">
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_viewFA">Vision par FA</button></li>
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button></li>
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="sv_adoptTab">Chats a l'adoption</button></li>
+                {% if user.FAisOV %}<li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Superviseur</a>
+                    <ul class="dropdown-menu"><form class="form-inline" action="/list" method="POST">
+                        <li><button class="dropdown-item" type="submit" name="action" value="sv_viewFA">Vision par FA</button></li>
+                        <li><button class="dropdown-item" type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button></li>
+                        <li><button class="dropdown-item" type="submit" name="action" value="sv_adoptTab">Chats a l'adoption</button></li>
                     </form><form class="form-inline" action="/search" method="GET">
-                        <li><button class="btn btn-link navbar-btn" type="submit">Recherche de chats</button></li>
+                        <li><button class="dropdown-item" type="submit">Recherche de chats</button></li>
                     </form></ul>
                 </li>{% endif %}
-                {% if user.PrivCOMPTA %}<li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Comptabilité<span class="caret"></span></a>
-                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/factures" method="GET">
-                        <li><button class="btn btn-link navbar-btn" type="submit">Factures</button></li>
+                {% if user.PrivCOMPTA %}<li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Comptabilité</a>
+                    <ul class="dropdown-menu"><form class="form-inline" action="/factures" method="GET">
+                        <li><button class="dropdown-item" type="submit">Factures</button></li>
                     </form></ul>
                 </li>{% endif %}
-                {% if user.FAisADM %}<li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Gest. Registre<span class="caret"></span></a>
-                    <ul class="dropdown-menu navbar-inverse"><form class="form-inline" action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
-                        <li><button class="btn btn-link navbar-btn" name="FAid" value="{{FAids[2]}}">Historique</button></li>
+                {% if user.FAisADM %}<li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Gest. Registre</a>
+                    <ul class="dropdown-menu"><form class="form-inline" action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
+                        <li><button class="dropdown-item" name="FAid" value="{{FAids[2]}}">Historique</button></li>
                     </form><form class="form-inline" action="/cat" method="POST">
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_newcat">Rajouter un chat</button></li>
+                        <li><button class="dropdown-item" type="submit" name="action" value="adm_newcat">Rajouter un chat</button></li>
                     </form><form class="form-inline" action="/user" method="POST">
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_listusers">Gestion utilisateurs</button></li>
+                        <li><button class="dropdown-item" type="submit" name="action" value="adm_listusers">Gestion utilisateurs</button></li>
                     </form><form class="form-inline" action="/admin" method="POST">
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_refucat">Interoperabilité Refugilys</button></li>
-                        <li><button class="btn btn-link navbar-btn" type="submit" name="action" value="adm_admin">Operations systeme</button></li>
+                        <li><button class="dropdown-item" type="submit" name="action" value="adm_admin">Operations systeme</button></li>
                     </form></ul>
                 </li>{% endif %}
             </ul>
             <ul class="nav navbar-nav navbar-right">
-                <li><a href="/help">Aide</a></li>
+                <li><a class="nav-link" href="/help">Aide</a></li>
             {% if current_user.is_authenticated %}
-            <li><a href="{{ url_for('logout') }}">Log out</a></li>
+            <li><a class="nav-link" href="{{ url_for('logout') }}">Log out</a></li>
             {% else %}
-            <li><a href="{{ url_for('login') }}">Log in</a></li>
+            <li><a class="nav-link" href="{{ url_for('login') }}">Log in</a></li>
             {% endif %}
             </ul>
         </div>

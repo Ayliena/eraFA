@@ -2,17 +2,13 @@
     <head>
         <title>Familles d'accueil ERA</title>
         <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
 
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-
-<script language="javascript" src="https://momentjs.com/downloads/moment.js"></script>
-<script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/js/bootstrap-datetimepicker.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/css/bootstrap-datetimepicker.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
     </head>
     <script type="text/javascript">
 {% include 'functions.html' %}
@@ -37,19 +33,12 @@
                 sel.add(option);
             }
 
-            fixAllRegnums();
-
             populatevets("visit_vet");
             {% for vv in cat.vetvisits %}{% if vv.planned %}
             populatevets("oldv_{{vv.id}}_vet");
             document.getElementById("oldv_{{vv.id}}_vet").value = {{vv.vet_id}};
             {% endif %}{% endfor %}
         }
-        $(document).ready(function() {
-          $('.datepick').datetimepicker({
-            format: 'DD/MM/YY'
-        });
-        });
         function validateForm() {
             var x = document.forms["c_form"]["c_registre"].value;
             if (!x.match("^[0-9]+-[0-9]+$") && x != "") {
@@ -92,7 +81,6 @@
     {% else %}
         <h2>Nouveau chat</h2>
     {% endif %}
-
     <form class="form-horizontal" action="/cat" id="c_form" onsubmit="return validateForm()" enctype="multipart/form-data" method="POST">
         <input type="hidden" name="catid" value="{{cat.id}}">
         <div class="row">
@@ -102,61 +90,56 @@
                     <label class="col-sm-2 control-label" for="c_registre">Registre:</label>
                     <div class="col-sm-6">
                         {% if cat.regnum>0 %} <p class="form-control-static"><b><span id="rn_cat">{{cat.regnum}}</span></b> (N{{cat.id}})</p>
-                        {% else %}{% if user.FAisADM %}<input class="form-control" type="text" id="c_registre" name="c_registre" placeholder="xxx-xx">  {% endif %}(N{{cat.id}}){% endif %}
+                        {% else %}{% if user.FAisADM %}<input class="form-control border border-dark" type="text" id="c_registre" name="c_registre" placeholder="xxx-xx">  {% endif %}(N{{cat.id}}){% endif %}
                     </div>
                     {% else %}
                     <div class="col-sm-8">Registre: non enregistre</div>
                     {% endif %}
-                    <div class="col-sm-4"><select class="form-control" name="c_adoptable" id="c_adoptable" {% if readonly %}disabled{% endif %}>                        <option value="0">Non adoptable</option>
+                    <div class="col-sm-4"><select class="form-control border border-dark" name="c_adoptable" id="c_adoptable" {% if readonly %}disabled{% endif %}>                        <option value="0">Non adoptable</option>
                         <option value="1">Disponible a l'adoption</option></select>
                     </div>
                 </div>
-                {% if cat.owner_id==FAids[3] %}<div class="row form-group">
+                {% if cat.owner_id==FAids[3] %}<div class="row form-group align-items-baseline my-1">
                     <label class="col-sm-2 control-label" for="c_cage">Cage:</label>
-                    <div class="col-sm-6"><select class="form-control" name="c_cage" id="c_cage" {% if readonly %}disabled{% endif %}></select></div>
+                    <div class="col-sm-6"><select class="form-control border border-dark" name="c_cage" id="c_cage" {% if readonly %}disabled{% endif %}></select></div>
                 </div>
-                {% elif not cat.regnum or cat.owner_id == FAids[4] %}<div class="row form-group">
+                {% elif not cat.regnum or cat.owner_id == FAids[4] %}<div class="row form-group my-1">
                     <label class="col-sm-3 control-label" for="c_fatemp">FA temporaire:</label>
                     <div class="col-sm-9">
-                        <input class="form-control" type="text" id="c_fatemp" name="c_fatemp" value="{{ cat.temp_owner }}" {% if readonly %}disabled{% endif %}>
+                        <input class="form-control border border-dark" type="text" id="c_fatemp" name="c_fatemp" value="{{ cat.temp_owner }}" {% if readonly %}disabled{% endif %}>
                     </div>
                 </div>{% endif %}
-                <div class="row form-group">
+                <div class="row form-group align-items-baseline my-1">
                     <label class="col-sm-2 control-label" for="c_name">Nom:</label>
                     <div class="col-sm-4">
-                        {% if cat.name %} <input class="form-control" type="text" id="c_name" name="c_name" oninput="this.value = this.value.toUpperCase()" value="{{ cat.name }}" {% if readonly %}disabled{% endif %}>
-                        {% else %} <input class="form-control" type="text" id="c_name" name="c_name" oninput="this.value = this.value.toUpperCase()" placeholder="Nom du chat" {% if readonly %}disabled{% endif %}> {% endif %}
+                        {% if cat.name %} <input class="form-control border border-dark" type="text" id="c_name" name="c_name" oninput="this.value = this.value.toUpperCase()" value="{{ cat.name }}" {% if readonly %}disabled{% endif %}>
+                        {% else %} <input class="form-control border border-dark" type="text" id="c_name" name="c_name" oninput="this.value = this.value.toUpperCase()" placeholder="Nom du chat" {% if readonly %}disabled{% endif %}> {% endif %}
                     </div>
                     <label class="col-sm-2 control-label" for="c_identif">Identification:</label>
                     <div class="col-sm-4">
-                        {% if cat.identif %} <input class="form-control" type="text" id="c_identif" name="c_identif" value="{{ cat.identif }}" {% if readonly %}disabled{% endif %}>
-                        {% else %} <input class="form-control" type="text" id="c_identif" name="c_identif" placeholder="numero de puce" {% if readonly %}disabled{% endif %}> {% endif %}
+                        {% if cat.identif %} <input class="form-control border border-dark" type="text" id="c_identif" name="c_identif" value="{{ cat.identif }}" {% if readonly %}disabled{% endif %}>
+                        {% else %} <input class="form-control border border-dark" type="text" id="c_identif" name="c_identif" placeholder="numero de puce" {% if readonly %}disabled{% endif %}> {% endif %}
                     </div>
                 </div>
-                <div class="row form-group">
+                <div class="row form-group align-items-baseline my-1">
                     <label class="col-sm-2 control-label" for="c_sex">Sexe:</label>
-                    <div class="col-sm-4"><select class="form-control" name="c_sex" id="c_sex" {% if readonly %}disabled{% endif %}>
+                    <div class="col-sm-4"><select class="form-control border border-dark" name="c_sex" id="c_sex" {% if readonly %}disabled{% endif %}>
                         <option value="0">INCONNU</option>
                         <option value="1">FEMELLE</option>
                         <option value="2">MALE</option></select></div>
                     <label class="col-sm-2 control-label" for "c_birthdate">Naissance:</label>
                     <div class="col-sm-4">
-                        <div class="input-group datepick">
-                            <input type="text" class="form-control" name="c_birthdate" id="c_birthdate" {% if cat.birthdate %}value="{{ cat.birthdate.strftime("%d/%m/%y") }}"{% else %}placeholder="date de naissance"{% endif %} {% if readonly %}disabled{% endif %}>
-                            <div class="input-group-addon">
-                                <span class="glyphicon glyphicon-calendar"></span>
-                            </div>
-                        </div>
+                        <input type="date" class="form-control border border-dark" name="c_birthdate" id="c_birthdate" {% if cat.birthdate %}value="{{ cat.birthdate.strftime("%Y-%m-%d") }}"{% else %}placeholder="date de naissance"{% endif %} {% if readonly %}disabled{% endif %}>
                     </div>
                 </div>
-                <div class="row form-group">
+                <div class="row form-group align-items-baseline">
                     <label class="col-sm-2 control-label" for="c_hlen">Poil:</label>
-                    <div class="col-sm-4"><select class="form-control" name="c_hlen" id="c_hlen"{% if readonly %}disabled{% endif %}>
+                    <div class="col-sm-4"><select class="form-control border border-dark" name="c_hlen" id="c_hlen"{% if readonly %}disabled{% endif %}>
                         <option value="0">COURT</option>
                         <option value="1">MI-LONG</option>
                         <option value="2">LONG</option></select></div>
                     <label class="col-sm-2 control-label" for="c_color">Couleur:</label>
-                    <div class="col-sm-4"><select class="form-control" name="c_color" id="c_color"{% if readonly %}disabled{% endif %}>
+                    <div class="col-sm-4"><select class="form-control border border-dark" name="c_color" id="c_color"{% if readonly %}disabled{% endif %}>
                     </select></div>
                 </div>
             </div>
@@ -173,20 +156,19 @@
                 </div>
                 <div class="row">
                     <br><br>
-                    <label><input type="checkbox" name="img_erase" id="img_erase" onChange="document.getElementById('img_file').disabled=document.getElementById('img_erase').checked">Effacer l'image</label>
+                    <label><input type="checkbox border-black" name="img_erase" id="img_erase" onChange="document.getElementById('img_file').disabled=document.getElementById('img_erase').checked">Effacer l'image</label>
                 </div>
             </div>
             {% endif %}
         </div>
-        {% if cat.comments %}<div class="form-group"><label class="control-label" for="c_comments">Commentaires (interne ERA):</label><textarea class="form-control" id="c_comments" name="c_comments" {% if readonly %}disabled{% endif %}>{{ cat.comments }}</textarea></div>
+        {% if cat.comments %}<div class="form-group"><label class="control-label" for="c_comments">Commentaires (interne ERA):</label><textarea class="form-control border border-dark" id="c_comments" name="c_comments" {% if readonly %}disabled{% endif %}>{{ cat.comments }}</textarea></div>
         {% else %}<div class="form-group"><label class="control-label" for="c_comments">Commentaires (interne ERA):</label><textarea class="form-control" id="c_comments" name="c_comments" placeholder="Commentaires et/ou signes particuliers" {% if readonly %}disabled{% endif %}></textarea></div> {% endif %}
 
-        {% if cat.description %}<div class="form-group"><label class="control-label" for="c_description">Description (publique, pour les adoptants):</label><textarea class="form-control" rows="4" id="c_description" name="c_description" {% if readonly %}disabled{% endif %}>{{ cat.description }}</textarea></div>
-        {% else %}<div class="form-group"><label class="control-label" for="c_description">Description (publique, pour les adoptants):</label><textarea class="form-control" rows="4" id="c_description" name="c_description" placeholder="Description et conseils d'adoption" {% if readonly %}disabled{% endif %}></textarea></div> {% endif %}
+        {% if cat.description %}<div class="form-group"><label class="control-label" for="c_description">Description (publique, pour les adoptants):</label><textarea class="form-control border border-dark" rows="4" id="c_description" name="c_description" {% if readonly %}disabled{% endif %}>{{ cat.description }}</textarea></div>
+        {% else %}<div class="form-group"><label class="control-label" for="c_description">Description (publique, pour les adoptants):</label><textarea class="form-control border border-dark" rows="4" id="c_description" name="c_description" placeholder="Description et conseils d'adoption" {% if readonly %}disabled{% endif %}></textarea></div> {% endif %}
 
         {% if cat.regnum %}
-            <hr>
-            <div class="row">
+            <div class="row mt-2 pt-2 border-2 border-top border-black">
                 <div class="col-sm-9">
                     <h3>Visites vétérinaires</h3>
                     {% for vv in cat.vetvisits %}
@@ -217,45 +199,47 @@
                 </div>
                 <div class="col-sm-3">
                     <div class="row form-group">
-                        {% if not readonly %}<br><button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_modvet">Modifier l'historique des visites</button>{% endif %}
+                        {% if not readonly %}<br><button class="btn btn-secondary mx-1" style="white-space: normal;" type="submit" name="action" value="fa_modvet">Modifier l'historique des visites</button>{% endif %}
                     </div>
                 </div>
             </div>
             {% for vv in cat.vetvisits %}
                 {% if vv.planned %}
-                <hr>
-                <div class="row form-group">
+                <div class="row form-group align-items-baseline mt-2 pt-2 border-1 border-top border-black">
                     <label class="col-sm-2 control-label" for="oldv_{{vv.id}}_state">Visite vétérinaire</label>
-                    <div class="col-sm-2"><select class="form-control" id="oldv_{{vv.id}}_state" name="oldv_{{vv.id}}_state" {% if readonly %}disabled{% endif %}><option value="0">Effectuée</option><option value="1" selected>Planifiée</option>><option value="2">ANNULLEE</option></select></div>
+                    <div class="col-sm-2"><select class="form-control border border-dark" id="oldv_{{vv.id}}_state" name="oldv_{{vv.id}}_state" {% if readonly %}disabled{% endif %}><option value="0">Effectuée</option><option value="1" selected>Planifiée</option>><option value="2">ANNULLEE</option></select></div>
                     <label class="col-sm-1 control-label" for="oldv_{{vv.id}}_date">en date</label>
                     <div class="col-sm-2">
-                        <div class="input-group datepick">
-                            <input type="text" class="form-control" name="oldv_{{vv.id}}_date"  id="oldv_{{vv.id}}_date" value="{{vv.vdate.strftime("%d/%m/%y")}}" {% if readonly %}disabled{% endif %}>
-                            <div class="input-group-addon">
-                                <span class="glyphicon glyphicon-calendar"></span>
-                            </div>
-                        </div>
+                        <input type="date" class="form-control border border-dark" name="oldv_{{vv.id}}_date"  id="oldv_{{vv.id}}_date" value="{{vv.vdate.strftime("%Y-%m-%d")}}" {% if readonly %}disabled{% endif %}>
                     </div>
                     <label class="col-sm-1 control-label" for="oldv_{{vv.id}}_vet">chez</label>
-                    <div class="col-sm-3"><select class="form-control" name="oldv_{{vv.id}}_vet" id="oldv_{{vv.id}}_vet" {% if readonly %}disabled{% endif %}></select></div>
+                    <div class="col-sm-3"><select class="form-control border border-dark" name="oldv_{{vv.id}}_vet" id="oldv_{{vv.id}}_vet" {% if readonly %}disabled{% endif %}></select></div>
                     <div class="col-sm-1 control-label"><b>pour:</b></div>
                 </div>
-                <div class="row form-group">
+                <div class="row form-group align-items-baseline my-1">
                     <div class="col-sm-12">
-                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_pv"{% if vv.vtype[0] != '-' %} checked{% endif %} {% if readonly %}disabled{% endif %}>Primo vaccination</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_r1"{% if vv.vtype[1] != '-' %} checked{% endif %} {% if readonly %}disabled{% endif %}>1er rappel</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_rr"{% if vv.vtype[2] != '-' %} checked{% endif %} {% if readonly %}disabled{% endif %}>Rappel annuel</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_id"{% if vv.vtype[3] != '-' %} checked{% endif %} {% if readonly %}disabled{% endif %}>Identification</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_tf"{% if vv.vtype[4] != '-' %} checked{% endif %} {% if readonly %}disabled{% endif %}>Test FIV/FelV</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_sc"{% if vv.vtype[5] != '-' %} checked{% endif %} {% if readonly %}disabled{% endif %}>Stérilisation/Castration</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_gen"{% if vv.vtype[6] != '-' %} checked{% endif %} {% if readonly %}disabled{% endif %}>Soins / autre</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="oldv_{{vv.id}}_ap"{% if vv.vtype[7] != '-' %} checked{% endif %} {% if readonly %}disabled{% endif %}>Déparasitage</label>
+                    <input class="form-check-input border-black" type="checkbox" name="oldv_{{vv.id}}_pv" id="oldv_{{vv.id}}_pv"{% if vv.vtype[0] != '-' %} checked{% endif %} {% if readonly %}disabled{% endif %}>
+                        <label class="form-check-label" for="visit_pv">Primo vaccination&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="oldv_{{vv.id}}_r1" id="oldv_{{vv.id}}_r1"{% if vv.vtype[1] != '-' %} checked{% endif %} {% if readonly %}disabled{% endif %}>
+                        <label class="form-check-label">1er rappel&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="oldv_{{vv.id}}_rr" id="oldv_{{vv.id}}_rr"{% if vv.vtype[2] != '-' %} checked{% endif %} {% if readonly %}disabled{% endif %}>
+                        <label class="form-check-label">Rappel annuel&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="oldv_{{vv.id}}_id" id="oldv_{{vv.id}}_id"{% if vv.vtype[3] != '-' %} checked{% endif %} {% if readonly %}disabled{% endif %}>
+                        <label class="form-check-label">Identification&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="oldv_{{vv.id}}_tf" id="oldv_{{vv.id}}_tf"{% if vv.vtype[4] != '-' %} checked{% endif %} {% if readonly %}disabled{% endif %}>
+                        <label class="form-check-label">Test FIV/FelV&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="oldv_{{vv.id}}_sc" id="oldv_{{vv.id}}_sc"{% if vv.vtype[5] != '-' %} checked{% endif %} {% if readonly %}disabled{% endif %}>
+                        <label class="form-check-label">Stérilisation/Castration&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="oldv_{{vv.id}}_gen" id="oldv_{{vv.id}}_gen"{% if vv.vtype[6] != '-' %} checked{% endif %} {% if readonly %}disabled{% endif %}>
+                        <label class="form-check-label">Soins / autre&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="oldv_{{vv.id}}_ap" id="oldv_{{vv.id}}_ap"{% if vv.vtype[7] != '-' %} checked{% endif %} {% if readonly %}disabled{% endif %}>
+                        <label class="form-check-label">Déparasitage</label>
                     </div>
                 </div>
                 <div class="row form-group">
                     <div class="col-sm-12">
-                    {% if vv.comments %}<textarea class="form-control" name="oldv_{{vv.id}}_comments" {% if readonly %}disabled{% endif %}>{{ vv.comments }}</textarea>
-                    {% else %}<textarea class="form-control" name="oldv_{{vv.id}}_comments" placeholder="Commentaires / informations additionnelles / pour Deparasitage indiquer si antipuces ou vermifuge" {% if readonly %}disabled{% endif %}></textarea>{% endif %}
+                    {% if vv.comments %}<textarea class="form-control border border-dark" name="oldv_{{vv.id}}_comments" {% if readonly %}disabled{% endif %}>{{ vv.comments }}</textarea>
+                    {% else %}<textarea class="form-control border border-dark" name="oldv_{{vv.id}}_comments" placeholder="Commentaires / informations additionnelles / pour Deparasitage indiquer si antipuces ou vermifuge" {% if readonly %}disabled{% endif %}></textarea>{% endif %}
                     </div>
                 </div>
                 {% endif %}
@@ -263,45 +247,47 @@
                 <div class="row form-group"><div class="col-sm-12">Aucune visite enregistrée</div></div>
             {% endfor %}
             {% if not readonly %}
-                <hr>
-                <div class="row form-group">
+                <div class="row form-group align-items-baseline mt-2 pt-2 border-1 border-top border-black">
                     <label class="col-sm-2 control-label" for="visit_state">NOUVELLE VISITE</label>
-                    <div class="col-sm-2"><select class="form-control" name="visit_state" id="visit_state"><option value="0">Effectuée</option><option value="1" selected>Planifiée</option></select></div>
+                    <div class="col-sm-2"><select class="form-control border border-dark" name="visit_state" id="visit_state"><option value="0">Effectuée</option><option value="1" selected>Planifiée</option></select></div>
                     <label class="col-sm-1 control-label" for="visit_date">en date</label>
                     <div class="col-sm-2">
-                        <div class="input-group datepick">
-                            <input type="text" class="form-control" name="visit_date" id="visit_date" placeholder="aujourd'hui">
-                            <div class="input-group-addon">
-                                <span class="glyphicon glyphicon-calendar"></span>
-                            </div>
-                        </div>
+                        <input type="text" class="form-control border border-dark" name="visit_date" id="visit_date" placeholder="aujourd'hui">
                     </div>
                     <label class="col-sm-1 control-label" for="visit_vet">chez</label>
-                    <div class="col-sm-3"><select class="form-control" name="visit_vet" id="visit_vet"></select></div>
+                    <div class="col-sm-3"><select class="form-control border border-dark" name="visit_vet" id="visit_vet"></select></div>
                     <div class="col-sm-1 control-label"><b>pour:</b></div>
                 </div>
-                <div class="row form-group">
+                <div class="row form-group align-items-baseline my-1">
                     <div class="col-sm-12">
-                    <label class="checkbox-inline"><input type="checkbox" name="visit_pv">Primo vaccination</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="visit_r1">1er rappel</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="visit_rr">Rappel annuel</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="visit_id">Identification</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="visit_tf">Test FIV/FelV</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="visit_sc">Stérilisation/Castration</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="visit_gen">Soins / autre</label>
-                    <label class="checkbox-inline"><input type="checkbox" name="visit_ap">Déparasitage</label>
-                    </div>
+                    <input class="form-check-input border-black" type="checkbox" name="visit_pv" id="visit_pv"}>
+                        <label class="form-check-label" for="visit_pv">Primo vaccination&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="visit_r1" id="visit_r1">
+                        <label class="form-check-label">1er rappel&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="visit_rr" id="visit_rr">
+                        <label class="form-check-label">Rappel annuel&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="visit_id" id="visit_id">
+                        <label class="form-check-label">Identification&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="visit_tf" id="visit_tf">
+                        <label class="form-check-label">Test FIV/FelV&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="visit_sc" id="visit_sc">
+                        <label class="form-check-label">Stérilisation/Castration</label>
+                    <input class="form-check-input border-black" type="checkbox" name="visit_gen" id="visit_gen">
+                        <label class="form-check-label">Soins / autre&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="visit_ap" id="visit_ap">
+                        <label class="form-check-label">Déparasitage</label>
+                     </div>
                 </div>
                 <div class="row form-group">
                     <div class="col-sm-12">
-                    <textarea class="form-control" name="visit_comments" placeholder="Commentaires / informations additionnelles / pour Deparasitage indiquer si antipuces ou vermifuge"></textarea>
+                    <textarea class="form-control border border-dark" name="visit_comments" placeholder="Commentaires / informations additionnelles / pour Deparasitage indiquer si antipuces ou vermifuge"></textarea>
                     </div>
                 </div>
             {% endif %}
         {% endif %}
 
         {% if cat.regnum and user.FAisADM %}
-            <hr>
+        <div class="row mt-2 pt-2 border-2 border-top border-black"></div>
             <h3>Historique du chat{% if cat.lastop %} <small>(Dernière modification: {{ cat.lastop.strftime("%d/%m/%Y %H:%M") }})</small>{%endif %}</h3>
             {% for ev in cat.events %}
                 <div class="row">
@@ -312,50 +298,59 @@
                 <div class="row">Aucun évènement</div>
             {% endfor %}
         {% endif %}
-        <hr>
         {% if cat.regnum %}
-        <div class="row form-group">
+        <div class="row mt-2 pt-2 border-2 border-top border-black"></div>
+        <div class="btn-toolbar my-1">
             {% if readonly %}
-            <div class="col-sm-2"><button type="submit" name="action" value="fa_return">Revenir a la liste</button></div>
+            <div class="col-sm-2"><button class="btn btn-secondary mx-1" type="submit" name="action" value="fa_return">Revenir a la liste</button></div>
             {% else %}
-            <div class="col-sm-2"><button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_modcat">Mettre à jour les informations et revenir à la liste</button></div>
-            <div class="col-sm-2"><button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_modcatr">Mettre à jour les informations et rester sur la page</button></div>
-            <div class="col-sm-2"><button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_return">Annuler les changements et revenir à la liste</button></div>
+            <div class="col-sm-2"><button class="btn btn-secondary mx-1" style="white-space: normal;" type="submit" name="action" value="fa_modcat">Mettre à jour les informations et revenir à la liste</button></div>
+            <div class="col-sm-2"><button class="btn btn-secondary mx-1" style="white-space: normal;" type="submit" name="action" value="fa_modcatr">Mettre à jour les informations et rester sur la page</button></div>
+            <div class="col-sm-2"><button class="btn btn-secondary mx-1" style="white-space: normal;" type="submit" name="action" value="fa_return">Annuler les changements et revenir à la liste</button></div>
             <div class="col-sm-2">{% if cat.owner.FAisREF %}<button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_anonfa">FA: chat parti en famille d'accueil</button>{% endif %}</div>
             {% if cat.owner_id != FAids[2] %}
-            <div class="col-sm-2">{% if cat.regnum != -2 and cat.owner_id != FAids[0] %}<button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_adopted">Adoption: indiquer que le chat a été adopté</button>{% endif %}</div>
-            <div class="col-sm-2">{% if cat.owner_id != FAids[1] %}<button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_dead">Décès: Indiquer que le chat est décédé</button>{% endif %}</div>
+            <div class="col-sm-2">{% if cat.regnum != -2 and cat.owner_id != FAids[0] %}<button class="btn btn-secondary mx-1" style="white-space: normal;" type="submit" name="action" value="fa_adopted">Adoption: indiquer que le chat a été adopté</button>{% endif %}</div>
+            <div class="col-sm-2">{% if cat.owner_id != FAids[1] %}<button class="btn btn-secondary mx-1" style="white-space: normal;" type="submit" name="action" value="fa_dead">Décès: Indiquer que le chat est décédé</button>{% endif %}</div>
             {% endif %}
             {% endif %}
         </div>
         {% if user.FAisADM %}
-            <div class="row">
-                <div class="col-sm-12">
-                    <button class="btn btn-secondary" type="submit" name="action" value="adm_putcat">Transférer le chat chez:</button>
-                    <select class="btn btn-secondary" id="sel_FA" name="FAid"></select>
-                </div>
-            </div>
+            <div class="row form-group my-1">
+                <div class="col-sm-3"><button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_putcat">Transférer le chat chez:</button></div>
+                <div class="col-sm-4"><select class="form-control border border-dark" id="sel_FA" name="FAid"></select></div>
+        </div>
         {% endif %}
         {% else %}
         <div class="row">
             Indication de visites effectuées avant l'arrivée chez nous, donc sans spécifier de date:
         </div>
-        <div class="row form-group">
-            <label class="checkbox-inline"><input type="checkbox" name="visit_pv">Primo vaccination</label>
-            <label class="checkbox-inline"><input type="checkbox" name="visit_r1">1er rappel</label>
-            <label class="checkbox-inline"><input type="checkbox" name="visit_rr">Rappel annuel</label>
-            <label class="checkbox-inline"><input type="checkbox" name="visit_id">Identification</label>
-            <label class="checkbox-inline"><input type="checkbox" name="visit_tf">Test FIV/FelV</label>
-            <label class="checkbox-inline"><input type="checkbox" name="visit_sc">Stérilisation/Castration</label>
+        <div class="row form-group my-1">
+            <div class="col-sm-12">
+                <input class="form-check-input border-black" type="checkbox" name="visit_pv" id="visit_pv">
+                    <label class="form-check-label" for="visit_pv">Primo vaccination&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                <input class="form-check-input border-black" type="checkbox" name="visit_r1" id="visit_r1">
+                    <label class="form-check-label">1er rappel&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                <input class="form-check-input border-black" type="checkbox" name="visit_rr" id="visit_rr">
+                    <label class="form-check-label">Rappel annuel&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                <input class="form-check-input border-black" type="checkbox" name="visit_id" id="visit_id">
+                    <label class="form-check-label">Identification&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                <input class="form-check-input border-black" type="checkbox" name="visit_tf" id="visit_tf">
+                    <label class="form-check-label">Test FIV/FelV&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                <input class="form-check-input border-black" type="checkbox" name="visit_sc" od="visit_sc">
+                    <label class="form-check-label">Stérilisation/Castration</label>
+            </div>
         </div>
         <div class="row form-group">
             Une fois les informations remplies:
         </div>
-        <div class="row form-group">
-            <button type="submit" name="action" value="adm_addcathere">Rajouter le chat ici</button>
+        <div class="row form-group my-1">
+            <div class="col-sm-12>">
+                <button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_addcathere">Rajouter le chat ici</button>
+            </div>
         </div>
-        {% if falist %}<div class="row form-group">
-             <button type="submit" name="action" value="adm_addcatputFA">Placer le chat chez:</button><select id="sel_FA" name="FAid"></select>
+        {% if falist %}<div class="row form-group my-1">
+             <div class="col-sm-2"><button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_addcatputFA">Placer le chat chez:</button></div>
+             <div class="col-sm-4"><select class="form-control border border-dark" id="sel_FA" name="FAid"></select></div>
         </div>{% endif %}
         {% endif %}
     </form>

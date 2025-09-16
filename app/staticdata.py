@@ -75,6 +75,7 @@ NO_VISIT = '--------'
 # database ID of special 'Aucun' and 'Generic' vet
 NO_VET = 115
 GEN_VET = 8
+DEFAULT_VET = 7
 
 # IMPORTANT: the special FAs are stored statically here, so this must be set with the correct database IDs
 # special FA ids (static): AD DCD HIST REF TEMP

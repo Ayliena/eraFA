@@ -1,5 +1,5 @@
 from app import app, db, devel_site
-from app.staticdata import TabColor, TabSex, TabHair, FAidSpecial, ACC_NONE, ACC_RO, ACC_MOD, ACC_FULL, ACC_TOTAL, NO_VISIT, NO_VET, GEN_VET
+from app.staticdata import TabColor, TabSex, TabHair, FAidSpecial, ACC_NONE, ACC_RO, ACC_MOD, ACC_FULL, ACC_TOTAL, NO_VISIT, NO_VET, GEN_VET, DEFAULT_VET
 from app.models import User, Cat, VetInfo, Event
 from app.helpers import ERAsum, encodeRegnum, accessPrivileges, getViewUser, isFATemp, isRefuge, isAdoptes, isHistorique
 from app.vetvisits import vetMapToString, vetAddStrings, vetIsPrimo, vetIsRappel1, vetIsRappelAnn, vetIsIdent, vetIsTest, vetIsSteril, \
@@ -147,7 +147,7 @@ def vetpage():
             theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.regnum).all()
 
         return render_template("vet_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-            cats=theCats, FAids=FAidSpecial, VETids=VETlist)
+            cats=theCats, FAids=FAidSpecial, VETids=VETlist, VETdef=DEFAULT_VET)
 
     # plan multiple visits (execute action)
     if vetMode >= ACC_MOD and cmd == "fa_vetmpl_save":
@@ -453,7 +453,7 @@ def vetpage():
         # check is a 12-byte string obtained by md5sum of previous part + some random junk + base64_encode + cut in half
 
         try:
-            vdate = datetime.strptime(request.form["visit_date"], "%d/%m/%y")
+            vdate = datetime.strptime(request.form["visit_date"], "%Y-%m-%d")
         except ValueError:
             vdate = datetime.now()
 
@@ -566,7 +566,7 @@ def vetpage():
         # check is a 12-byte string obtained by md5sum of previous part + some random junk + base64_encode + cut in half
 
         try:
-            vdate = datetime.strptime(request.form["visit_date"], "%d/%m/%y")
+            vdate = datetime.strptime(request.form["visit_date"], "%Y-%m-%d")
         except ValueError:
             vdate = datetime.now()
 
