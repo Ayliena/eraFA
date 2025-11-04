@@ -10,6 +10,7 @@ from datetime import datetime
 import os
 from PIL import Image, ImageOps
 from werkzeug.utils import secure_filename
+import re
 
 
 @app.route("/cat", methods=["POST"])
@@ -75,7 +76,7 @@ def catpage(catid=-1):
             fatemp = request.form["c_cage"] if current_user.FAisREF else request.form["c_fatemp"]
 
             theCat = Cat(regnum=rn, temp_owner=fatemp, name=request.form["c_name"], sex=request.form["c_sex"], birthdate=bdate,
-                        color=request.form["c_color"], longhair=request.form["c_hlen"], identif=request.form["c_identif"],
+                        color=request.form["c_color"], longhair=request.form["c_hlen"], identif=request.form["c_identif"].upper(),
                         description=request.form["c_description"], comments=request.form["c_comments"], vetshort=vetstr,
                         adoptable=(request.form["c_adoptable"]=="1"))
 
@@ -87,9 +88,18 @@ def catpage(catid=-1):
                 if checkCat:
                     # this is bad, we regenerate the page wit the current data
                     message = [ [3, "Le numéro de registre existe déjà!"] ]
-                    theCat.regnum = -1
+                    theCat.regnum = 0
                     return render_template("cat_page.html", devsite=devel_site, user=current_user, cat=theCat, falist=User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).order_by(User.FAid).all(), msg=message,
                                            FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
+
+            # validate the id
+            if theCat.identif:
+                # this must either be [0-9]{15} or [A-Za-z]{3}[0-9]{3}/[0-9]{3}[A-Za-z]{3}
+                if not re.fullmatch(r"[0-9]{15}", theCat.identif) and not re.fullmatch(r"([A-Z]{3}[0-9]{3}|[0-9]{3}[A-Z]{3})", theCat.identif):
+                    message = [ [3, "Identification incorrecte (puce: 15 chiffres, tatouage: 3 chiffres+3 lettres ou l'inverse)!"] ]
+                    theCat.regnum = 0
+                    return render_template("cat_page.html", devsite=devel_site, user=current_user, cat=theCat, falist=User.query.filter(or_(User.FAisFA==True,User.FAisREF==True)).order_by(User.FAid).all(), msg=message,
+                                       FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
 
             # if for any reason the FA is invalid, then put it here
             if cmd != "adm_addcathere":
@@ -180,6 +190,8 @@ def catpage(catid=-1):
         updated = ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-']
         # NOTE: we use ident also to deal with registre, by setting it to "R"
 
+        message = []
+
         # see if a temp cat was given a real regnum
         if theCat.regnum < 0 and "c_registre" in request.form and request.form["c_registre"] and catMode == ACC_TOTAL:
             # validate the regnum
@@ -245,27 +257,37 @@ def catpage(catid=-1):
             updated[4] = "B"
 
         if theCat.color != int(request.form["c_color"]):
-            theCat.color=request.form["c_color"]
+            theCat.color = request.form["c_color"]
             updated[6] = 'C'
 
         if theCat.longhair != int(request.form["c_hlen"]):
-            theCat.longhair=request.form["c_hlen"]
+            theCat.longhair = request.form["c_hlen"]
             updated[5] = 'L'
 
-        if theCat.identif != request.form["c_identif"]:
-            theCat.identif=request.form["c_identif"]
-            updated[2] = 'I'
+        if theCat.identif != request.form["c_identif"].upper():
+            newid = request.form["c_identif"].upper()
+
+
+            # validate the id
+            if newid:
+                # this must either be [0-9]{15} or [A-Za-z]{3}[0-9]{3}/[0-9]{3}[A-Za-z]{3}
+                if not re.fullmatch(r"[0-9]{15}", newid) and not re.fullmatch(r"([A-Z]{3}[0-9]{3}|[0-9]{3}[A-Z]{3})", newid):
+                    message.append([3, "Identification incorrecte (puce: 15 chiffres, tatouage: 3 chiffres+3 lettres ou l'inverse)!"])
+                # data is not updated
+                else:
+                    theCat.identif = newid
+                    updated[2] = 'I'
 
         if theCat.comments != request.form["c_comments"]:
-            theCat.comments=request.form["c_comments"]
+            theCat.comments = request.form["c_comments"]
             updated[7] = 'c'
 
         if theCat.description != request.form["c_description"]:
-            theCat.description=request.form["c_description"]
+            theCat.description = request.form["c_description"]
             updated[8] = 'D'
 
         if theCat.adoptable != (request.form["c_adoptable"] == "1"):
-            theCat.adoptable=(request.form["c_adoptable"] == "1")
+            theCat.adoptable = (request.form["c_adoptable"] == "1")
             updated[0] = 'A'
 
         if 'img_erase' in request.form:
@@ -347,8 +369,6 @@ def catpage(catid=-1):
                 visitupdated += vres
                 cat_updated = True
 
-        message = []
-
         if cat_updated or visitupdated:
             theCat.lastop = datetime.now()
             current_user.FAlastop = datetime.now()
@@ -359,6 +379,7 @@ def catpage(catid=-1):
 
         # if we stay on the page, regenerate it directly
         if cmd == "fa_modcatr":
+            session["pendingmessage"] = message
             return render_template("cat_page.html", devsite=devel_site, user=current_user, cat=theCat, falist=FAlist, msg=message,
                                    VETids=VETlist, VETdef=DEFAULT_VET, FAids=FAidSpecial, TabCols=DBTabColor, TabCages=TabCage)
 

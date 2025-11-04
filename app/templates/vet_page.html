@@ -14,7 +14,6 @@
 {% include 'functions.html' %}
         window.onload=function() {
             fixAllDates();
-            //fixAllRegnums();
             populatevets('visit_vet');
         }
     </script>
@@ -58,7 +57,7 @@
                         {% else %}<div class="text-danger">Demande à effectuer</div>{% endif %}
                     </div>
                     <div class="col-sm-10">
-                        <input class="form-check-input border border-dark"" type="checkbox" name="re_{{v.id}}" id="re_{{v.id}}">
+                        <input class="form-check-input border border-dark" type="checkbox" name="re_{{v.id}}" id="re_{{v.id}}">
                         <label class="form-check-label" for="re_{{v.id}}">
                             {{ v.vdate.strftime("%d/%m/%y") }} {% if v.cat.owner_id == FAids[4] %}[{{ v.cat.temp_owner }}]{% endif %}
                             visite de <a href="{{ url_for('catpage') }}/{{ v.cat.id }}"><span id="rn_{{v.cat.id}}">{{ v.cat.regStr() }}</span></a>
@@ -88,7 +87,7 @@
                 <div class="col-sm-3"><button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_vetmvd">Indiquer que les visites selectionnees ont ete effectuees a la date indiquee ci-contre</button></div>
                 <div class="col-sm-2">
                     <div class="form-group">
-                        <input type="date" class="form-control border border-dark" name="c_vdate" id="c_vdate" placeholder="aujourd'hui">
+                        <input type="date" class="form-control border border-dark" name="c_vdate" id="c_vdate">
                     </div>
                 </div>
             </div>
@@ -126,7 +125,7 @@
                     <button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="adm_vbver">Verifier le contenu du QRcode de bon veterinaire colle ci-contre</button>
                 </div>
                 <div class="col-sm-6">
-                    <input type="text" class="form-control" name="vb_qrcode" id="iR" style="width: 100%">
+                    <input type="text" class="form-control border border-dark" name="vb_qrcode" id="iR" style="width: 100%">
                 </div>
             </div>{% endif %}
             </form>
@@ -171,13 +170,13 @@
             <hr>
                 <div class="row form-group align-items-baseline mt-2 pt-2 border-1 border-top border-black">
                     <label class="col-sm-2 control-label" for="visit_state">NOUVELLE VISITE</label>
-                    <div class="col-sm-2"><select class="form-control border border-dark" name="visit_state" id="visit_state"><option value="0">Effectuée</option><option value="1" selected>Planifiée</option></select></div>
+                    <div class="col-sm-2"><select class="form-select border border-dark" name="visit_state" id="visit_state"><option value="0">Effectuée</option><option value="1" selected>Planifiée</option></select></div>
                     <label class="col-sm-1 control-label" for="visit_date">en date</label>
                     <div class="col-sm-2">
-                        <input type="text" class="form-control border border-dark" name="visit_date" id="visit_date" placeholder="aujourd'hui">
+                        <input type="date" class="form-control border border-dark" name="visit_date" id="visit_date">
                     </div>
                     <label class="col-sm-1 control-label" for="visit_vet">chez</label>
-                    <div class="col-sm-3"><select class="form-control border border-dark" name="visit_vet" id="visit_vet"></select></div>
+                    <div class="col-sm-3"><select class="form-select border border-dark" name="visit_vet" id="visit_vet"></select></div>
                     <div class="col-sm-1 control-label"><b>pour:</b></div>
                 </div>
                 <div class="row form-group align-items-baseline my-1">

@@ -10,20 +10,19 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
-        <script language="javascript" src="https://momentjs.com/downloads/moment.js"></script>
-        <script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/js/bootstrap-datetimepicker.min.js"></script>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/css/bootstrap-datetimepicker.min.css">
     </head>
     <script type="text/javascript">
 {% include 'functions.html' %}
         window.onload=function() {
             fixAllDates();
         }
-        $(document).ready(function() {
-          $('.datepick').datetimepicker({
-            format: 'DD/MM/YY'
-          });
-        });
+        function clearFilter() {
+            document.getElementById("opt_fa").value = "";
+            var dateids = ["d_visit0", "d_visit1"];
+            for (var i = 0; i < dateids.length; ++i) {
+                document.getElementById(dateids[i]).value = "";
+            }
+        }
     </script>
     <style>
    hr {
@@ -52,21 +51,47 @@
         {% if viewuser.FAisVET %}
             {% if viewuser != user %} <h2>Situation veterinaire : {{ viewuser.FAname }}</h2>{% endif %}
 
-            <h2>{% if visitmode == "planned" %}Visites prevues a la clinique{% else %}Historique des visites{% endif %}</h2>
+            {% if visitmode == "planned" %}<h2>Visites prevues a la clinique</h2>
+            {% else %}<h2>Historique des visites</h2>
+            <form action="/vet" method="POST">
+                <div class="row form-group my-1">
+                    <div class="col-sm-1">
+                        <button class="btn btn-secondary" type="submit" name="action" value="vet_histfilt">Filtrer</button>
+                    </div>
+                    <div class="col-sm-8">
+                        Famille d'accueil: <input class="border border-dark" type="text" id="opt_fa" name="opt_fa"{% if histfilter[0] %} value="{{histfilter[0]}}"{% endif %}>
+                    </div>
+                    <div class="col-sm-1">
+                        <button class="btn btn-secondary" type="button" onClick="clearFilter()">RAZ</button>
+                    </div>
+                </div>
+                <div class="row form-group">
+                <div class="col-sm-1">
+               </div>
+                <label class="col-sm-1 control-label" for="d_visit0">Dates :</label>
+                <div class="col-sm-2">
+                    <input type="date" class="form-control border border-dark" name="d_visit0" id="d_visit0" {% if histfilter[1] %}value="{{ histfilter[1] }}"{% else %}placeholder="debut"{% endif %}>
+                </div>
+                <div class="col-sm-2">
+                    <input type="date" class="form-control border border-dark" name="d_visit1" id="d_visit1" {% if histfilter[2] %}value="{{ histfilter[2] }}"{% else %}placeholder="fin"{% endif %}>
+                </div>
+            </div>
+            </form>
+            <div class="row mt-2 pt-2 border-2 border-top border-black"></div>{% endif %}
             {% if vvisits %}
                 <form action="/vet" method="POST">
                 {% for v in vvisits %}
                     <div class="row" style="margin-top: 8px;">
                         <div class="col-sm-3">
-                            <input class="form-check-input" type="checkbox" name="re_{{v.id}}" id="re_{{v.id}}">
+                            <input class="form-check-input border border-dark" type="checkbox" name="re_{{v.id}}" id="re_{{v.id}}">
                             <label class="form-check-label" for="re_{{v.id}}">
-                                {% if visitmode == "planned" %}{{ v.vdate.strftime("%d/%m/%y") }}, {% if v.doneby_id == FAids[4] %}{{ v.cat.temp_owner }}{% else %}{{ v.doneby.FAname }}{% endif %}
-                                {% else %}{% if v.doneby_id == FAids[4] %}{{ v.cat.temp_owner }}{% else %}{{ v.doneby.FAname }} le {{ v.vdate.strftime("%d/%m/%y") }}{% endif %}{% endif %}
+                                {% if visitmode == "planned" %}{{ v.vdate.strftime("%d/%m/%y") }}, <b>{% if v.doneby_id == FAids[4] %}{{ v.cat.temp_owner }}{% else %}{{ v.doneby.FAname }}{% endif %}</b>
+                                {% else %}<b>{% if v.doneby_id == FAids[4] %}{{ v.cat.temp_owner }}{% else %}{{ v.doneby.FAname }}</b> le {{ v.vdate.strftime("%d/%m/%y") }}{% endif %}{% endif %}
                             </label>
                         </div>
                         <div class="col-sm-9">
                             animal {% if v.cat.identif %}{{ v.cat.identif }}{% else %}non identifie{% endif %}
-                            ({% if v.cat.name %}{{ v.cat.name }}{% else %}sans nom{% endif %} / <span id="rn_{{v.cat.id}}">{{ v.cat.regStr() }}</span>)
+                            (<b>{% if v.cat.name %}{{ v.cat.name }}{% else %}sans nom{% endif %}</b> / <span id="rn_{{v.cat.id}}">{{ v.cat.regStr() }}</span>)
                             pour:
                         </div>
                     </div>
@@ -93,7 +118,7 @@
                         <button class="btn btn-secondary mx-1" style="white-space: normal;" type="submit" name="action" value="adm_vbver">Verifier le contenu du QRcode de bon veterinaire colle ci-contre</button>
                     </div>
                     <div class="col-sm-6">
-                        <input type="text" class="form-control" name="vb_qrcode" id="iR" style="width: 100%">
+                        <input type="text" class="form-control border border-dark"  name="vb_qrcode" id="iR" style="width: 100%">
                     </div>
                 </div>
                 <hr>
@@ -104,12 +129,7 @@
                     <div class="col-sm-3"><button class="btn btn-secondary mx-1" style="white-space: normal;" type="submit" name="action" value="fa_vetmvd">Indiquer que les visites selectionnees ont ete effectuees a la date indiquee ci-contre</button></div>
                     <div class="col-sm-2">
                         <div class="form-group">
-                            <div class="input-group datepick">
-                                <input type="text" class="form-control" name="c_vdate" id="c_vdate" placeholder="aujourd'hui">
-                                <div class="input-group-addon">
-                                    <span class="glyphicon glyphicon-calendar"></span>
-                                </div>
-                            </div>
+                            <input type="date" class="form-control border border-dark" name="c_vdate" id="c_vdate" placeholder="aujourd'hui">
                         </div>
                     </div>
                 </div>

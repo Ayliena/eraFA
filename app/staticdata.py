@@ -69,6 +69,12 @@ ACC_MOD  = 2
 ACC_FULL = 3
 ACC_TOTAL = 4
 
+# states for factures
+FAC_FROZEN = 0  # en attente
+FAC_UNPAID = 1  # non reglee
+FAC_PAID = 2    # reglee
+FAC_RECONC = 3  # reglee+rapprochee
+
 # empty vet visit type
 NO_VISIT = '--------'
 

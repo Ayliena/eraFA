@@ -10,9 +10,6 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
-        <script language="javascript" src="https://momentjs.com/downloads/moment.js"></script>
-        <script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/js/bootstrap-datetimepicker.min.js"></script>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/css/bootstrap-datetimepicker.min.css">
     </head>
     <script>
         function submitForm() {
@@ -44,15 +41,15 @@
             {% endfor %}{% endif %}
 
             <form action="/user" method="POST"><div class="row">
-                <div class="col-sm-12"><button name="action" value="adm_newuser">Nouveau utilisateur
-                                      </button><button name="action" value="adm_expusers">Exporter le tableau</button></div>
+                <div class="col-sm-12"><button class="btn btn-secondary mx-1" name="action" value="adm_newuser">Nouveau utilisateur
+                                      </button><button class="btn btn-secondary mx-1" name="action" value="adm_expusers">Exporter le tableau</button></div>
             </div></form>
 
             <h2>Utilisateurs definis</h2>
             <form action="/user" method="POST"><input type=hidden name="action" value="adm_edituser">
             {% for fa in falist %}
                 <div class="row">
-                    <div class="col-sm-2"><button class="btn btn-default" name="FAid" value="{{fa.id}}">{{ fa.username }}</button> :</div>
+                    <div class="col-sm-2"><button class="btn btn-outline-dark" name="FAid" value="{{fa.id}}">{{ fa.username }}</button> :</div>
                     <div class="col-sm-5">{% if fa.password_hash == 'nologin' %}<i>{{ fa.FAid }} ({{ fa.FAname }})</i>{% else %}{{ fa.FAid }} ({{ fa.FAname }}){% endif %} <b>[
                     {% if fa.FAisFA %} FA {% endif %}
                     {% if fa.FAisRF %} RF {% endif %}
@@ -113,7 +110,7 @@
         <div class="row form-group">
             <div class="col-sm-2">Sous la responsabilite de:</div>
             <div class="col-sm-2">
-                <select name="u_resp" id="u_resp"{% if fauser.FAisRF or fauser.FAisADM %} disabled{% endif %}>
+                <select class="form-select border border-dark" name="u_resp" id="u_resp"{% if fauser.FAisRF or fauser.FAisADM %} disabled{% endif %}>
                 <option value="0">Personne</option>
                 {% for k,v in rftab.items() %}
                 <option value="{{k}}" {% if k == fauser.FAresp_id %} selected{% endif %}>{{v}}</option>{% endfor %}
@@ -125,37 +122,37 @@
             <div class="col-sm-4"><b>Caracteristiques et acces:</b></div>
         </div>
         <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isFA"{% if fauser.FAisFA %} checked{% endif %}>Famille d'accueil (= detient des chats)</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isRF"{% if fauser.FAisRF %} checked{% endif %}>Responsable d'autres Familles d'accueil</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_isFA"{% if fauser.FAisFA %} checked{% endif %}>Famille d'accueil (= detient des chats)</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_isRF"{% if fauser.FAisRF %} checked{% endif %}>Responsable d'autres Familles d'accueil</label></div>
         </div>
         <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isOV"{% if fauser.FAisOV %} checked{% endif %}>Superviseur (= vision de toutes les FA)</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isADM"{% if fauser.FAisADM %} checked{% endif %} disabled>Administrateur/Gestion Registre</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_isOV"{% if fauser.FAisOV %} checked{% endif %}>Superviseur (= vision de toutes les FA)</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_isADM"{% if fauser.FAisADM %} checked{% endif %} disabled>Administrateur/Gestion Registre</label></div>
         </div>
         <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isVET"{% if fauser.FAisVET %} checked{% endif %}>Veterinaire</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_isVET"{% if fauser.FAisVET %} checked{% endif %}>Veterinaire</label></div>
         </div>
         <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="p_COMPTA"{% if fauser.PrivCOMPTA %} checked{% endif %}>Vue Comptabilité</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="p_COMPTAMOD"{% if fauser.PrivCOMPTAMOD %} checked{% endif %}>Accès Comptabilité</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="p_COMPTASELF"{% if fauser.PrivCOMPTASELF %} checked{% endif %}>Comptabilité: que ses factures</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="p_COMPTA"{% if fauser.PrivCOMPTA %} checked{% endif %}>Vue Comptabilité</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="p_COMPTAMOD"{% if fauser.PrivCOMPTAMOD %} checked{% endif %}>Accès Comptabilité</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="p_COMPTASELF"{% if fauser.PrivCOMPTASELF %} checked{% endif %}>Comptabilité: que ses factures</label></div>
         </div>
         <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isAD"{% if fauser.FAisAD %} checked{% endif %} disabled>Special: chats adoptes</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isREF"{% if fauser.FAisREF %} checked{% endif %} disabled>Special: refuge</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_isAD"{% if fauser.FAisAD %} checked{% endif %} disabled>Special: chats adoptes</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_isREF"{% if fauser.FAisREF %} checked{% endif %} disabled>Special: refuge</label></div>
         </div>
         <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isDCD"{% if fauser.FAisDCD %} checked{% endif %} disabled>Special: chats decedes</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isHIST"{% if fauser.FAisHIST %} checked{% endif %} disabled>Special: historique</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_isDCD"{% if fauser.FAisDCD %} checked{% endif %} disabled>Special: chats decedes</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_isHIST"{% if fauser.FAisHIST %} checked{% endif %} disabled>Special: historique</label></div>
         </div>
         <div class="row form-group">
             <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isTEMP"{% if fauser.FAisTEMP %} checked{% endif %} disabled>Special: FA temporaires</label></div>
         </div>
         <hr>
         <div class="row form-group">
-            <div class="col-sm-2"><button type="submit" name="action" {% if fauser.username %}value="adm_moduser"{% else %}value="adm_adduser"{% endif %}>Enregistrer</button></div>
-            <div class="col-sm-2">{% if fauser.username %}<button type="submit" name="action" value="adm_pwduser">Regenerer MDP</button>{% endif %}</div>
-            <div class="col-sm-2"><button type="submit" name="action" value="adm_listusers">Annuler</button></div>
+            <div class="col-sm-2"><button class="btn btn-secondary mx-1" type="submit" name="action" {% if fauser.username %}value="adm_moduser"{% else %}value="adm_adduser"{% endif %}>Enregistrer</button></div>
+            <div class="col-sm-2">{% if fauser.username %}<button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_pwduser">Regenerer MDP</button>{% endif %}</div>
+            <div class="col-sm-2"><button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_listusers">Annuler</button></div>
         </div>
 
         {% endif %}

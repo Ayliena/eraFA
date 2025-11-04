@@ -34,6 +34,16 @@ def vetpage():
         session["otherMode"] = "special-vethistory"
         return redirect(url_for('fapage'))
 
+    if cmd == "vet_histfilt" and current_user.FAisVET:
+        session["otherMode"] = "special-vethistory"  # this should not be necessary
+        # update the filter
+        # store the options in the session data
+        filtFA = request.form["opt_fa"] if "opt_fa" in request.form else ""
+        filtDates = [request.form[did] for did in ["d_visit0", "d_visit1"]]
+        # save for the future
+        session["optVETOHIST"] = (filtFA+";"+";".join(filtDates))
+        return redirect(url_for('fapage'))
+
     # action = plan/indicate multiple visits
     if cmd == "fa_vetplan":
         session["otherMode"] = "special-vetplan"

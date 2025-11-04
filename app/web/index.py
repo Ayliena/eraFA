@@ -47,6 +47,7 @@ def login():
     session.pop("otherMode", None)
     session.pop("searchFilter", None)
     session.pop("optCOMPTA", None)
+    session.pop("optVETOHIST", None)
     return redirect(url_for('fapage'))
 
 @app.route("/logout/")

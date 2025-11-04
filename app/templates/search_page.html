@@ -76,7 +76,7 @@
                 {% for cat in scatlist %}
                     <div class="row">
                         <div class="col-sm-1">
-                            <input class="form-check-input" type="checkbox" name="re_{{cat.id}}" id="re_{{cat.id}}">
+                            <input class="form-check-input border-black" type="checkbox" name="re_{{cat.id}}" id="re_{{cat.id}}">
                                 <label class="form-check-label" for="re_{{cat.id}}">
                                     <span id="rn_{{cat.id}}">{{ cat.regStr() }}</span>
                                 </label>
@@ -101,14 +101,14 @@
                 </div>
                 <div class="row form-group">
                     <div class="col-sm-12">
-                    <label class="checkbox-inline mx-2"><input type="checkbox" name="visit_pv">Primo vaccination</label>
-                    <label class="checkbox-inline mx-2"><input type="checkbox" name="visit_r1">1er rappel</label>
-                    <label class="checkbox-inline mx-2"><input type="checkbox" name="visit_rr">Rappel annuel</label>
-                    <label class="checkbox-inline mx-2"><input type="checkbox" name="visit_id">Identification</label>
-                    <label class="checkbox-inline mx-2"><input type="checkbox" name="visit_tf">Test FIV/FelV</label>
-                    <label class="checkbox-inline mx-2"><input type="checkbox" name="visit_sc">Stérilisation/Castration</label>
-                    <label class="checkbox-inline mx-2"><input type="checkbox" name="visit_gen">Soins / autre</label>
-                    <label class="checkbox-inline mx-2"><input type="checkbox" name="visit_ap">Déparasitage</label>
+                    <label class="checkbox-inline mx-2 border-black"><input type="checkbox" name="visit_pv">Primo vaccination</label>
+                    <label class="checkbox-inline mx-2 border-black"><input type="checkbox" name="visit_r1">1er rappel</label>
+                    <label class="checkbox-inline mx-2 border-black"><input type="checkbox" name="visit_rr">Rappel annuel</label>
+                    <label class="checkbox-inline mx-2 border-black"><input type="checkbox" name="visit_id">Identification</label>
+                    <label class="checkbox-inline mx-2 border-black"><input type="checkbox" name="visit_tf">Test FIV/FelV</label>
+                    <label class="checkbox-inline mx-2 border-black"><input type="checkbox" name="visit_sc">Stérilisation/Castration</label>
+                    <label class="checkbox-inline mx-2 border-black"><input type="checkbox" name="visit_gen">Soins / autre</label>
+                    <label class="checkbox-inline mx-2 border-black"><input type="checkbox" name="visit_ap">Déparasitage</label>
                     </div>
                 </div>
                 <div class="row form-group">
@@ -124,7 +124,7 @@
                 </div>
                 </form>
             {% else %}
-                <p><a href="#" onClick="showHideAll();">Montrer/cacher toutes les commentaires</a></p>
+                <p><a href="#" onClick="showHideAllDescs();">Montrer/cacher toutes les commentaires</a></p>
                 {% for cat in catlist %}
                 <div class="row">
                      <div class="col-sm-1">
@@ -135,7 +135,7 @@
                     </div>
                     <div class="col-sm-2">{{ cat.identif }}</div>
                     <div class="col-sm-4">
-                        <a href="#" onClick="showHide('desc_{{cat.registre}}');"><b>{% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}</b></a>
+                        <a href="#" onClick="showHide('desc_{{cat.id}}');"><b>{% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}</b></a>
                         ({{ tabsex[cat.sex] }},
                         {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}??âge??{% endif %},
                         {{ tabcol[cat.color] }}{{ tabhair[cat.longhair] }})</div>
@@ -147,7 +147,7 @@
                         <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success">Adoptable</span>{% else %}<span class="bg-danger">Non adoptable</span>{% endif %}</div>
                     {% endif %}
                 </div>
-                <div class="row" style="display: none;" id="desc_{{cat.registre}}">
+                <div class="row" style="display: none;" id="desc_{{cat.id}}">
                     <div class="col-sm-1"></div>
                     <div class="col-sm-11"><p class="small">{{ cat.comments }}</p></div>
                 </div>

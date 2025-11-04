@@ -1,6 +1,7 @@
 from app import db
 from werkzeug.security import check_password_hash
 from app.permissions import hasPrivilege, UT_MANAGER, UT_FA, UT_REFUGE, UT_ADOPTES, UT_DECEDES, UT_HIST, UT_FATEMP, UT_VETO, PRIV_ADMIN, PRIV_RFA, PRIV_REF, PRIV_ADDCD, PRIV_HIST, PRIV_SEARCH, PRIV_BSC, PRIV_RVETO, PRIV_RPLAN, PRIV_REGNUM, PRIV_APIR, PRIV_APIW, PRIV_ADDUNR
+from app.staticdata import FAC_FROZEN, FAC_UNPAID, FAC_PAID, FAC_RECONC
 from flask_login import UserMixin
 from datetime import datetime
 
@@ -167,6 +168,19 @@ class Cat(db.Model):
         else:
             return "P{}".format(self.id)
 
+    def isPrivate(self):
+        if self.regnum < -1:
+            return True
+        else:
+            return False
+
+    def isUnreg(self):
+        if self.regnum == -1:
+            return True
+        else:
+            return False
+
+
 # --------------- VETINFO CLASS
 
 class VetInfo(db.Model):
@@ -203,8 +217,20 @@ class Facture(db.Model):
     clinic_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     facnumber = db.Column(db.String(64))
     duplicata = db.Column(db.Integer)
-    total = db.Column(db.Numeric(6,2))
-    paid = db.Column(db.Boolean)
+    total = db.Column(db.Numeric(8,2))
+    state = db.Column(db.Integer)
     pdate = db.Column(db.DateTime)
-    reconciled = db.Column(db.Boolean)
     rdate = db.Column(db.DateTime)
+
+    def isFrozen(self):
+        return self.state == FAC_FROZEN
+
+    def isUnpaid(self):
+        return self.state < FAC_PAID
+
+    def isPaid(self):
+        return self.state > FAC_UNPAID
+
+    def isReconciled(self):
+        return self.state >= FAC_RECONC
+

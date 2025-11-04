@@ -89,19 +89,20 @@
                     {% if cat.regnum %}
                     <label class="col-sm-2 control-label" for="c_registre">Registre:</label>
                     <div class="col-sm-6">
-                        {% if cat.regnum>0 %} <p class="form-control-static"><b><span id="rn_cat">{{cat.regnum}}</span></b> (N{{cat.id}})</p>
-                        {% else %}{% if user.FAisADM %}<input class="form-control border border-dark" type="text" id="c_registre" name="c_registre" placeholder="xxx-xx">  {% endif %}(N{{cat.id}}){% endif %}
+                        {% if cat.isPrivate() %}<p>Chat privé</p>{% else %}
+                        {% if cat.regnum>0 %}<p class="form-control-static"><b><span id="rn_cat">{{ cat.regStr() }}</span></b> (N{{cat.id}})</p>
+                        {% else %}{% if user.FAisADM %}<input class="form-control border border-dark" type="text" id="c_registre" name="c_registre" placeholder="xxx-xx">  {% endif %}(N{{cat.id}}){% endif %}{% endif %}
                     </div>
                     {% else %}
                     <div class="col-sm-8">Registre: non enregistre</div>
                     {% endif %}
-                    <div class="col-sm-4"><select class="form-control border border-dark" name="c_adoptable" id="c_adoptable" {% if readonly %}disabled{% endif %}>                        <option value="0">Non adoptable</option>
-                        <option value="1">Disponible a l'adoption</option></select>
+                    <div class="col-sm-4">{% if not cat.isPrivate() %}<select class="form-select border border-dark" name="c_adoptable" id="c_adoptable" {% if readonly %}disabled{% endif %}>                        <option value="0">Non adoptable</option>
+                        <option value="1">Disponible a l'adoption</option></select>{% endif %}
                     </div>
                 </div>
                 {% if cat.owner_id==FAids[3] %}<div class="row form-group align-items-baseline my-1">
                     <label class="col-sm-2 control-label" for="c_cage">Cage:</label>
-                    <div class="col-sm-6"><select class="form-control border border-dark" name="c_cage" id="c_cage" {% if readonly %}disabled{% endif %}></select></div>
+                    <div class="col-sm-6"><select class="form-select border border-dark" name="c_cage" id="c_cage" {% if readonly %}disabled{% endif %}></select></div>
                 </div>
                 {% elif not cat.regnum or cat.owner_id == FAids[4] %}<div class="row form-group my-1">
                     <label class="col-sm-3 control-label" for="c_fatemp">FA temporaire:</label>
@@ -123,7 +124,7 @@
                 </div>
                 <div class="row form-group align-items-baseline my-1">
                     <label class="col-sm-2 control-label" for="c_sex">Sexe:</label>
-                    <div class="col-sm-4"><select class="form-control border border-dark" name="c_sex" id="c_sex" {% if readonly %}disabled{% endif %}>
+                    <div class="col-sm-4"><select class="form-select border border-dark" name="c_sex" id="c_sex" {% if readonly %}disabled{% endif %}>
                         <option value="0">INCONNU</option>
                         <option value="1">FEMELLE</option>
                         <option value="2">MALE</option></select></div>
@@ -134,12 +135,12 @@
                 </div>
                 <div class="row form-group align-items-baseline">
                     <label class="col-sm-2 control-label" for="c_hlen">Poil:</label>
-                    <div class="col-sm-4"><select class="form-control border border-dark" name="c_hlen" id="c_hlen"{% if readonly %}disabled{% endif %}>
+                    <div class="col-sm-4"><select class="form-select border border-dark" name="c_hlen" id="c_hlen"{% if readonly %}disabled{% endif %}>
                         <option value="0">COURT</option>
                         <option value="1">MI-LONG</option>
                         <option value="2">LONG</option></select></div>
                     <label class="col-sm-2 control-label" for="c_color">Couleur:</label>
-                    <div class="col-sm-4"><select class="form-control border border-dark" name="c_color" id="c_color"{% if readonly %}disabled{% endif %}>
+                    <div class="col-sm-4"><select class="form-select border border-dark" name="c_color" id="c_color"{% if readonly %}disabled{% endif %}>
                     </select></div>
                 </div>
             </div>
@@ -207,13 +208,13 @@
                 {% if vv.planned %}
                 <div class="row form-group align-items-baseline mt-2 pt-2 border-1 border-top border-black">
                     <label class="col-sm-2 control-label" for="oldv_{{vv.id}}_state">Visite vétérinaire</label>
-                    <div class="col-sm-2"><select class="form-control border border-dark" id="oldv_{{vv.id}}_state" name="oldv_{{vv.id}}_state" {% if readonly %}disabled{% endif %}><option value="0">Effectuée</option><option value="1" selected>Planifiée</option>><option value="2">ANNULLEE</option></select></div>
+                    <div class="col-sm-2"><select class="form-select border border-dark" id="oldv_{{vv.id}}_state" name="oldv_{{vv.id}}_state" {% if readonly %}disabled{% endif %}><option value="0">Effectuée</option><option value="1" selected>Planifiée</option>><option value="2">ANNULLEE</option></select></div>
                     <label class="col-sm-1 control-label" for="oldv_{{vv.id}}_date">en date</label>
                     <div class="col-sm-2">
                         <input type="date" class="form-control border border-dark" name="oldv_{{vv.id}}_date"  id="oldv_{{vv.id}}_date" value="{{vv.vdate.strftime("%Y-%m-%d")}}" {% if readonly %}disabled{% endif %}>
                     </div>
                     <label class="col-sm-1 control-label" for="oldv_{{vv.id}}_vet">chez</label>
-                    <div class="col-sm-3"><select class="form-control border border-dark" name="oldv_{{vv.id}}_vet" id="oldv_{{vv.id}}_vet" {% if readonly %}disabled{% endif %}></select></div>
+                    <div class="col-sm-3"><select class="form-select border border-dark" name="oldv_{{vv.id}}_vet" id="oldv_{{vv.id}}_vet" {% if readonly %}disabled{% endif %}></select></div>
                     <div class="col-sm-1 control-label"><b>pour:</b></div>
                 </div>
                 <div class="row form-group align-items-baseline my-1">
@@ -249,13 +250,13 @@
             {% if not readonly %}
                 <div class="row form-group align-items-baseline mt-2 pt-2 border-1 border-top border-black">
                     <label class="col-sm-2 control-label" for="visit_state">NOUVELLE VISITE</label>
-                    <div class="col-sm-2"><select class="form-control border border-dark" name="visit_state" id="visit_state"><option value="0">Effectuée</option><option value="1" selected>Planifiée</option></select></div>
+                    <div class="col-sm-2"><select class="form-select border border-dark" name="visit_state" id="visit_state"><option value="0">Effectuée</option><option value="1" selected>Planifiée</option></select></div>
                     <label class="col-sm-1 control-label" for="visit_date">en date</label>
                     <div class="col-sm-2">
                         <input type="text" class="form-control border border-dark" name="visit_date" id="visit_date" placeholder="aujourd'hui">
                     </div>
                     <label class="col-sm-1 control-label" for="visit_vet">chez</label>
-                    <div class="col-sm-3"><select class="form-control border border-dark" name="visit_vet" id="visit_vet"></select></div>
+                    <div class="col-sm-3"><select class="form-select border border-dark" name="visit_vet" id="visit_vet"></select></div>
                     <div class="col-sm-1 control-label"><b>pour:</b></div>
                 </div>
                 <div class="row form-group align-items-baseline my-1">
@@ -317,7 +318,7 @@
         {% if user.FAisADM %}
             <div class="row form-group my-1">
                 <div class="col-sm-3"><button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_putcat">Transférer le chat chez:</button></div>
-                <div class="col-sm-4"><select class="form-control border border-dark" id="sel_FA" name="FAid"></select></div>
+                <div class="col-sm-4"><select class="form-select border border-dark" id="sel_FA" name="FAid"></select></div>
         </div>
         {% endif %}
         {% else %}
@@ -350,7 +351,7 @@
         </div>
         {% if falist %}<div class="row form-group my-1">
              <div class="col-sm-2"><button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_addcatputFA">Placer le chat chez:</button></div>
-             <div class="col-sm-4"><select class="form-control border border-dark" id="sel_FA" name="FAid"></select></div>
+             <div class="col-sm-4"><select class="form-select border border-dark" id="sel_FA" name="FAid"></select></div>
         </div>{% endif %}
         {% endif %}
     </form>

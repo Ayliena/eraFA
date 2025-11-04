@@ -9,12 +9,8 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
-        <script language="javascript" src="https://momentjs.com/downloads/moment.js"></script>
-        <script language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/js/bootstrap-datetimepicker.min.js"></script>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.43/css/bootstrap-datetimepicker.min.css">
     </head>
     <script>
-{% include 'functions.html' %}
         function confirmDialog() {
             return confirm("Effectuer l'annulation?");
         }
@@ -26,13 +22,8 @@
             for (var i = 0; i < dateids.length; ++i) {
                 document.getElementById(dateids[i]).value = "";
             }
-            {% if not current_user.PrivCOMPTASELF %}document.getElementById("opt_clinic").value = "";{% endif %}
+            {% if not user.PrivCOMPTASELF %}document.getElementById("opt_clinic").value = "";{% endif %}
         }
-        $(document).ready(function() {
-          $('.datepick').datetimepicker({
-            format: 'DD/MM/YY'
-        });
-        });
    </script>
 <body>
     {% include 'navbar.html' %}
@@ -44,14 +35,15 @@
         <a href="https://erafa.pythonanywhere.com/fa">https://erafa.pythonanywhere.com/fa</a></div>
     </div>{% endif %}
     {% if msg %}{% for m in  msg %}
-        {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
-        {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
-        {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
-        {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
-        {{ m[1] }}</div>
+        {% if m[0] == 1 %}<div class="alert alert-info">
+        {% elif m[0] == 2 %}<div class="alert alert-warning">
+        {% elif m[0] == 3 %}<div class="alert alert-danger">
+        {% else %}<div class="alert alert-success">{% endif %}
+        {{ m[1]|safe }}</div>
     {% endfor %}{% endif %}
 
-    <h2>Factures (impayees {{ cumulative }}&nbsp;€)</h2>
+    <h2>Factures</h2>
+    <h5>(impayeés {{ cumulative[0] }}&nbsp;€ + payées {{ cumulative[1] }}&nbsp;€ = {{ cumulative[2] }}&nbsp;€ total)</h5>
 
     <form action="/factures" method="POST">
         <div class="row form-group my-1">
@@ -62,7 +54,7 @@
                 <label class="checkbox-inline mx-2"><input type="checkbox" id="opt_unpaid" name="opt_unpaid"{% if facfilter[0] %} checked{% endif %}>Impayees</label>
                 <label class="checkbox-inline mx-2"><input type="checkbox" id="opt_paid" name="opt_paid"{% if facfilter[1] %} checked{% endif %}>Payees</label>
                 <label class="checkbox-inline mx-2"><input type="checkbox" id="opt_reconciled" name="opt_reconciled"{% if facfilter[2] %} checked{% endif %}>Rapprochees</label>
-                {% if not current_user.PrivCOMPTASELF %} | Clinique: <input type="text" id="opt_clinic" name="opt_clinic"{% if facfilter[3] %} value="{{facfilter[3]}}"{% endif %}>{% endif %}
+                {% if not current_user.PrivCOMPTASELF %} | Clinique: <input class="border border-dark" type="text" id="opt_clinic" name="opt_clinic"{% if facfilter[3] %} value="{{facfilter[3]}}"{% endif %}>{% endif %}
             </div>
             <div class="col-sm-1">
                 <button class="btn btn-secondary" type="button" onClick="clearFilter()">RAZ</button>
@@ -77,10 +69,10 @@
             </div>
             <label class="col-sm-2 control-label" for="d_comp0">Emission :</label>
             <div class="col-sm-2">
-                <input type="date" class="form-control border border-dark" name="c_comp0" id="c_comp0" {% if facfilter[5] %}value="{{ facfilter[4] }}"{% else %}placeholder="debut"{% endif %}>
+                <input type="date" class="form-control border border-dark" name="d_comp0" id="d_comp0" {% if facfilter[4] %}value="{{ facfilter[4] }}"{% else %}placeholder="debut"{% endif %}>
             </div>
             <div class="col-sm-2">
-                <input type="date" class="form-control border border-dark" name="c_comp1" id="c_comp1" {% if facfilter[5] %}value="{{ facfilter[5] }}"{% else %}placeholder="fin"{% endif %}>
+                <input type="date" class="form-control border border-dark" name="d_comp1" id="d_comp1" {% if facfilter[5] %}value="{{ facfilter[5] }}"{% else %}placeholder="fin"{% endif %}>
             </div>
         </div>
         <div class="row form-group">
@@ -88,28 +80,17 @@
             </div>
             <label class="col-sm-2 control-label" for="d_reg0">Reglement :</label>
             <div class="col-sm-2">
-                <input type="date" class="form-control border border-dark" name="c_reg0" id="c_reg0" {% if facfilter[5] %}value="{{ facfilter[6] }}"{% else %}placeholder="debut"{% endif %}>
+                <input type="date" class="form-control border border-dark" name="d_reg0" id="d_reg0" {% if facfilter[6] %}value="{{ facfilter[6] }}"{% else %}placeholder="debut"{% endif %}>
             </div>
             <div class="col-sm-2">
-                <input type="date" class="form-control border border-dark" name="c_reg1" id="c_reg1" {% if facfilter[5] %}value="{{ facfilter[7] }}"{% else %}placeholder="fin"{% endif %}>
-            </div>
-        </div>
-        <div class="row form-group">
-            <div class="col-sm-1">
-            </div>
-            <label class="col-sm-2 control-label" for="d_rapp0">Rapprochement :</label>
-            <div class="col-sm-2">
-                <input type="date" class="form-control border border-dark" name="c_rapp0" id="c_rapp0" {% if facfilter[5] %}value="{{ facfilter[8] }}"{% else %}placeholder="debut"{% endif %}>
-            </div>
-            <div class="col-sm-2">
-                <input type="date" class="form-control border border-dark" name="c_rapp1" id="c_rapp1" {% if facfilter[5] %}value="{{ facfilter[9] }}"{% else %}placeholder="fin"{% endif %}>
+                <input type="date" class="form-control border border-dark" name="d_reg1" id="d_reg1" {% if facfilter[7] %}value="{{ facfilter[7] }}"{% else %}placeholder="fin"{% endif %}>
             </div>
         </div>
     </form>
 
     {% for fac in factures %}
         <div class="row">
-            <div class="col-sm-2">
+            <div class="col-sm-2" id="fac{{ fac.id }}">
                 {{ fac.fdate.strftime("%Y-%m-%d")}} :
             </div>
             <div class="col-sm-3">{% if fac.clinic_id %}<span class="bg-success-subtle">{% endif %}
@@ -118,14 +99,15 @@
             <div class="col-sm-1">
                 <i>{{ fac.total }}&nbsp;€</i>
             </div>
-            <div class="col-sm-3"><form action="/factures" {% if fac.paid %}onsubmit="return confirmDialog()"{% endif %} method="POST">
+            <div class="col-sm-6"><form action="/factures" {% if fac.isPaid() %}onsubmit="return confirmDialog()"{% endif %} method="POST">
+                {% if fac.isFrozen() %}En attente{% elif fac.isUnpaid() %}A payer{% elif fac.isPaid() %}<span class="bg-success-subtle"><i>réglée le {{ fac.pdate.strftime("%Y-%m-%d %H:%M") }}</i></span>{% endif %}
+                {% if user.PrivCOMPTAMOD %}
                 <input type="hidden" name="factid" value="{{fac.id}}">
-                {% if fac.paid %}<span class="bg-success-subtle"><i>réglée le {{ fac.pdate.strftime("%Y-%m-%d %H:%M") }}</i></span>{% if user.PrivCOMPTAMOD and not fac.reconciled %} <button class="btn btn-danger btn-sm" type="submit" name="action" value="fact_unpaid">Annuler</button>{% endif %}
-                {% elif not fac.reconciled %}{% if user.PrivCOMPTAMOD %}<button class="btn btn-warning btn-sm" type="submit" name="action" value="fact_paid">Indiquer réglée</button>{% else %}A payer{% endif %}{% endif %}
+                {% if fac.isFrozen() %}<button class="btn btn-secondary btn-sm" type="submit" name="action" value="fact_unfreeze">Mettre en reglement</button>
+                {% elif fac.isUnpaid() %}<button class="btn btn-warning btn-sm" type="submit" name="action" value="fact_paid">Indiquer réglée</button> <button class="btn btn-secondary btn-sm" type="submit" name="action" value="fact_freeze">Mettre en attente</button>
+                {% elif fac.isPaid() and not fac.isReconciled()%}<button class="btn btn-danger btn-sm" type="submit" name="action" value="fact_unpaid">Annuler</button>{% endif %}
+                {% endif %}{% if fac.isReconciled() %}<span class="text-success"><i>OK BANQUE le {{ fac.rdate.strftime("%Y-%m-%d") }}</i></span>{% endif %}
                 </form>
-            </div>
-            <div class="col-sm-3">
-                {% if fac.reconciled %}<span class="alert-success"><i>OK BANQUE le {{ fac.rdate.strftime("%Y-%m-%d") }}</i></span>{% endif %}
             </div>
         </div>
     {% endfor %}

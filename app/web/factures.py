@@ -1,5 +1,5 @@
 from app import app, db, devel_site
-from app.staticdata import FAidSpecial
+from app.staticdata import FAidSpecial, FAC_FROZEN, FAC_UNPAID, FAC_PAID, FAC_RECONC
 from app.models import Facture, User
 from flask import render_template, request, redirect, url_for, jsonify, session, Response
 from flask_login import login_required, current_user
@@ -67,7 +67,7 @@ def factures_upload():
                 if theClinic:
                     theClinicId = theClinic.id
 
-                theFact = Facture(fdate=facdate, clinic=val[1], clinic_id=theClinicId, facnumber=val[2], total=val[3], duplicata=dupnum, paid=False, reconciled=False)
+                theFact = Facture(fdate=facdate, clinic=val[1], clinic_id=theClinicId, facnumber=val[2], total=val[3], duplicata=dupnum, state=FAC_UNPAID)
                 db.session.add(theFact)
                 rv[datline] = "success"
 
@@ -96,19 +96,29 @@ def factures_upload():
             theFact = Facture.query.filter(and_(Facture.clinic==val[1],Facture.facnumber==val[2])).first()
 
             if theFact:
-                if not theFact.reconciled:
-                    # mark as reconciled
-                    theFact.reconciled = True
+                if theFact.state == FAC_RECONC:
+                    # attempt to re-reconcile, indicate possible problem (duplicate?)
+                    rv[datline] = "WARN: already reconciled: " + theFact.rdate.strftime("%Y-%m-%d")
+
+                elif theFact.state == FAC_PAID:
+                    # all is normal
+                    theFact.state = FAC_RECONC
                     theFact.rdate = bankdate
                     rv[datline] = "success"
-                else:
-                    rv[datline] = "already reconciled: " + theFact.rdate.strftime("%Y-%m-%d")
 
-                # also force indication of paid if it wasn't done (and report it)
-                if not theFact.paid:
-                    theFact.paid = True
+                elif theFact.state == FAC_UNPAID:
+                    # should have been marked paid....
+                    theFact.state = FAC_RECONC
                     theFact.pdate = bankdate
-                    rv[datline] = rv[datline] + ", force-marked paid: " + bankdate.strftime("%Y-%m-%d")
+                    theFact.rdate = bankdate
+                    rv[datline] = "WARN: success, but force-marked paid: " + bankdate.strftime("%Y-%m-%d")
+
+                else: # FROZEN
+                    # no choice but to indicate done....
+                    theFact.state = FAC_RECONC
+                    theFact.pdate = bankdate
+                    theFact.rdate = bankdate
+                    rv[datline] = "ERROR: paid+reconciled on FROZEN " + bankdate.strftime("%Y-%m-%d")
 
             else:
                 rv[datline] = "facture not found"
@@ -159,7 +169,8 @@ def factures_download():
     for f in theFacts:
         datline = "data{}".format(i)
         i = i + 1
-        rv[datline] = "{};{};{};{};{};{};{};{}".format(f.fdate.strftime("%Y-%m-%d"), f.clinic, f.facnumber, f.total, f.paid, f.pdate.strftime("%Y-%m-%d") if f.paid else "", f.reconciled, f.rdate.strftime("%Y-%m-%d") if f.reconciled else "")
+        rv[datline] = "{};{};{};{};{};{};{}".format(f.fdate.strftime("%Y-%m-%d"), f.clinic, f.facnumber, f.total, \
+            f.state, f.pdate.strftime("%Y-%m-%d") if f.state>=FAC_PAID else "", f.rdate.strftime("%Y-%m-%d") if f.state>=FAC_RECONC else "")
 
     # return the result
     return jsonify(rv)
@@ -184,18 +195,21 @@ def factures_page():
         if theFact == None:
             return render_template("error_page.html", user=current_user, errormessage="invalid fact id", FAids=FAidSpecial)
 
-        if theFact.paid:
-            message.append( [2, "Facture {}/{} DEJA indiquée payée".format(theFact.clinic, theFact.facnumber) ] )
+        if theFact.state == FAC_FROZEN:
+            message.append( [3, "Facture <a href=\"#fac{}\">{}/{}</a> EN ATTENTE".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
 
-        elif theFact.reconciled:
-            message.append( [3, "Facture {}/{} DEJA dans un extrait banquaire".format(theFact.clinic, theFact.facnumber) ] )
+        elif theFact.state == FAC_PAID:
+            message.append( [2, "Facture <a href=\"#fac{}\">{}/{}</a> DEJA indiquée payée".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
+
+        elif theFact.state == FAC_RECONC:
+            message.append( [3, "Facture <a href=\"#fac{}\">{}/{}</a> DEJA dans un extrait banquaire".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
 
         else:
             # indicate as paid
-            theFact.paid = True
+            theFact.state = FAC_PAID
             theFact.pdate = datetime.now()
             db.session.commit()
-            message.append( [0, "Facture {}/{} indiquée payée".format(theFact.clinic, theFact.facnumber) ] )
+            message.append( [0, "Facture <a href=\"#fac{}\">{}/{}</a> indiquée payée".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
 
     elif cmd == "fact_unpaid" and current_user.PrivCOMPTAMOD:
         # find the facture
@@ -203,13 +217,43 @@ def factures_page():
         if theFact == None:
             return render_template("error_page.html", user=current_user, errormessage="invalid fact id", FAids=FAidSpecial)
 
-        if theFact.reconciled:
+        if theFact.state == FAC_RECONC:
             # you cannot indicate this unpaid!
-            message.append( [3, "Facture {}/{}: reglement deja indiqué sur le relevé banquaire!".format(theFact.clinic, theFact.facnumber) ] )
+            message.append( [3, "Facture <a href=\"#fac{}\">{}/{}</a>: reglement deja indiqué sur le relevé bancaire!".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
         else:
-            theFact.paid = False
+            theFact.state = FAC_UNPAID
             db.session.commit()
-            message.append( [2, "Facture {}/{} indiquée NON payée".format(theFact.clinic, theFact.facnumber) ] )
+            message.append( [2, "Facture <a href=\"#fac{}\">{}/{}</a> indiquée NON payée".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
+
+    elif cmd == "fact_freeze" and current_user.PrivCOMPTAMOD:
+        # find the facture
+        theFact = Facture.query.filter_by(id=request.form["factid"]).first()
+        if theFact == None:
+            return render_template("error_page.html", user=current_user, errormessage="invalid fact id", FAids=FAidSpecial)
+
+        if theFact.state >= FAC_PAID:
+            # you cannot indicate this unpaid!
+            message.append( [3, "Facture <a href=\"#fac{}\">{}/{}</a> DEJA indiquée payée!".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
+        elif theFact.state == FAC_UNPAID:
+            # freeze this
+            theFact.state = FAC_FROZEN
+            db.session.commit()
+            message.append( [2, "Facture <a href=\"#fac{}\">{}/{}</a> mise en attente".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
+
+    elif cmd == "fact_unfreeze" and current_user.PrivCOMPTAMOD:
+        # find the facture
+        theFact = Facture.query.filter_by(id=request.form["factid"]).first()
+        if theFact == None:
+            return render_template("error_page.html", user=current_user, errormessage="invalid fact id", FAids=FAidSpecial)
+
+        if theFact.state != FAC_FROZEN:
+            # uh?
+            message.append( [3, "Facture <a href=\"#fac{}\">{}/{}</a>: n'est pas en attente!".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
+        else:
+            # ufreeze this
+            theFact.state = FAC_UNPAID
+            db.session.commit()
+            message.append( [2, "Facture <a href=\"#fac{}\">{}/{}</a> règlement désormais possible".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
 
     elif cmd == "fact_filter":
         # update the filter
@@ -219,7 +263,7 @@ def factures_page():
         showPaid = ("opt_paid" in request.form)
         showReconciled = ("opt_reconciled" in request.form)
         filtClinic = request.form["opt_clinic"] if "opt_clinic" in request.form else ""
-        filtDates = [request.form[did] for did in ["d_comp0", "d_comp1", "d_reg0", "d_reg1", "d_rapp0", "d_rapp1"]]
+        filtDates = [request.form[did] for did in ["d_comp0", "d_comp1", "d_reg0", "d_reg1"]]
 
         # save for the future
         session["optCOMPTA"] = ("1;" if showUnpaid else "0;")+("1;" if showPaid else "0;")+("1;" if showReconciled else "0;")+filtClinic+";"+";".join(filtDates)
@@ -244,34 +288,35 @@ def factures_page():
         showPaid = True
         showReconciled = False
         filtClinic = ""
-        filtDates = ["","","","","",""]
+        filtDates = ["","","",""]
 
     fquery = Facture.query
 
     if current_user.PrivCOMPTASELF:
         fquery = fquery.filter(Facture.clinic_id==current_user.id)
 
-    # I have no idea how to do this cleanly with a query....
+    # make sure we keep the ones requested (note: frozen == unpaid)
+    # no idea on how to do this in a better way....
     if showUnpaid:
         if showPaid:
             if showReconciled:
                 pass
             else:
-                fquery = fquery.filter(Facture.reconciled==False)
+                fquery = fquery.filter(Facture.state<FAC_RECONC)
         else:
             if showReconciled:
-                fquery = fquery.filter(or_(Facture.reconciled==True,and_(Facture.paid==False,Facture.reconciled==False)))
+                fquery = fquery.filter(Facture.state!=FAC_PAID)
             else:
-                fquery = fquery.filter(and_(Facture.reconciled==False,Facture.paid==False))
+                fquery = fquery.filter(Facture.state<FAC_PAID)
     else:
         if showPaid:
             if showReconciled:
-                fquery = fquery.filter(or_(Facture.reconciled==True,Facture.paid==True))
+                fquery = fquery.filter(Facture.state>FAC_UNPAID)
             else:
-                fquery = fquery.filter(and_(Facture.reconciled==False,Facture.paid==True))
+                fquery = fquery.filter(Facture.state==FAC_PAID)
         else:
             if showReconciled:
-                fquery = fquery.filter(Facture.reconciled==True)
+                fquery = fquery.filter(Facture.state>FAC_PAID)
             else:
                 fquery = None
 
@@ -281,10 +326,10 @@ def factures_page():
             fquery = fquery.filter(Facture.clinic.contains(filtClinic))
 
         # add filtering by date (dates are stored as dd/mm/yy, so we need to convert)
-        for i in range(0,6):
+        for i in range(0,4):
             if filtDates[i]:
                 try:
-                    dv = datetime.strptime(filtDates[i], "%d/%m/%y")
+                    dv = datetime.strptime(filtDates[i], "%Y-%m-%d")
                 except ValueError:
                     dv = None
 
@@ -297,21 +342,21 @@ def factures_page():
                         fquery = fquery.filter(Facture.pdate>=dv)
                     elif i == 3:
                         fquery = fquery.filter(Facture.pdate<=dv)
-                    elif i == 4:
-                        fquery = fquery.filter(Facture.rdate>=dv)
-                    elif i == 5:
-                        fquery = fquery.filter(Facture.rdate<=dv)
 
         # order by date
         facs = fquery.order_by(Facture.fdate).all()
     else:
         facs = []
 
-    # cumulate the total
-    ftotal = Decimal(0)
+    # calculate the totals
+    # values are: unpaid, paid, grand total
+    ftotal = [Decimal(0), Decimal(0), Decimal(0)]
     for f in facs:
-        if not f.paid and not f.reconciled:
-            ftotal = ftotal + f.total
+        if f.state < FAC_PAID:  # unpaid
+            ftotal[0] = ftotal[0] + f.total
+        if f.state > FAC_UNPAID: # paid, reconciled or not
+            ftotal[1] = ftotal[1] + f.total
+        ftotal[2] = ftotal[2] + f.total
 
     if cmd == "fact_export":
         # generate the CSV instead of the page
@@ -319,7 +364,7 @@ def factures_page():
         datfile.append("Date,Clinique,N.Facture,Total TTC,Réglée le,Rapprochée le")
 
         for f in facs:
-            datline = [ f.fdate.strftime("%Y-%m-%d"), '"'+f.clinic+'"', '"'+f.facnumber+'"',str(f.total),("" if not f.paid else f.pdate.strftime('%Y-%m-%d')),("" if not f.reconciled else f.rdate.strftime('%Y-%m-%d')) ]
+            datline = [ f.fdate.strftime("%Y-%m-%d"), '"'+f.clinic+'"', '"'+f.facnumber+'"',str(f.total),("" if f.state<FAC_PAID else f.pdate.strftime('%Y-%m-%d')),("" if f.state<FAC_RECONC else f.rdate.strftime('%Y-%m-%d')) ]
             datfile.append(",".join(datline))
 
         return Response(

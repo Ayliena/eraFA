@@ -57,7 +57,7 @@
                     </form></ul>
                 </li>{% endif %}
                 {% if user.FAisADM %}<li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Gest. Registre</a>
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Administrateur</a>
                     <ul class="dropdown-menu"><form class="form-inline" action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
                         <li><button class="dropdown-item" name="FAid" value="{{FAids[2]}}">Historique</button></li>
                     </form><form class="form-inline" action="/cat" method="POST">

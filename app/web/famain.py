@@ -6,7 +6,7 @@ from flask import render_template, redirect, request, url_for, session
 from flask_login import login_required, current_user
 from sqlalchemy import and_
 from sqlalchemy.sql import text
-from datetime import datetime
+from datetime import datetime,timedelta
 
 @app.route('/fa', methods=["GET", "POST"])
 def fapage():
@@ -65,11 +65,37 @@ def fapage():
                 listtitle="Chats disponibles à l'adoption", catlist=Cat.query.filter_by(adoptable=True).order_by(Cat.regnum).all(), FAids=FAidSpecial, msg=message, adoptonly=True)
 
         elif mode == "special-vethistory":
+            if "optVETOHIST" in session:
+                histFilter = session["optVETOHIST"].split(';')
+            else:
+                histFilter = ["", (datetime.now()-timedelta(days=7)).strftime('%Y-%m-%d'), datetime.today().strftime('%Y-%m-%d')]
+
+            vquery = VetInfo.query
+            # get all the visits
+            vquery = vquery.filter(and_(VetInfo.vet_id==FAid, and_(VetInfo.planned==False,VetInfo.transferred==True)))
+            # filter by fa if requested
+            if histFilter[0]:
+                vquery = vquery.join(VetInfo.doneby).filter(User.FAname.contains(histFilter[0]))
+
+            for i in range(1,3):
+                if histFilter[i]:
+                    try:
+                        dv = datetime.strptime(histFilter[i], "%Y-%m-%d")
+                        dv = dv.replace(hour=23, minute=59, second=59)
+                    except ValueError:
+                        dv = None
+
+                    if dv:
+                        if i == 1:
+                            vquery = vquery.filter(VetInfo.vdate>=dv)
+                        elif i == 2:
+                           vquery = vquery.filter(VetInfo.vdate<=dv)
+
             # display the past visits, sorted by date
-            visits = VetInfo.query.filter(and_(VetInfo.vet_id==FAid, and_(VetInfo.planned==False,VetInfo.transferred==True))).order_by(VetInfo.vdate.desc()).all()
+            visits = vquery.order_by(VetInfo.vdate.desc()).all()
 
             return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    vvisits=visits, visitmode="history", FAids=FAidSpecial, msg=message)
+                    vvisits=visits, visitmode="history", histfilter=histFilter, FAids=FAidSpecial, msg=message)
 
         elif mode == "special-search":
             searchfilter = session["searchFilter"]

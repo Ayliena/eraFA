@@ -1,5 +1,6 @@
 from app import app, db, devel_site
 from app.staticdata import FAidSpecial
+from app.permissions import hasPrivilege, UT_MANAGER, UT_FA, UT_REFUGE, UT_ADOPTES, UT_DECEDES, UT_HIST, UT_FATEMP, UT_VETO, PRIV_ADMIN, PRIV_RFA, PRIV_REF, PRIV_ADDCD, PRIV_HIST, PRIV_SEARCH, PRIV_BSC, PRIV_RVETO, PRIV_RPLAN, PRIV_REGNUM, PRIV_APIR, PRIV_APIW, PRIV_ADDUNR
 from app.models import Cat, User
 from app.helpers import isRefuge
 from flask import render_template, redirect, request, url_for, session, Response
@@ -58,7 +59,7 @@ def userpage():
             return redirect(url_for('userpage'))
 
         # TODO: sanity check on compatible/incompatible privileges
-        theFA = User(username=uname, password_hash="nologin", FAname=request.form["u_iname"], FAid=request.form["u_pname"], FAemail=request.form["u_email"],
+        theFA = User(username=uname, password_hash="nologin", usertype=UT_FA, PrivStr="0", FAname=request.form["u_iname"], FAid=request.form["u_pname"], FAemail=request.form["u_email"],
                      numcats=0, FAisFA=("u_isFA" in request.form), FAisRF=("u_isRF" in request.form),
                      FAisOV=("u_isOV" in request.form), FAisVET=("u_isVET" in request.form), PrivCOMPTA=("p_COMPTA" in request.form) )
 
