@@ -131,6 +131,7 @@
                         <div class="form-group">
                             <input type="date" class="form-control border border-dark" name="c_vdate" id="c_vdate" placeholder="aujourd'hui">
                         </div>
+                        (vide = aujourd'hui)
                     </div>
                 </div>
                 {% else %}<div class="row">
@@ -163,7 +164,7 @@
                 <form action="/cat" method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
                 <div class="row">
                     <div class="col-sm-1">
-                        <button class="btn btn-outline-dark" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{{ cat.regStr() }}</span></strong></button>
+                        <button class="btn btn-outline-dark text-nowrap" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{{ cat.regStr() }}</span></strong></button>
                     </div>
                     <div class="col-sm-2">{{ cat.identif }}</div>
                     <div class="col-sm-4">
@@ -171,8 +172,8 @@
                         ({% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}<span class="bg-warning">??sexe??</span>{% endif %},
                         {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %},
                         {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})</div>
-                    <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
-                    <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success">Adoptable</span>{% else %}Non adoptable{% endif %}</div>
+                    <div class="col-sm-1"><p class="text-nowrap" style="font-family:monospace;">{{ cat.vetshort }}</p></div>
+                    <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success-subtle">Adoptable</span>{% else %}Non adoptable{% endif %}</div>
                 </div>
                 <div class="row" style="display: none;" id="desc_{{cat.id}}">
                     <div class="col-sm-1"></div>
@@ -191,7 +192,7 @@
                 <form action="/cat" method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
                 <div class="row align-items-baseline">
                     <div class="col-sm-1">
-                        <button class="btn btn-outline-dark" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{{ cat.regStr() }}</span></strong></button>
+                        <button class="btn btn-outline-dark text-nowrap" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{{ cat.regStr() }}</span></strong></button>
                     </div>
                     <div class="col-sm-2">{{ cat.identif }}</div>
                     <div class="col-sm-4">
@@ -199,7 +200,7 @@
                         ({% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}<span class="bg-warning">??sexe??</span>{% endif %},
                         {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %},
                         {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})</div>
-                    <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
+                    <div class="col-sm-1"><p class="text-nowrap" style="font-family:monospace;">{{ cat.vetshort }}</p></div>
                     {% if cat.owner_id == FAids[4] %}<div class="col-sm-2">
                         {{ cat.temp_owner }}
                     </div>{% endif %}
@@ -208,7 +209,7 @@
                         Sortie: {{ cat.lastop.strftime("%d/%m/%y") }}
                     </div>
                     {% else %}
-                    <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success">Adoptable</span>{% else %}Non adoptable{% endif %}</div>
+                    <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success-subtle">Adoptable</span>{% else %}Non adoptable{% endif %}</div>
                     {% endif %}
                 </div>
                 <div class="row" style="display: none;" id="desc_{{cat.id}}">

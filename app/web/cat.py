@@ -373,9 +373,9 @@ def catpage(catid=-1):
             theCat.lastop = datetime.now()
             current_user.FAlastop = datetime.now()
             db.session.commit()
-            message.append([0, "Informations mises a jour: {}{}".format(updated, visitupdated)])
+            message.append([0, "{}/{} informations mises á jour: {}{}".format(theCat.regStr(), theCat.name, updated, visitupdated)])
         else:
-            message.append([0, "Aucune information etait modifiee"])
+            message.append([0, "{}/{} aucune information était modifiée".format(theCat.regStr(), theCat.name)])
 
         # if we stay on the page, regenerate it directly
         if cmd == "fa_modcatr":

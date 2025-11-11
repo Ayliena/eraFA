@@ -41,21 +41,22 @@
                  <div class="col-sm-1">
                     <form action="/cat" method="POST">
                         <input type="hidden" name="catid" value="{{cat.id}}">
-                        <button class="btn btn-outline-dark" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{{ cat.regStr() }}</span></strong></button>
+                        <button class="btn btn-outline-dark text-nowrap" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{{ cat.regStr() }}</span></strong></button>
                     </form>
                 </div>
                 <div class="col-sm-2">{{ cat.identif }}</div>
                 <div class="col-sm-4">
                     <a href="#" onClick="showHide('desc_{{cat.registre}}');"><b>{% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}</b></a>
-                    ({{ tabsex[cat.sex] }},
-                    {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}??âge??{% endif %},
-                    {{ tabcol[cat.color] }}{{ tabhair[cat.longhair] }})</div>
-                <div class="col-sm-1"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
+                    ({% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}<span class="bg-warning">??sexe??</span>{% endif %},
+                    {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %},
+                    {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})
+                </div>
+                <div class="col-sm-1"><p class="text-nowrap" style="font-family:monospace;">{{ cat.vetshort }}</p></div>
                 <div class="col-sm-2">
                     {% if cat.owner_id == FAids[4] %}[{{ cat.temp_owner }}]{% else %}{{ cat.owner.FAname }}{% endif %}
                 </div>
                 {% if not adoptonly %}
-                    <div class="col-sm-2">{% if cat.isPrivate() %}Privé{% else %}{% if cat.adoptable %}<span class="bg-success-subtle">Adoptable</span>{% else %}<span class="bg-danger-subtle">Non adoptable</span>{% endif %}{% endif %}</div>
+                    <div class="col-sm-2">{% if cat.isPrivate() %}Privé{% else %}{% if cat.adoptable %}<span class="bg-success-subtle">Adoptable</span>{% else %}Non adoptable{% endif %}{% endif %}</div>
                 {% endif %}
             </div>
             <div class="row" style="display: none;" id="desc_{{cat.registre}}">

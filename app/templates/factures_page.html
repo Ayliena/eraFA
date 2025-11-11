@@ -18,12 +18,17 @@
             document.getElementById("opt_unpaid").checked = true;
             document.getElementById("opt_paid").checked = true;
             document.getElementById("opt_reconciled").checked = false;
-            var dateids = ["d_comp0", "d_comp1", "d_reg0", "d_reg1", "d_rapp0", "d_rapp1"];
+            var dateids = ["d_comp0", "d_comp1", "d_reg0", "d_reg1"];
             for (var i = 0; i < dateids.length; ++i) {
                 document.getElementById(dateids[i]).value = "";
             }
             {% if not user.PrivCOMPTASELF %}document.getElementById("opt_clinic").value = "";{% endif %}
         }
+        {% if user.PrivCOMPTAMOD %}function copyFac(c, n, t) {
+            var tf = t.replace('.', ',');
+            navigator.clipboard.writeText("ERAFAC;" + c + ";" + n + ";" + tf);
+            alert("Information copiee");
+        }{% endif %}
    </script>
 <body>
     {% include 'navbar.html' %}
@@ -94,7 +99,9 @@
                 {{ fac.fdate.strftime("%Y-%m-%d")}} :
             </div>
             <div class="col-sm-3">{% if fac.clinic_id %}<span class="bg-success-subtle">{% endif %}
+                {% if user.PrivCOMPTAMOD %}<a href="javascript:void(0);" onClick="copyFac('{{ fac.clinic }}','{{ fac.facnumber }}','{{ fac.total }}')">{% endif %}
                 <b>{{ fac.clinic }} {{ fac.facnumber }}{% if fac.duplicata %} [{{ fac.duplicata }}]{% endif %}</b>{% if fac.clinic_id %}</span>{% endif %}
+                {% if user.PrivCOMPTAMOD %}</a>{% endif %}
             </div>
             <div class="col-sm-1">
                 <i>{{ fac.total }}&nbsp;€</i>
