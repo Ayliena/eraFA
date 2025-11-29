@@ -1,0 +1,115 @@
+<html>
+    <head>
+        <title>{{ bvtitle }}</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <style>
+            @page {
+                 size: A4 portrait;
+                 margin: 0pt;
+            }
+            @media print {
+                html, body {
+                    margin: 20pt;
+                }
+                table, th, td, p {
+                    font-size: 11pt;
+                }
+                h4 {
+                    margin-top: 0px;
+                }
+            }
+            table, th, td {
+                border: 0px;
+                margin-left: 10px;
+            }
+            th, td {
+               padding: 2px;
+            }
+        </style>
+    </head>
+    <script>
+{% include 'functions.html' %}
+    </script>
+<body>
+
+<table>
+    <tr>
+        <td><img src="{{ url_for('static', filename='logo-ERA.png')}}" style="width:140px;" /></td>
+        <td style="white-space: pre;"><b>ERA Ethique et Respect Animal</b>
+1 rue des Zouaves
+67000 STRASBOURG
+Tel. 06 58 49 23 93
+E-mail: veterinaires@association-era.org
+Web: www.association-era.org</td>
+        <td style="width: 100%; text-align: right;"><img src="{{ qrcode(qrdata) }}" style="width:140px;" /></td>
+    </tr>
+</table>
+
+<h3 style="text-align:center">PRISE EN CHARGE (ABANDON)</h2>
+<p>Motif/Lieu: blah blah blah</p>
+
+<h4>Amenant</h4>
+
+<table>
+    <tr>
+        <td>Nom: LENOM</td>
+        <td>Prenom: LEPRENOM</td>
+    </tr>
+    <tr>
+        <td>Adresse: LADRESSE</td>
+    </tr>
+    <tr>
+        <td>CP: LECP</td>
+        <td>Ville: LAVILLE</td>
+    </tr>
+    <tr>
+        <td>Tel.: LETEL</td>
+        <td>E-Mail: LEE-MAIL</td>
+    </tr>
+</table>
+
+<h4>Chats</h4>
+<table>
+    <tr>
+        <th>Nom</th>
+        <th>Sexe</th>
+        <th>Couleur</th>
+        <th>Age</th>
+        <th>Identification</th>
+        <th>Signes particuliers</th>
+    </tr>
+{% for cat in peccats %}
+{% endfor %}
+    <tr>
+        <td>Tigrou</td>
+        <td>MALE</td>
+        <td>TABBY BLANC</td>
+        <td>ADULTE</td>
+        <td>250269699786100</td>
+        <td>coryza bien avance</td>
+    </tr>
+</table>
+
+<h4>Situation vétérinaire</h4>
+
+<h4>Localisation</h4>
+
+<h4>Déclaration signée par l'amenant :</h4>
+
+<p>Je soussigné(e) AAA BBB déposant des chats mentionnés
+ci-haut, désire les confier à l'association ERA. Il est donc convenu par la signature de ce document que je
+n’aurai plus aucun droit de propriété et de responsabilité sur les chats ci-haut mentionnés.<br>
+L’association se chargera de trouver une nouvelle famille pour les chats ou de trouver un endroit adapté
+pour leur relâche si les chats sont sauvages et qu’ils ont éthologiquement besoin de vivre en liberté.<br>
+(cocher ici ☐ si dans ce cas de figure une relâche est possible chez vous)</p>
+
+<p>A Strasbourg, le 11/22/3333<br>(signature précédée de la mention 'Lu et Approuvé')</p>
+
+
+<p>Montant du don pour prise en charge : __________________ réglés en _______________</p>
+
+</body>
+</html>
