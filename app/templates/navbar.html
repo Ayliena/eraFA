@@ -17,7 +17,7 @@
                 {% if user.FAisREF %}<li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Opérations refuge</a>
                     <ul class="dropdown-menu"><form class="form-inline" action="/refuge" method="POST">
-                        <li><button class="dropdown-item" type="submit" name="action" value="ref_prise">Prise en charge</button></li>
+                        <li><a class="dropdown-item" href="/refpec">Prise en charge</a></li>
                         <li><a class="dropdown-item" href="/refbsc">Bon de stérilisation</a></li>
                     </form><form class="form-inline" action="/cat" method="POST">
                         <li><button class="dropdown-item" type="submit" name="action" value="adm_newcatref">Arrivee d'un chat</button></li>

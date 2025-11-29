@@ -163,7 +163,7 @@
             {% endif %}
         </div>
         {% if cat.comments %}<div class="form-group"><label class="control-label" for="c_comments">Commentaires (interne ERA):</label><textarea class="form-control border border-dark" id="c_comments" name="c_comments" {% if readonly %}disabled{% endif %}>{{ cat.comments }}</textarea></div>
-        {% else %}<div class="form-group"><label class="control-label" for="c_comments">Commentaires (interne ERA):</label><textarea class="form-control" id="c_comments" name="c_comments" placeholder="Commentaires et/ou signes particuliers" {% if readonly %}disabled{% endif %}></textarea></div> {% endif %}
+        {% else %}<div class="form-group"><label class="control-label" for="c_comments">Commentaires (interne ERA):</label><textarea class="form-control border border-dark" id="c_comments" name="c_comments" placeholder="Commentaires et/ou signes particuliers" {% if readonly %}disabled{% endif %}></textarea></div> {% endif %}
 
         {% if cat.description %}<div class="form-group"><label class="control-label" for="c_description">Description (publique, pour les adoptants):</label><textarea class="form-control border border-dark" rows="4" id="c_description" name="c_description" {% if readonly %}disabled{% endif %}>{{ cat.description }}</textarea></div>
         {% else %}<div class="form-group"><label class="control-label" for="c_description">Description (publique, pour les adoptants):</label><textarea class="form-control border border-dark" rows="4" id="c_description" name="c_description" placeholder="Description et conseils d'adoption" {% if readonly %}disabled{% endif %}></textarea></div> {% endif %}

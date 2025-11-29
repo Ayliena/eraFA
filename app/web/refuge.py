@@ -18,6 +18,15 @@ def refugebscpage():
     # we rely on the webpage to do the job
     return render_template("refuge_page.html", devsite=devel_site, user=current_user, pagetype=2, FAids=FAidSpecial, TabCols=DBTabColor)
 
+@app.route("/refpec", methods=["GET"])
+@login_required
+def refugepecpage():
+    if not current_user.FAisREF:
+       return render_template("error_page.html", user=current_user, errormessage="acion only available for REF", FAids=FAidSpecial)
+
+    # we rely on the webpage to do the job
+    return render_template("refuge_page.html", devsite=devel_site, user=current_user, pagetype=1, FAids=FAidSpecial, TabCols=DBTabColor)
+
 @app.route("/refuge", methods=["GET", "POST"])
 @login_required
 def refugepage():
@@ -30,20 +39,56 @@ def refugepage():
 
     cmd = request.form["action"]
 
-    # prise en charge - request for parameters
-    if cmd == "ref_prise":
-       return render_template("refuge_page.html", devsite=devel_site, user=current_user, pagetype=1, FAids=FAidSpecial, TabCols=DBTabColor)
-
     # prise en charge - generate the document
-    if cmd == "ref_genprise":
-       return render_template("error_page.html", user=current_user, errormessage="unimplemented ref_genprise", FAids=FAidSpecial)
+    if cmd == "ref_genprise" or cmd == "ref_genprisesave":
+        messages = []
 
-    # bon sterilisation for an adopted cat - try to take the data from the clipboard, otherwise ask
-#    if cmd == "ref_bonSter":
-#        # we rely on the webpage to do the job
-#        return render_template("refuge_page.html", devsite=devel_site, user=current_user, pagetype=2, FAids=FAidSpecial, TabCols=DBTabColor)
+        # get the data
+        ptype = 1 if request.form["pec_type"] == 'T' else 2
 
-    # bon sterilisation for an adopted cat - called by the previous page
+        try:
+            date = datetime.strptime(request.form["pec_date"], "%Y-%m-%d")
+        except ValueError:
+            date = datetime.now()
+
+        motif = request.form["pec_why"]
+        amdata = [request.form[k] for k in ('pec_nom', 'pec_prenom', 'pec_adresse', 'pec_cp', 'pec_ville', 'pec_tel', 'pec_email')]
+
+        cats = []
+        for i in range(1,7):
+            # only fill the lines where we have a name
+            cn = request.form["pec_name{}".format(i)]
+
+            if cn:
+                cs = request.form["pec_sex{}".format(i)]
+                cc = DBTabColor[int(request.form["pec_color{}".format(i)])]
+                ca = request.form["pec_age{}".format(i)]
+                cats.append([cn, cs, cc, ca, request.form["pec_id{}".format(i)], request.form["pec_spec{}".format(i)]])
+            else:
+                cats.append(['', '', '', '', '', ''])
+
+        carnet = 1 if 'pec_carnet' in request.form else 0
+        icad = 1 if 'pec_icad' in request.form else 0
+        vet = [request.form[k] for k in ('pec_vetv', 'pec_vett', 'pec_vets')]
+
+        # note that in reality we ignore the radio selection, unless everything is empty
+        locref = request.form['pec_refwhere']
+        locFA = request.form['pec_fawhere']
+
+        if not locref and not locFA:
+            if request.form["pec_where"] == "R":
+                locref = '...au refuge...'
+            else:
+                locFA = '...une FA...'
+
+        # if we have to add the cats, do it and prepare the messages
+        if cmd == "ref_genprisesave":
+            # blah blah add the cats
+            messages.append("La possibilite de enregistrer automatiquement les chats n'est pas encore en place!")
+
+        return render_template("pecform_page.html", user=current_user, msg=messages, pec_type=ptype, pec_date=date, pec_motif=motif, amenant=amdata, peccats=cats, pec_carnet=carnet, pec_icad=icad, pec_vet=vet, pec_refuge=locref, pec_FA=locFA)
+
+    # bon sterilisation for an adopted cat - called by the /refbsc page
     if cmd == "ref_genbonSter" or cmd == "ref_genbonSterMan":
         # if we have the string from refugilys, we need nothing else
         if cmd == "ref_genbonSter":
@@ -101,7 +146,12 @@ def refugepage():
             return render_template("refuge_page.html", devsite=devel_site, user=current_user, msg=message, pagetype=2, FAids=FAidSpecial)
 
         # generate the dates
-        bdate = datetime.strptime(vals[7], "%d/%m/%y")
+        try:
+            bdate = datetime.strptime(vals[7], "%d/%m/%y")
+        except ValueError:
+            message = [ [3, "Date de naissance non valable!"] ]
+            return render_template("refuge_page.html", devsite=devel_site, user=current_user, msg=message, pagetype=2, FAids=FAidSpecial)
+
         # steril is +6m, lim is steril +2m
         datpro = bdate+relativedelta(months=6)
         #datlim = datpro.replace(day=1)

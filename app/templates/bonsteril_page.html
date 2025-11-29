@@ -1,32 +1,64 @@
 <html>
-    <head>
-        <title>{{ bvtitle }}</title>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+<head>
+    <title>{{ bvtitle }}</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <style>
-            @page {
-                 size: A4 portrait;
-                 margin: 0pt;
+    <style>
+        @page {
+             size: A4 portrait;
+             margin: 15mm;
+        }
+
+        .screen-only {
+            display: block;
+        }
+
+        .screen-only button {
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin: 5px;
+        }
+
+        .screen-only button:hover {
+            background-color: #0056b3;
+        }
+
+        @media print {
+            body {
+                width: 210mm;
+                height: 297mm;
+                margin: 0;
+                padding: 0;
             }
-            @media print {
-                html, body {
-                    margin: 20pt;
-                }
-                table, th, td, p {
-                    font-size: 11pt;
-                }
+            table, th, td, p {
+                font-size: 11pt;
             }
-            table, th, td {
-                border: 0px;
+            .screen-only {
+                display: none !important;
             }
-            th, td {
-               padding: 2px;
-            }
+        }
+        table, th, td {
+            border: 0px;
+        }
+        th, td {
+           padding: 2px;
+        }
         </style>
     </head>
 <body>
+
+    <div class="screen-only">
+        <button onclick="window.print()">Imprimer le document</button>
+        <a href="/fa"><button>Retour au site</button></a>
+    </div>
+
 
 <table>
     <tr>

@@ -1,115 +1,394 @@
-<html>
-    <head>
-        <title>{{ bvtitle }}</title>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demande de Prise en Charge</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-        <style>
-            @page {
-                 size: A4 portrait;
-                 margin: 0pt;
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+
+        .screen-only {
+            display: block;
+        }
+
+        .screen-only button {
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin: 5px;
+        }
+
+        .screen-only button:hover {
+            background-color: #0056b3;
+        }
+
+        .screen-only p {
+            font-size: 16px;
+            display: block;
+            background-color: lightgreen;
+        }
+
+        @media print {
+            body {
+                width: 210mm;
+                height: 297mm;
+                margin: 0;
+                padding: 0;
             }
-            @media print {
-                html, body {
-                    margin: 20pt;
-                }
-                table, th, td, p {
-                    font-size: 11pt;
-                }
-                h4 {
-                    margin-top: 0px;
-                }
+            .screen-only {
+                display: none !important;
             }
-            table, th, td {
-                border: 0px;
-                margin-left: 10px;
-            }
-            th, td {
-               padding: 2px;
-            }
-        </style>
-    </head>
-    <script>
-{% include 'functions.html' %}
-    </script>
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.1;
+            color: #000;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .header h1 {
+            font-size: 14pt;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .header h2 {
+            font-size: 12pt;
+            font-weight: bold;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 10px;
+            font-size: 11pt;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .form-field {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+
+        .form-field label {
+            margin-right: 5px;
+            white-space: nowrap;
+        }
+
+        .form-field .underline {
+            flex: 1;
+            border-bottom: 1px solid #000;
+            min-width: 50px;
+            height: 20px;
+            line-height: 18px;
+            font-weight: bold;
+        }
+
+.multiline-field {
+    width: 100%;
+    min-height: 40px;
+    padding: 5px 5px 0 5px;
+    line-height: 20px;
+    font-weight: bold;
+    word-wrap: break-word;
+    text-decoration: underline;
+    text-decoration-thickness: 0.5px;
+    text-decoration-color: #000;
+}
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+table th,
+table td {
+    border: 1px solid #000;
+    padding: 5px;
+    text-align: left;
+    font-size: 10pt;
+}
+
+table th {
+    font-weight: bold;
+    background-color: #f0f0f0;
+}
+
+table td {
+    height: 25px;
+    vertical-align: top;
+}
+
+        .checkbox-group {
+            margin-bottom: 8px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .checkbox {
+            width: 15px;
+            height: 15px;
+            border: 1px solid #000;
+            margin-right: 8px;
+            display: inline-block;
+            text-align: center;
+            line-height: 15px;
+            font-size: 15pt;
+            font-weight: bold;
+        }
+
+        .declaration {
+            margin: 5px 0;
+            line-height: 1.6;
+            text-align: justify;
+        }
+
+        .signature-section {
+            margin-top: 20px;
+        }
+
+        .signature-line {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .signature-line label {
+            margin-right: 5px;
+        }
+
+        .signature-line .underline {
+            flex: 1;
+            border-bottom: 1px solid #000;
+            height: 20px;
+        }
+
+        .small-text {
+            font-size: 9pt;
+            font-style: italic;
+        }
+    </style>
+</head>
 <body>
+    <div class="screen-only">
+    {% for m in msg %}
+        <p class="messagegr">{{ m }}</p>
+    {% endfor %}
+    </div>
+
+    <div class="screen-only">
+        <button onclick="window.print()">Imprimer le document</button>
+        <a href="/fa"><button>Retour au site</button></a>
+    </div>
 
 <table>
     <tr>
-        <td><img src="{{ url_for('static', filename='logo-ERA.png')}}" style="width:140px;" /></td>
-        <td style="white-space: pre;"><b>ERA Ethique et Respect Animal</b>
+        <td style="border: 0px;"><img src="{{ url_for('static', filename='logo-ERA.png')}}" style="width:120px;" /></td>
+        <td style="white-space: pre; border: 0px;"><b>ERA Ethique et Respect Animal</b>
 1 rue des Zouaves
 67000 STRASBOURG
 Tel. 06 58 49 23 93
 E-mail: veterinaires@association-era.org
 Web: www.association-era.org</td>
-        <td style="width: 100%; text-align: right;"><img src="{{ qrcode(qrdata) }}" style="width:140px;" /></td>
+        <td style="width: 100%; text-align: right; border: 0px;"></td>
     </tr>
 </table>
 
-<h3 style="text-align:center">PRISE EN CHARGE (ABANDON)</h2>
-<p>Motif/Lieu: blah blah blah</p>
+<h2 class="header">DEMANDE DE PRISE EN CHARGE ({% if pec_type==2 %}ABANDON{% else %}TROUVE{% endif %})</h2>
 
-<h4>Amenant</h4>
+    <div class="section">
+        <div class="form-field">
+        <label>{% if pec_type==1 %}Lieu/contexte où ils les chats ont été trouvés{% else %}Contexte de l'abandon / conseils d'adoption{% endif %} :</label>
+        </div>
+        <div class="multiline-field">
+            {{ pec_motif }}
+        </div>
+    </div>
 
-<table>
-    <tr>
-        <td>Nom: LENOM</td>
-        <td>Prenom: LEPRENOM</td>
-    </tr>
-    <tr>
-        <td>Adresse: LADRESSE</td>
-    </tr>
-    <tr>
-        <td>CP: LECP</td>
-        <td>Ville: LAVILLE</td>
-    </tr>
-    <tr>
-        <td>Tel.: LETEL</td>
-        <td>E-Mail: LEE-MAIL</td>
-    </tr>
-</table>
+    <div class="section">
+        <div class="section-title">Amenant</div>
+        <div class="form-row">
+            <div class="form-field">
+                <label>Nom :</label>
+                <span class="underline">{{ amenant[0] }}</span>
+            </div>
+            <div class="form-field">
+                <label>Prénom :</label>
+                <span class="underline">{{ amenant[1] }}</span>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-field">
+                <label>Adresse :</label>
+                <span class="underline">{{ amenant[2] }}</span>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-field" style="flex: 0 0 30%;">
+                <label>CP :</label>
+                <span class="underline">{{ amenant[3] }}</span>
+            </div>
+            <div class="form-field">
+                <label>Ville :</label>
+                <span class="underline">{{ amenant[4] }}</span>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-field">
+                <label>Tel. :</label>
+                <span class="underline">{{ amenant[5] }}</span>
+            </div>
+            <div class="form-field">
+                <label>E-Mail :</label>
+                <span class="underline">{{ amenant[6] }}</span>
+            </div>
+        </div>
+    </div>
 
-<h4>Chats</h4>
-<table>
-    <tr>
-        <th>Nom</th>
-        <th>Sexe</th>
-        <th>Couleur</th>
-        <th>Age</th>
-        <th>Identification</th>
-        <th>Signes particuliers</th>
-    </tr>
+    <div class="section">
+        <div class="section-title">Chats</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Sexe</th>
+                    <th>Couleur</th>
+                    <th>Age</th>
+                    <th>Numéro de puce</th>
+                    <th>Signes particuliers</th>
+                </tr>
+            </thead>
+            <tbody>
 {% for cat in peccats %}
+                <tr>
+                    <td>{{ cat[0] }}</td>
+                    <td>{{ cat[1] }}</td>
+                    <td>{{ cat[2] }}</td>
+                    <td>{{ cat[3] }}</td>
+                    <td>{{ cat[4] }}</td>
+                    <td>{{ cat[5] }}</td>
+                </tr>
 {% endfor %}
-    <tr>
-        <td>Tigrou</td>
-        <td>MALE</td>
-        <td>TABBY BLANC</td>
-        <td>ADULTE</td>
-        <td>250269699786100</td>
-        <td>coryza bien avance</td>
-    </tr>
-</table>
+            </tbody>
+        </table>
+    </div>
 
-<h4>Situation vétérinaire</h4>
+    <div class="section">
+        <div class="section-title">Situation vétérinaire</div>
+        <div class="checkbox-group">
+            <div class="checkbox-item">
+                <label>Pour des chats abandonnés :</label>
+            </div>
+            <div class="checkbox-item">
+                <span class="checkbox" style="margin-left: 30px">{% if pec_carnet %}X{% endif %}</span>
+                <label>déposés avec carnet vétérinaire</label>
+                <span class="checkbox" style="margin-left: 30px;">{% if pec_icad %}X{% endif %}</span>
+                <label>déposés avec fiche ICad signée</label>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-field">
+                <label>Vaccin/rappel :</label>
+                <span class="underline">{{ pec_vet[0] }}</span>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-field">
+                <label>Test FIV/FeLV :</label>
+                <span class="underline">{{ pec_vet[1] }}</span>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-field">
+                <label>Sterilisation/castration :</label>
+                <span class="underline">{{ pec_vet[2] }}</span>
+            </div>
+        </div>
+    </div>
 
-<h4>Localisation</h4>
+    <div class="section">
+        <div class="section-title">Localisation</div>
+        <div class="form-row">
+            <div class="form-field">
+                <span class="checkbox">{% if pec_refuge %}X{% endif %}</span>
+                <label>Chats au refuge (indiquer pièce / cage) :</label>
+                <span class="underline">{{ pec_refuge }}</span>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-field">
+                <span class="checkbox">{% if pec_FA %}X{% endif %}</span>
+                <label>Chats partis en FA (indiquer le nom) :</label>
+                <span class="underline">{{ pec_FA }}</span>
+            </div>
+        </div>
+    </div>
 
-<h4>Déclaration signée par l'amenant :</h4>
+    <div class="section">
+        <div class="section-title">Déclaration signée par l'amenant :</div>
+        <div class="declaration">
+            Je soussigné(e) <b>{{ amenant[1] }} {{ amenant[0] }}</b> déposant des chats mentionnés
+            ci-haut, désire les confier à l'association ERA. Il est donc convenu par la signature de ce document que je
+            n'aurai plus aucun droit de propriété et de responsabilité sur les chats ci-haut mentionnés.
+            L'association se chargera de trouver une nouvelle famille pour les chats ou de trouver un endroit adapté
+            pour leur relâche si les chats sont sauvages et qu'ils ont éthologiquement besoin de vivre en liberté.
+        </div>
+        <div class="checkbox-item" style="margin-top: 0px;">
+            <span class="checkbox"></span>
+            <label>(cocher ici si dans ce cas de figure une relâche est possible chez vous)</label>
+        </div>
+    </div>
 
-<p>Je soussigné(e) AAA BBB déposant des chats mentionnés
-ci-haut, désire les confier à l'association ERA. Il est donc convenu par la signature de ce document que je
-n’aurai plus aucun droit de propriété et de responsabilité sur les chats ci-haut mentionnés.<br>
-L’association se chargera de trouver une nouvelle famille pour les chats ou de trouver un endroit adapté
-pour leur relâche si les chats sont sauvages et qu’ils ont éthologiquement besoin de vivre en liberté.<br>
-(cocher ici ☐ si dans ce cas de figure une relâche est possible chez vous)</p>
+    <div class="signature-section">
+        <div class="signature-line">
+            <label>A Strasbourg, le {{ pec_date.strftime("%d/%m/%y") }}
+        </div>
+        <div class="small-text" style="margin-bottom: 50px;">(signature précédée de la mention 'Lu et Approuvé')</div>
+    </div>
 
-<p>A Strasbourg, le 11/22/3333<br>(signature précédée de la mention 'Lu et Approuvé')</p>
-
-
-<p>Montant du don pour prise en charge : __________________ réglés en _______________</p>
-
+    <div class="section">
+        <div class="form-row">
+            <div class="form-field">
+                <label>Montant du don pour prise en charge :</label>
+                <span class="underline" style="max-width: 150px;"></span>
+                <label style="margin-left: 10px;">réglés en</label>
+                <span class="underline" style="max-width: 150px;"></span>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
