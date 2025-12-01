@@ -135,7 +135,8 @@ def refugepage():
 
             db.session.commit()
 
-        return render_template("pecform_page.html", user=current_user, msg=messages, pec_type=ptype, pec_date=date, pec_motif=motif, amenant=amdata, peccats=cats, pec_carnet=carnet, pec_icad=icad, pec_vet=vet, pec_refuge=locref, pec_FA=locFA)
+        pdfname = "PeC-{} {}-{}".format(amdata[0], amdata[1], date.strftime("%Y-%m-%d"))
+        return render_template("pecform_page.html", user=current_user, msg=messages, pectitle=pdfname, pec_type=ptype, pec_date=date, pec_motif=motif, amenant=amdata, peccats=cats, pec_carnet=carnet, pec_icad=icad, pec_vet=vet, pec_refuge=locref, pec_FA=locFA)
 
     # bon sterilisation for an adopted cat - called by the /refbsc page
     if cmd == "ref_genbonSter" or cmd == "ref_genbonSterMan":
