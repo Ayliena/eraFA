@@ -10,6 +10,25 @@
                  size: A4 portrait;
                  margin: 0pt;
             }
+        .screen-only {
+            display: block;
+        }
+
+        .screen-only button {
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin: 5px;
+        }
+
+        .screen-only button:hover {
+            background-color: #0056b3;
+        }
+
             @media print {
                 html, body {
                     margin: 20pt;
@@ -37,6 +56,11 @@
         }
     </script>
 <body>
+
+    <div class="screen-only">
+        <button onclick="window.print()">Imprimer le document</button>
+        <a href="/fa"><button>Retour au site</button></a>
+    </div>
 
 <table>
     <tr>

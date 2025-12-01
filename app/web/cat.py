@@ -1,6 +1,6 @@
 from app import app, db, devel_site
 from app.staticdata import DBTabColor, TabCage, FAidSpecial, ACC_NONE, ACC_RO, ACC_FULL, ACC_TOTAL, DEFAULT_VET
-from app.models import User, Cat, VetInfo, Event
+from app.models import User, Cat, Event
 from app.helpers import isRefuge, isFATemp, isValidCage, cat_associate_to_FA, accessPrivileges, getViewUser
 from app.vetvisits import vetMapToString, vetSubStrings, cat_addVetVisit, cat_updateVetVisit
 from flask import render_template, redirect, request, url_for, session

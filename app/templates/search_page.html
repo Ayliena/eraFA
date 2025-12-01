@@ -17,6 +17,25 @@
             fixAllDates();
             //fixAllRegnums();
         }
+function toggleTooltip(icon) {
+    const tooltip = icon.nextElementSibling;
+    const isCurrentlyOpen = tooltip.classList.contains('show');
+
+    // Close all tooltips first
+    document.querySelectorAll('.tooltip.show').forEach(t => t.classList.remove('show'));
+
+    // If this tooltip wasn't open, open it now
+    if (!isCurrentlyOpen) {
+        tooltip.classList.add('show');
+    }
+}
+
+// Optional: close tooltip when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.classList.contains('help-icon')) {
+        document.querySelectorAll('.tooltip.show').forEach(t => t.classList.remove('show'));
+    }
+});
     </script>
     <style>
    hr {
@@ -24,6 +43,39 @@
        margin-bottom:10px !important;
        margin-top:5px !important;
    }
+.help-icon {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-color: #007bff;
+    color: white;
+    text-align: center;
+    line-height: 18px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.tooltip {
+    display: none;
+    position: absolute;
+    background-color: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    margin-left: 5px;
+    max-width: 500px;
+    white-space: normal;
+    word-wrap: break-word;
+    z-index: 1000;
+}
+
+.tooltip.show {
+    display: inline-block;
+}
     </style><body>
 {% include 'navbar.html' %}
 
@@ -43,30 +95,55 @@
 
         <h2>Recherche de chats</h2>
 
-        <p>Le résultat est la liste de tous les chats qui vérifient au moins un des critères.</p>
-        <p>Pour le registre "nnn-yy" cherche un chat précis, "nnn" cherche le numéro indépendemment de l'année, 'N' cherche les chats non-enregistrés et 'P' les chats privés.</p>
+        <p>Le résultat est la liste de tous les chats qui <b>vérifient au moins un des critères</b>.</p>
         <p>(Dernier import: <span id="rn_1">{{ lastreg }}</span> le {{ lastdate.strftime("%Y-%m-%d") }}, dernier synch {{ syncdate.strftime("%Y-%m-%d") }})</p>
 
         <form action="/search" method="POST">
             <div class="row">
                 <div class="col-sm-2">Registre:</div>
-                <div class="col-sm-3"><input type="text" name="src_regnum"{% if defval and defval[0] %} value="{{defval[0]}}"{% endif %}></div>
+                <div class="col-sm-3"><input type="text" name="src_regnum"{% if defval and defval[0] %} value="{{defval[0]}}"{% endif %}>
+                <span class="help-icon" onclick="toggleTooltip(this)">?</span>
+                <span class="tooltip">Numero de registre ERA (nnn-yy: nnn=numero du chat et yy=annee),
+                    nnn seul donne les chats avec ce numero independemment de l'annee.<br>
+                    Pour les chat non-enregistres, Nxxxx avec xxxx=numero interne du site FA,
+                    si on indique 'N' sans numero le resultat sont tous les chats non-enregistres.</span>
+                </div>
             </div>
             <div class="row">
                 <div class="col-sm-2">Nom:</div>
-                <div class="col-sm-3"><input type="text" name="src_name"{% if defval and defval[1] %} value="{{defval[1]}}"{% endif %}></div>
+                <div class="col-sm-3"><input type="text" name="src_name"{% if defval and defval[1] %} value="{{defval[1]}}"{% endif %}>
+                <span class="help-icon" onclick="toggleTooltip(this)">?</span>
+                <span class="tooltip">Cherche tous les noms qui contiennent le texte indique
+                    et non pas une correspondence exacte.</span>
+                </div>
             </div>
             <div class="row">
                 <div class="col-sm-2">Identification:</div>
-                <div class="col-sm-4"><input type="text" name="src_id"{% if defval and defval[2] %} value="{{defval[2]}}"{% endif %}></div>
+                <div class="col-sm-4"><input type="text" name="src_id"{% if defval and defval[2] %} value="{{defval[2]}}"{% endif %}>
+                <span class="help-icon" onclick="toggleTooltip(this)">?</span>
+                <span class="tooltip">Cherche tous les identifications qui contiennent la sequence de chiffres indiquee
+                    et non pas une correspondence exacte.<br>
+                    En general, avec les 6 dernieres chiffres on a le bon resultat.</span>
+                </div>
             </div>
             <div class="row form-group">
                 <div class="col-sm-2">Nom FA:</div>
-                <div class="col-sm-4"><input type="text" name="src_faname"{% if defval and defval[3] %} value="{{defval[3]}}"{% endif %}></div>
+                <div class="col-sm-4"><input type="text" name="src_faname"{% if defval and defval[3] %} value="{{defval[3]}}"{% endif %}>
+                <span class="help-icon" onclick="toggleTooltip(this)">?</span>
+                <span class="tooltip">Cherche tous les chats dans des FA dont le nom contient le texte indique.<br>
+                    "refuge" donne la liste des chats au refuge.<br>
+                    Il est possible de chercher des chats dans une cage specifique du refuge
+                    en utilisant l'identifiant de l'emplacement de la cage:<br>
+                    AXX = cage non specifiee<br>
+                    B01-B06 = cages de la maternite<br>
+                    G07-G22 = cages de la grande piece<br>
+                    P23-P34 = cages de la petite piece.</span>
+                </div>
             </div>
             <div class="row mt-2">
                 <div class="col-sm-2"><button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_search">Rechercher (information)</button></div>
-                {% if user.FAisADM or user.FAisOV %}<div class="col-sm-2"><button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_searchs">Rechercher (selection)</button></div>{% endif %}
+                {% if user.FAisADM or user.FAisOV %}<div class="col-sm-2"><button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_searchs">Rechercher (selection)</button></div>
+                <div class="col-sm-6">Utiliser "information" pour acceder aux informations des chats et<br>"selection" pour generer des bons veto relatifs aux chats.</div>{% endif %}
             </div>
         </form>
         {% if listtitle %}<hr>

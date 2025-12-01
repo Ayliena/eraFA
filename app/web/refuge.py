@@ -1,6 +1,7 @@
-from app import app, devel_site
+from app import app, db, devel_site
 from app.staticdata import DBTabColor, FAidSpecial
-from app.helpers import ERAsum
+from app.helpers import ERAsum, cat_associate_to_FA
+from app.models import User, Cat, Event
 from flask import render_template, redirect, request, url_for
 from flask_login import login_required, current_user
 from datetime import datetime
@@ -57,15 +58,18 @@ def refugepage():
         cats = []
         for i in range(1,7):
             # only fill the lines where we have a name
+            # note: we add two extra numeric columns with the sex and color representation (useful when adding a cat)
             cn = request.form["pec_name{}".format(i)]
 
             if cn:
                 cs = request.form["pec_sex{}".format(i)]
-                cc = DBTabColor[int(request.form["pec_color{}".format(i)])]
+                csn = (1 if cs == 'F' else (2 if cs == 'M' else 0))
+                ccn = int(request.form["pec_color{}".format(i)])
+                cc = DBTabColor[ccn]
                 ca = request.form["pec_age{}".format(i)]
-                cats.append([cn, cs, cc, ca, request.form["pec_id{}".format(i)], request.form["pec_spec{}".format(i)]])
+                cats.append([cn, cs, cc, ca, request.form["pec_id{}".format(i)], request.form["pec_spec{}".format(i)], csn, ccn])
             else:
-                cats.append(['', '', '', '', '', ''])
+                cats.append(['', '', '', '', '', '', 0, 0])
 
         carnet = 1 if 'pec_carnet' in request.form else 0
         icad = 1 if 'pec_icad' in request.form else 0
@@ -75,6 +79,9 @@ def refugepage():
         locref = request.form['pec_refwhere']
         locFA = request.form['pec_fawhere']
 
+        if locFA.lower() == "amenant":
+            locFA = amdata[0] + " " + amdata[1]
+
         if not locref and not locFA:
             if request.form["pec_where"] == "R":
                 locref = '...au refuge...'
@@ -83,8 +90,50 @@ def refugepage():
 
         # if we have to add the cats, do it and prepare the messages
         if cmd == "ref_genprisesave":
-            # blah blah add the cats
-            messages.append("La possibilite de enregistrer automatiquement les chats n'est pas encore en place!")
+            # use the cat information to add the cats
+            # decide where they go: note that while it may be possible to fill both refuge and FA
+            # the program cannot guess, so they all go to refuge if it's not empty
+            if locref:
+                theFA = User.query.filter_by(id=FAidSpecial[3]).first()
+                fatemp = "AXX"
+            else:
+                # we could try an exact match, for now just use TempFA
+                theFA = User.query.filter_by(id=FAidSpecial[4]).first()
+                fatemp = locFA
+
+            for cd in cats:
+                # empty name = ignore
+                if not cd[0]:
+                    continue
+
+                # create the cat
+                # for vetshort, try to guess something from the data
+                # this may fail horribly for a mother+litter, but that's life
+                vetstr = ('-' +
+                    ('1' if carnet and vet[0] else '-') +
+                    '-' +
+                    ('P' if cd[4] else '-') +
+                    ('T' if carnet and vet[1] else '-') +
+                    ('S' if vet[2] else '-') +
+                    '--')
+
+                # save what we can in the comment string
+                commstr = "PeC {}: amenant {} {}, {}".format(date.strftime("%d/%m/%y"), amdata[0], amdata[1], motif)
+
+                theCat = Cat(regnum=-1, temp_owner=fatemp, name=cd[0], sex=cd[6], color=cd[7], longhair=0, identif=cd[4],
+                    vetshort=vetstr, comments=commstr, description='', adoptable=False)
+                cat_associate_to_FA(theCat, theFA)
+
+                db.session.add(theCat)
+                # make sure we have an id
+                db.session.commit()
+
+                # generate the event
+                messages.append("Chat N{}/{} rajoute dans le systeme".format(theCat.id, cd[0]))
+                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: auto-genere par prise en charge".format(current_user.FAname))
+                db.session.add(theEvent)
+
+            db.session.commit()
 
         return render_template("pecform_page.html", user=current_user, msg=messages, pec_type=ptype, pec_date=date, pec_motif=motif, amenant=amdata, peccats=cats, pec_carnet=carnet, pec_icad=icad, pec_vet=vet, pec_refuge=locref, pec_FA=locFA)
 

@@ -158,7 +158,11 @@ def fapage():
                 cats = cats + Cat.query.filter(Cat.identif.contains(src_id)).order_by(Cat.temp_owner,Cat.regnum).all()
 
             if src_FAname:
-                cats = cats + Cat.query.filter(Cat.temp_owner.contains(src_FAname)).order_by(Cat.temp_owner,Cat.regnum).all()
+                # handle the special "refuge" case
+                if src_FAname.lower() == 'refuge':
+                    cats = cats + Cat.query.filter(Cat.owner_id==FAidSpecial[3]).order_by(Cat.temp_owner,Cat.regnum).all()
+                else:
+                    cats = cats + Cat.query.filter(Cat.temp_owner.contains(src_FAname)).order_by(Cat.temp_owner,Cat.regnum).all()
 
             # ok, so if multiple rules were provided, the results will NOT be sorted correctly, but it's too annoying to do this right
             globaldata = GlobalData.query.filter_by(id=1).first()
