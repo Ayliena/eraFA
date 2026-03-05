@@ -143,7 +143,7 @@ class User(UserMixin, db.Model):
     # check that the privilieges definition for this user is correct
     def checkPrivileges(self):
         # if length of string is less than PRIV_NUMBER, expend and pad with zeroes
-        if len(self.PrivStr) < NUM_PRIVS:
+        if not self.PrivStr or len(self.PrivStr) < NUM_PRIVS:
             self.PrivStr = self.PrivStr.rjust(NUM_PRIVS, '0')
         return True
 
@@ -160,7 +160,7 @@ class User(UserMixin, db.Model):
         return True
 
     def hasPrivilege(self, pn):
-        if pn >= len(self.PrivStr):
+        if not self.PrivStr or pn >= len(self.PrivStr):
             return False
 
         if self.PrivStr[pn] == '1':

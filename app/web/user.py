@@ -90,7 +90,7 @@ def userpage():
     if cmd == "adm_newuser":
         # generate an empty page to create a new user
         theFA = User()
-        return render_template("user_page.html", devsite=devel_site, user=current_user, fauser=theFA, rftab=RFtab, FAids=FAidSpecial)
+        return render_template("user_page.html", devsite=devel_site, user=current_user, fauser=theFA, rftab=RFtab, TabUserTypes=TabUserTypes, FAids=FAidSpecial)
 
     if cmd == "adm_adduser":
         # add a new user
