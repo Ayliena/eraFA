@@ -108,7 +108,11 @@ def fapage():
             cats = []
 
             if src_name:
-                cats = cats + Cat.query.filter(Cat.name.contains(src_name)).order_by(Cat.regnum).all()
+                # see if we have one name or more
+                cnames = src_name.split(',')
+
+                for curcname in cnames:
+                    cats = cats + Cat.query.filter(Cat.name.contains(curcname)).order_by(Cat.regnum).all()
 
             if src_regnum:
                 if src_regnum.startswith('N'):

@@ -1,6 +1,6 @@
 from app import app, db, devel_site
 from app.staticdata import FAidSpecial
-from app.permissions import hasPrivilege, UT_MANAGER, UT_FA, UT_REFUGE, UT_ADOPTES, UT_DECEDES, UT_HIST, UT_FATEMP, UT_VETO, PRIV_ADMIN, PRIV_RFA, PRIV_REF, PRIV_ADDCD, PRIV_HIST, PRIV_SEARCH, PRIV_BSC, PRIV_RVETO, PRIV_RPLAN, PRIV_REGNUM, PRIV_APIR, PRIV_APIW, PRIV_ADDUNR
+from app.permissions import FIRST_PRIV, NUM_PRIVS, UT_FA, UT_MANAGER, UT_REFUGE, UT_AD, UT_DCD, UT_RS, UT_HIST, UT_FATEMP, UT_VETO, PRIV_CMMOD, TabUserTypes, TabPrivs
 from app.models import Cat, User
 from app.helpers import isRefuge
 from flask import render_template, redirect, request, url_for, session, Response
@@ -8,6 +8,54 @@ from flask_login import login_required, current_user
 from werkzeug.security import generate_password_hash
 import string
 import secrets
+
+
+# extract the checkbox information and set the correct flags
+
+def defineUserPrivileges(user, form):
+    for p in range(FIRST_PRIV, NUM_PRIVS):
+        user.setPrivilege(p, "u_has"+TabPrivs[p] in form)
+
+    user.defineMenus()
+
+
+# filter a user list by permission, this cannot be done with a select and must be done manually
+def filterUsers(users, pn):
+    nu = []
+
+    for u in users:
+        if u.hasPrivilege(pn):
+            nu.append(u)
+
+    return nu
+
+
+# check the user data and make sure everything is ok
+# in particular: some account types are unique, so any attempt to create a new one will result in a UT_MANAGER
+# at this time, only one user can have CMMOD, so any double will fail
+
+def checkUserData(user):
+    m = []
+
+    # check unique user types
+    if user.usertype in [UT_REFUGE, UT_AD, UT_DCD, UT_RS, UT_HIST, UT_FATEMP]:
+        eu = User.query.filter_by(usertype=user.usertype).all()
+
+        #
+        if len(eu) > 1 or (len(eu) == 1 and eu[0].id != user.id):
+            m.append([3, "Usertype : {} est forcement unique et deja associe a {} -> type transforme en Manager".format(TabUserTypes[user.usertype], eu[0].username)])
+            user.usertype = UT_MANAGER
+
+    # PRIV_CMMOD est unique, il faut donc chercher si qqun a deja et indiquer qui
+    users = User.query.all()
+
+    users = filterUsers(users, PRIV_CMMOD)
+
+    if len(users):
+        m.append([3, "Userpriv : {} a deja CMMOD, il faut lui retirer avant de l'associer a un autre utilisateur".format(users[0].username)])
+        user.setPrivilege(PRIV_CMMOD, 0)
+
+    return m
 
 
 @app.route("/user", methods=["GET", "POST"])
@@ -58,8 +106,12 @@ def userpage():
             session["pendingmessage"] = [ [3, "Nom d'utilisateur '{}' déjà utilisé!".format(uname) ] ]
             return redirect(url_for('userpage'))
 
+        ut = int(request.form["u_type"])
+        if ut < 0 or ut > UT_VETO:
+            ut = UT_FA
+
         # TODO: sanity check on compatible/incompatible privileges
-        theFA = User(username=uname, password_hash="nologin", usertype=UT_FA, PrivStr="0", FAname=request.form["u_iname"], FAid=request.form["u_pname"], FAemail=request.form["u_email"],
+        theFA = User(username=uname, password_hash="nologin", usertype=ut, PrivStr="0", FAname=request.form["u_iname"], FAid=request.form["u_pname"], FAemail=request.form["u_email"],
                      numcats=0, FAisFA=("u_isFA" in request.form), FAisRF=("u_isRF" in request.form),
                      FAisOV=("u_isOV" in request.form), FAisVET=("u_isVET" in request.form), PrivCOMPTA=("p_COMPTA" in request.form) )
 
@@ -68,10 +120,15 @@ def userpage():
         if not theFA.FAresp_id or theFA.FAisRF or theFA.FAisADM:
             theFA.FAresp_id = None
 
+        # set privileges
+        defineUserPrivileges(theFA, request.form)
+        msg = checkUserData(theFA)
+
         db.session.add(theFA)
         db.session.commit()
 
-        session["pendingmessage"] = [ [0, "Nouveau utilisateur '{}' creé sans mot de passe".format(theFA.username) ] ]
+        msg.append([0, "Nouveau utilisateur '{}' creé sans mot de passe".format(theFA.username)])
+        session["pendingmessage"] = msg
         return redirect(url_for('userpage'))
 
     if cmd == "adm_expusers":
@@ -105,13 +162,19 @@ def userpage():
         return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage="invalid used id", FAids=FAidSpecial)
 
     if cmd == "adm_edituser":
-        return render_template("user_page.html", devsite=devel_site, user=current_user, fauser=theFA, rftab=RFtab, FAids=FAidSpecial)
+        return render_template("user_page.html", devsite=devel_site, user=current_user, fauser=theFA, rftab=RFtab, TabUserTypes=TabUserTypes, FAids=FAidSpecial)
 
     if cmd == "adm_moduser":
         theFA.FAid = request.form["u_pname"]
         theFA.FAname = request.form["u_iname"]
         theFA.FAemail = request.form["u_email"]
         theFA.FAresp_id = int(request.form["u_resp"]) if "u_resp" in request.form else 0
+
+        ut = int(request.form["u_type"])
+        if ut < 0 or ut > UT_VETO:
+            ut = UT_FA
+        theFA.usertype = ut
+
         theFA.FAisFA = "u_isFA" in request.form;
         theFA.FAisRF = "u_isRF" in request.form;
         theFA.FAisOV = "u_isOV" in request.form;
@@ -123,6 +186,9 @@ def userpage():
         # sanity check
         if not theFA.FAresp_id or theFA.FAisRF or theFA.FAisADM:
             theFA.FAresp_id = None
+
+        defineUserPrivileges(theFA, request.form)
+        msg = checkUserData(theFA)
 
         if theFA.FAisVET:
             # some privileges are not available to vets
@@ -139,7 +205,8 @@ def userpage():
                 c.temp_owner = theFA.FAname
 
         db.session.commit()
-        session["pendingmessage"] = [ [0, "Utilisateur {} : informations mises à jour".format(theFA.username) ] ]
+        msg.append([0, "Utilisateur {} : informations mises à jour".format(theFA.username)])
+        session["pendingmessage"] = msg
         return redirect(url_for('userpage'))
 
     if cmd == "adm_pwduser":

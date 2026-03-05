@@ -53,7 +53,7 @@ def refugepage():
             date = datetime.now()
 
         motif = request.form["pec_why"]
-        amdata = [request.form[k] for k in ('pec_nom', 'pec_prenom', 'pec_adresse', 'pec_cp', 'pec_ville', 'pec_tel', 'pec_email')]
+        amdata = [request.form[k] for k in ('ind_nom', 'ind_prenom', 'ind_adresse', 'ind_cp', 'ind_ville', 'ind_tel', 'ind_email')]
 
         cats = []
         for i in range(1,7):
@@ -67,7 +67,7 @@ def refugepage():
                 ccn = int(request.form["pec_color{}".format(i)])
                 cc = DBTabColor[ccn]
                 ca = request.form["pec_age{}".format(i)]
-                cats.append([cn, cs, cc, ca, request.form["pec_id{}".format(i)], request.form["pec_spec{}".format(i)], csn, ccn])
+                cats.append([cn.upper(), cs, cc, ca, request.form["pec_id{}".format(i)], request.form["pec_spec{}".format(i)], csn, ccn])
             else:
                 cats.append(['', '', '', '', '', '', 0, 0])
 
@@ -171,12 +171,12 @@ def refugepage():
             vals[8] = request.form["bcs_id"]
             vals[9] = request.form["bcs_addate"]
             # vals[10] provided already split
-            prop[0] = request.form["bcs_adnp"].upper()
-            prop[1] = request.form["bcs_adad"]
+            prop[0] = request.form["ind_nom"].upper() + " " + request.form["ind_prenom"].upper()
+            prop[1] = request.form["ind_adresse"]
             prop[2] = ""
             prop[3] = ""
-            prop[4] = request.form["bcs_adcp"] + " " + request.form["bcs_adcy"].upper()
-            prop[5] = request.form["bcs_adtel"]
+            prop[4] = request.form["ind_cp"] + " " + request.form["ind_ville"].upper()
+            prop[5] = request.form["ind_tel"]
             prop[6] = ""
 
         # check that puce is defined...
@@ -197,7 +197,7 @@ def refugepage():
 
         # generate the dates
         try:
-            bdate = datetime.strptime(vals[7], "%d/%m/%y")
+            bdate = datetime.strptime(vals[7], "%Y-%m-%d")
         except ValueError:
             message = [ [3, "Date de naissance non valable!"] ]
             return render_template("refuge_page.html", devsite=devel_site, user=current_user, msg=message, pagetype=2, FAids=FAidSpecial)

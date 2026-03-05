@@ -1,84 +1,97 @@
 # user types (defines the type of main page)
 
-UT_MANAGER = 0
-UT_FA = 1
+UT_FA     = 0
+UT_MANAGER= 1
 UT_REFUGE = 2
-UT_ADOPTES = 3
-UT_DECEDES = 4
-UT_HIST = 5
-UT_FATEMP = 6
-UT_VETO = 7
+UT_AD     = 3
+UT_DCD    = 4
+UT_RS     = 5
+UT_HIST   = 6
+UT_FATEMP = 7
+UT_VETO   = 8
 
-# 1st column is actually useless as UT_xxx can be used as an index
+# the index must match the values above!
 TabUserTypes = [
-    (UT_MANAGER, "Acces"),  # donne acces au permissions, mais sans role specifique
-    (UT_FA, "Famille d'Accueil"),
-    (UT_REFUGE, "Refuge"),
-    (UT_ADOPTES, "Adoptes"),
-    (UT_DECEDES, "Decedes"),
-    (UT_HIST, "Historique"),
-    (UT_FATEMP, "FA Temporaires"),
-    (UT_VETO, "Veterinaire")
+    "Famille d'Accueil",
+    "Manager",
+    "Refuge",
+    "Adoptes",
+    "Decedes",
+    "Relaches",
+    "Historique",
+    "FA Temporaires",
+    "Veterinaire"
 ]
 
 # Provileges are stored in a string using '0' and '1', the initial NUM_MENUS character refer to accessible menus in the
 # interface, while the subsequent characters are the privileges themselves
 NUM_MENUS = 10
 MENU_FA = 0       # liste chats + visites veto + registre des soins
-MENU_RFA = 1      # FA suivies + adoptes + decedes + historique + arrivee chat (FA suivies) + search
-MENU_REF = 2      # arrivee chat (refuge) + situation veto + planning veto + Bon S/C
-MENU_COMPTA = 3   # factures
-MENU_ADMIN = 4    # set regnum + arrivee chat (w/regnum) + users + admin functions + info on API access
+MENU_VET = 1      # visites planifiees / historique
+MENU_RFA = 2      # FA suivies + adoptes + decedes + historique + arrivee chat (FA suivies) + search
+MENU_PROC = 3     # procedures: arrivee chat (refuge) + situation veto + planning veto + Bon S/C
+MENU_COMPTA = 4   # factures
+MENU_ADMIN = 5    # admin functions
 
-PRIV_ADMIN = 11   # admin acces -> can do anything
-PRIV_RFA = 12     # referent FA -> can manage FAs
-PRIV_REF = 13     # refuge -> acces to refuge pages
-PRIV_ADDCD = 14   # access to the specific AD / DCD special FAs
-PRIV_HIST = 15    # access to the HIST special FA
-PRIV_SEARCH = 16  # can search for information on all cats
-PRIV_BSC = 17     # operations refuge -> bon sterilisation/castration
-PRIV_RVETO = 18   # access to refuge/visites veto
-PRIV_RPLAN = 19   # can plan visits for refuge
-PRIV_REGNUM = 20  # can give a regnum to an unregistered cat
-PRIV_APIR = 21    # api read access
-PRIV_APIW = 22    # api write access
-PRIV_ADDUNR= 23   # can add a new (unregistered) cat
+PRIV_RFA     = 10   # referent FA -> can manage FAs
+PRIV_RFATEMP = 11   # access to FAtemp
+PRIV_SUPER   = 12   # superviseur -> r/w access to all FA and cats
+PRIV_REF     = 13   # refuge -> acces to refuge page
+PRIV_ADR     = 14   # access to the specific AD / DCD . RS special FAs
+PRIV_HIST    = 15   # access to the HIST special FA
+PRIV_SEARCH  = 16   # can search for information on all cats
+PRIV_PEC     = 17   # procedure: PeC
+PRIV_BSC     = 18   # procedure: bon post-ad
+PRIV_CFA     = 19   # procedure: contrat FA
+PRIV_CAD     = 20   # procedure: contrat adoption
+PRIV_ADDCAT  = 21   # add an unregistered cat
+PRIV_COMPTA  = 22   # access to the factures
+PRIV_CMMOD   = 23   # can modify factures
+PRIV_CMSELF  = 24   # can only see owned factures
+PRIV_USERS   = 25   # can add/edit users
+PRIV_ADMIN   = 26   # admin operations
+PRIV_REGNUM  = 27   # can set regnum for a cat
+PRIV_MOVE    = 28   # can transfer cats
+PRIV_BVETO   = 29   # can generate bon veto/validate visit
+PRIV_RVETO   = 30   # can plan visits for refuge
+PRIV_APIR    = 31   # api read access
+PRIV_APIW    = 32   # api write access
 
-PRIV_NUMBER = 24
+FIRST_PRIV = 10
+NUM_PRIVS = 33
 
-
-# check that the privilieges definition for this user is correct
-def checkPrivileges(user):
-    # if length of string is less than PRIV_NUMBER, expend and pad with zeroes
-    if len(user.PrivStr) < PRIV_NUMBER:
-        user.PrivStr = user.PrivStr.rjust(PRIV_NUMBER, '0')
-    return True
-
-def setPrivilege(user, pn, val):
-    checkPrivileges(user)
-    # validate
-    if pn >= len(user.PrivStr):
-        return False
-
-    # note: we don't check if it was already set/unset
-    nps = user.PrivStr[:pn] + ("1" if val else "0") + user.PrivStr[pn+1:]
-    user.PrivStr = nps
-    return True
-
-def hasPrivilege(user, pn):
-    if pn >= len(user.PrivStr):
-        return False
-
-    if user.PrivStr[pn] == '1':
-        return True
-
-    return False
-
-def hasMenu(user, mn):
-    if mn > NUM_MENUS:
-        return False
-
-    if user.PrivStr[mn] == '1':
-        return True
-
-    return False
+TabPrivs = [
+    "MENU_FA",
+    "MENU_VET",
+    "MENU_RFA",
+    "MENU_PROC",
+    "MENU_COMPTA",
+    "MENU_ADMIN",
+    "",
+    "",
+    "",
+    "",
+    "RFA",
+    "RFATEMP",
+    "SUPER",
+    "REF",
+    "ADR",
+    "HIST",
+    "SEARCH",
+    "PEC",
+    "BSC",
+    "CFA",
+    "CAD",
+    "ADDCAT",
+    "COMPTA",
+    "CMMOD",
+    "CMSELF",
+    "USERS",
+    "ADMIN",
+    "REGNUM",
+    "MOVE",
+    "BVETO",
+    "RVETO",
+    "APIR",
+    "APIW"
+]

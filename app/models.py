@@ -1,6 +1,6 @@
 from app import db
 from werkzeug.security import check_password_hash
-from app.permissions import hasPrivilege, UT_MANAGER, UT_FA, UT_REFUGE, UT_ADOPTES, UT_DECEDES, UT_HIST, UT_FATEMP, UT_VETO, PRIV_ADMIN, PRIV_RFA, PRIV_REF, PRIV_ADDCD, PRIV_HIST, PRIV_SEARCH, PRIV_BSC, PRIV_RVETO, PRIV_RPLAN, PRIV_REGNUM, PRIV_APIR, PRIV_APIW, PRIV_ADDUNR
+from app.permissions import NUM_MENUS, NUM_PRIVS, UT_FA, UT_MANAGER, UT_REFUGE, UT_AD, UT_DCD, UT_RS, UT_HIST, UT_FATEMP, UT_VETO, MENU_FA, MENU_VET, MENU_RFA, MENU_PROC, MENU_COMPTA, MENU_ADMIN, PRIV_RFA, PRIV_RFATEMP, PRIV_SUPER, PRIV_REF, PRIV_ADR, PRIV_HIST, PRIV_SEARCH, PRIV_PEC, PRIV_BSC, PRIV_ADDCAT, PRIV_COMPTA, PRIV_CMMOD, PRIV_CMSELF, PRIV_USERS, PRIV_ADMIN, PRIV_REGNUM, PRIV_MOVE, PRIV_BVETO, PRIV_RVETO, PRIV_APIR, PRIV_APIW, TabUserTypes, TabPrivs, PRIV_CFA, PRIV_CAD
 from app.staticdata import FAC_FROZEN, FAC_UNPAID, FAC_PAID, FAC_RECONC
 from flask_login import UserMixin
 from datetime import datetime
@@ -59,16 +59,18 @@ class User(UserMixin, db.Model):
 
     # there does not seem to be an easy way to use constants in the templates without passing them
     # one by one as variables, so this utility functions "translate" the permissions into accessors
-    def typeManager(self):
-        return self.usertype == UT_MANAGER
     def typeFA(self):
         return self.usertype == UT_FA
+    def typeManager(self):
+        return self.usertype == UT_MANAGER
     def typeRefuge(self):
         return self.usertype == UT_REFUGE
     def typeAdoptes(self):
-        return self.usertype == UT_ADOPTES
+        return self.usertype == UT_AD
     def typeDecedes(self):
-        return self.usertype == UT_DECEDES
+        return self.usertype == UT_DCD
+    def typeRelaches(self):
+        return self.usertype == UT_RS
     def typeHistorique(self):
         return self.usertype == UT_HIST
     def typeFAtemp(self):
@@ -77,32 +79,164 @@ class User(UserMixin, db.Model):
         return self.usertype == UT_VETO
 
     # same as above, but for permissions and menus
-    def hasAdmin(self):
-        return hasPrivilege(self, PRIV_ADMIN)
+    def menuFA(self):
+        return self.hasMenu(MENU_FA)
+    def menuVET(self):
+        return self.hasMenu(MENU_VET)
+    def menuRFA(self):
+        return self.hasMenu(MENU_RFA)
+    def menuPROC(self):
+        return self.hasMenu(MENU_PROC)
+    def menuCOMPTA(self):
+        return self.hasMenu(MENU_COMPTA)
+    def menuADMIN(self):
+        return self.hasMenu(MENU_ADMIN)
+
     def hasReferent(self):
-        return hasPrivilege(self, PRIV_RFA)
+        return self.hasPrivilege(PRIV_RFA)
+    def hasReferentFAtemp(self):
+        return self.hasPrivilege(PRIV_RFATEMP)
+    def hasSuperviseur(self):
+        return self.hasPrivilege(PRIV_SUPER)
     def hasRefuge(self):
-        return hasPrivilege(self, PRIV_REF)
-    def hasAdDcd(self):
-        return hasPrivilege(self, PRIV_ADDCD)
+        return self.hasPrivilege(PRIV_REF)
+    def hasAdDcdRs(self):
+        return self.hasPrivilege(PRIV_ADR)
     def hasHist(self):
-        return hasPrivilege(self, PRIV_HIST)
+        return self.hasPrivilege(PRIV_HIST)
     def hasSearch(self):
-        return hasPrivilege(self, PRIV_SEARCH)
+        return self.hasPrivilege(PRIV_SEARCH)
+    def hasPriseEnCharge(self):
+        return self.hasPrivilege(PRIV_PEC)
     def hasBonSteril(self):
-        return hasPrivilege(self, PRIV_BSC)
-    def hasRefugeVeto(self):
-        return hasPrivilege(self, PRIV_RVETO)
-    def hasRefugePlanVeto(self):
-        return hasPrivilege(self, PRIV_RPLAN)
-    def hasRegistre(self):
-        return hasPrivilege(self, PRIV_REGNUM)
-    def hasAPIread(self):
-        return hasPrivilege(self, PRIV_APIR)
-    def hasAPIwrite(self):
-        return hasPrivilege(self, PRIV_APIW)
+        return self.hasPrivilege(PRIV_BSC)
+    def hasContratFA(self):
+        return self.hasPrivilege(PRIV_CFA)
+    def hasContratAD(self):
+        return self.hasPrivilege(PRIV_CAD)
     def hasAddUnreg(self):
-        return hasPrivilege(self, PRIV_ADDUNR)
+        return self.hasPrivilege(PRIV_ADDCAT)
+    def hasCompta(self):
+        return self.hasPrivilege(PRIV_COMPTA)
+    def hasComptaMod(self):
+        return self.hasPrivilege(PRIV_CMMOD)
+    def hasComptaSelf(self):
+        return self.hasPrivilege(PRIV_CMSELF)
+    def hasUsers(self):
+        return self.hasPrivilege(PRIV_USERS)
+    def hasAdmin(self):
+        return self.hasPrivilege(PRIV_ADMIN)
+    def hasRegNum(self):
+        return self.hasPrivilege(PRIV_REGNUM)
+    def hasMove(self):
+        return self.hasPrivilege(PRIV_MOVE)
+    def hasBonVeto(self):
+        return self.hasPrivilege(PRIV_BVETO)
+    def hasRefugeVeto(self):
+        return self.hasPrivilege(PRIV_RVETO)
+    def hasAPIread(self):
+        return self.hasPrivilege(PRIV_APIR)
+    def hasAPIwrite(self):
+        return self.hasPrivilege(PRIV_APIW)
+
+
+    # check that the privilieges definition for this user is correct
+    def checkPrivileges(self):
+        # if length of string is less than PRIV_NUMBER, expend and pad with zeroes
+        if len(self.PrivStr) < NUM_PRIVS:
+            self.PrivStr = self.PrivStr.rjust(NUM_PRIVS, '0')
+        return True
+
+    # set/unset a privilege (note: also works on menus)
+    def setPrivilege(self, pn, val):
+        self.checkPrivileges()
+        # validate
+        if pn >= len(self.PrivStr):
+            return False
+
+        # note: we don't check if it was already set/unset
+        nps = self.PrivStr[:pn] + ("1" if val else "0") + self.PrivStr[pn+1:]
+        self.PrivStr = nps
+        return True
+
+    def hasPrivilege(self, pn):
+        if pn >= len(self.PrivStr):
+            return False
+
+        if self.PrivStr[pn] == '1':
+            return True
+
+        return False
+
+    def hasPrivilegeAny(self, pna):
+        for pn in pna:
+            if self.hasPrivilege(pn):
+                return True
+
+        return False
+
+    def hasMenu(self, mn):
+        if mn > NUM_MENUS:
+            return False
+
+        if self.PrivStr[mn] == '1':
+            return True
+
+        return False
+
+    def defineMenus(self):
+        # this also fixes some random stuff
+        if self.hasComptaMod():
+            self.setPrivilege(PRIV_COMPTA)
+
+        if self.usertype == UT_VETO:
+            self.setPrivilege(MENU_FA, 0)
+            self.setPrivilege(MENU_VET, 1)
+        elif self.usertype == UT_MANAGER:
+            self.setPrivilege(MENU_FA, 0)
+            self.setPrivilege(MENU_VET, 0)
+        else:
+            self.setPrivilege(MENU_FA, 1)
+            self.setPrivilege(MENU_VET, 0)
+
+        if self.hasPrivilegeAny([PRIV_RFA, PRIV_SUPER, PRIV_REF, PRIV_ADR, PRIV_HIST, PRIV_SEARCH]):
+            self.setPrivilege(MENU_RFA, 1)
+        else:
+            self.setPrivilege(MENU_RFA, 0)
+
+        if self.hasPrivilegeAny([PRIV_PEC, PRIV_BSC, PRIV_CFA, PRIV_CAD, PRIV_ADDCAT]):
+            self.setPrivilege(MENU_PROC, 1)
+        else:
+            self.setPrivilege(MENU_PROC, 0)
+
+        if self.hasPrivilegeAny([PRIV_COMPTA, PRIV_CMSELF, PRIV_CMMOD]):
+            self.setPrivilege(MENU_COMPTA, 1)
+        else:
+            self.setPrivilege(MENU_COMPTA, 0)
+
+        if self.hasUsers() or self.hasAdmin():
+            self.setPrivilege(MENU_ADMIN, 1)
+        else:
+            self.setPrivilege(MENU_ADMIN, 0)
+
+    def usertypeStr(self):
+        if self.usertype < 0 or self.usertype > UT_VETO:
+            return "invalid"
+
+        return TabUserTypes[self.usertype]
+
+    def privilegesStr(self):
+        self.checkPrivileges()
+        rv = ""
+        sep = ""
+
+        for i in range(len(self.PrivStr)):
+            if self.PrivStr[i] == '1':
+                rv += sep+TabPrivs[i]
+                sep = " "
+
+        return rv
+
 
 
 # --------------- EVENT CLASS

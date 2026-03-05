@@ -10,33 +10,39 @@
                  size: A4 portrait;
                  margin: 0pt;
             }
-        .screen-only {
-            display: block;
-        }
-
-        .screen-only button {
-            padding: 12px 24px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            margin: 5px;
-        }
-
-        .screen-only button:hover {
-            background-color: #0056b3;
-        }
-
-            @media print {
-                html, body {
-                    margin: 20pt;
-                }
-                table, th, td {
-                    font-size: 11pt;
-                }
+            .screen-only {
+                display: block;
             }
+
+            .screen-only button {
+                padding: 12px 24px;
+                font-size: 16px;
+                cursor: pointer;
+                background-color: #007bff;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                margin: 5px;
+            }
+
+            .screen-only button:hover {
+                background-color: #0056b3;
+            }
+
+        @media print {
+            body {
+                width: 210mm;
+                height: 297mm;
+                margin: 0pt;
+                padding: 20pt;
+            }
+            table, th, td, p {
+                font-size: 11pt;
+            }
+            .screen-only {
+                display: none !important;
+            }
+        }
             table, th, td {
                 border: 0px;
                 margin-left: 10px;
@@ -98,7 +104,7 @@ Web: www.association-era.org</td>
     <tr><td>&nbsp;</td></tr>
     {% for cat in cats %}
         <tr>
-            <td>{% if cat==cats[0] %}{% if cats|length == 1 %}Animal concerné:{% else %}Animaux concernés:{% endif %}{% endif %}</td>
+            <td>{% if cat==cats[0] %}{% if cats|length == 1 %}Animal concerné:{% else %}Animaux:{% endif %}{% endif %}</td>
             <td><span id="rn_{{cat.id}}">{{cat.regStr()}}</span> / {% if cat.identif %}{{cat.identif}}{% else %}non identifié{% endif %}
                 ({% if cat.name %}{{ cat.name }}{% else %}sans nom{% endif %}, {% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}sexe?{% endif %},
                     {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">âge?</span>{% endif %},
@@ -107,7 +113,7 @@ Web: www.association-era.org</td>
     {% endfor %}
     {% for cat in ucats %}
         <tr>
-            <td>{% if cat==ucats[0] %}{% if ucats|length == 1 %}Animal concerné:{% else %}Animaux concernés:{% endif %}{% endif %}</td>
+            <td>{% if cat==ucats[0] %}{% if ucats|length == 1 %}Animal concerné:{% else %}Animaux:{% endif %}{% endif %}</td>
             <td><span id="rn_{{cat.id}}">{{cat['regnum']}}</span> ({% if cat['name'] %}{{ cat['name'] }}{% endif %} {% if cat['age'] %}{{ cat['age'] }}{% else %}chat{% endif %}
                     {% if cat['sex'] %}{{ cat['sex'] }}{% endif %}
                     {% if cat['col'] %}{{ cat['col'] }}{% endif %})</td>

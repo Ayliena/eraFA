@@ -2,7 +2,7 @@ from app import app, db, devel_site
 from app.staticdata import FAidSpecial, FAC_FROZEN, FAC_UNPAID, FAC_PAID, FAC_RECONC
 from app.models import Facture, User
 from flask import render_template, request, redirect, url_for, jsonify, session, Response
-from flask_login import login_required, current_user
+from flask_login import current_user
 from datetime import datetime
 from sqlalchemy import and_, or_
 from decimal import Decimal
@@ -177,8 +177,10 @@ def factures_download():
 
 
 @app.route('/factures', methods=["GET", "POST"])
-@login_required
 def factures_page():
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+
     if not current_user.PrivCOMPTA:
         return redirect(url_for('fapage'))
 
