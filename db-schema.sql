@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 5.7.23, for Linux (x86_64)
 --
--- Host: erafa.mysql.pythonanywhere-services.com    Database: erafa$data
+-- Host: localhost    Database: erafa$data
 -- ------------------------------------------------------
 -- Server version	5.6.40-log
 

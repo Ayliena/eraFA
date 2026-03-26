@@ -13,7 +13,7 @@ ALLOWED_EXTENSIONS = set(['jpg'])
 SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
     username="<your username>",
     password="<your mysql password>",
-    hostname="<your username>.mysql.pythonanywhere-services.com",
+    hostname="<your username>",
     databasename="<your username>$data",
 )
 SQLALCHEMY_POOL_RECYCLE = 299
