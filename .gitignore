@@ -1,2 +1,7 @@
+app/static/signature-bon.png
+config.py
+config-dev.py
+gunicorn.ctl
 *.pyc
-__pycache__
+__pycache__/
+venv/
