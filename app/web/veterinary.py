@@ -4,7 +4,8 @@ from app.models import User, Cat, VetInfo, Event
 from app.helpers import ERAsum, encodeRegnum, accessPrivileges, getViewUser, isFATemp, isRefuge, isAdoptes, isHistorique
 from app.vetvisits import vetMapToString, vetAddStrings, vetIsPrimo, vetIsRappel1, vetIsRappelAnn, vetIsIdent, vetIsTest, vetIsSteril, \
     vetIsSoins, vetIsDepara, cat_addVetVisit, cat_executeVetVisit, cat_deleteVisit
-from flask import render_template, redirect, request, url_for, session, Markup
+from flask import render_template, redirect, request, url_for, session
+from markupsafe import Markup
 from flask_login import login_required, current_user
 from sqlalchemy import and_
 from datetime import datetime
