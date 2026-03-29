@@ -62,18 +62,12 @@ TabCage = [
 ]
 
 
-# constants (see helpers.py accessPrivileges)
-ACC_NONE = 0
-ACC_RO = 1
-ACC_MOD  = 2
-ACC_FULL = 3
-ACC_TOTAL = 4
-
 # states for factures
 FAC_FROZEN = 0  # en attente
 FAC_UNPAID = 1  # non reglee
 FAC_PAID = 2    # reglee
 FAC_RECONC = 3  # reglee+rapprochee
+FAC_BEINGPAID = 4 # en reglement
 
 # empty vet visit type
 NO_VISIT = '--------'
@@ -84,5 +78,5 @@ GEN_VET = 8
 DEFAULT_VET = 7
 
 # IMPORTANT: the special FAs are stored statically here, so this must be set with the correct database IDs
-# special FA ids (static): AD DCD HIST REF TEMP
-FAidSpecial = [2, 5, 10, 18, 90]
+# special FA ids (static): AD DCD HIST REF TEMP RS
+FAidSpecial = [2, 5, 10, 18, 90, 124]

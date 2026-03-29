@@ -6,67 +6,68 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                {% if user.FAisFA %}<li class="nav-item dropdown">
+                {% if user.menuFA() %}<li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Famille</a>
                     <ul class="dropdown-menu"><form class="form-inline" action="/vet" method="POST">
-                        <li><button class="dropdown-item" type="submit" name="action" value="fa_catlist">Chats en FA</button></li>
+                        <li><button class="dropdown-item" type="submit" name="action" value="fa_catlist">Chats detenus</button></li>
                         <li><button class="dropdown-item" type="submit" name="action" value="fa_vetplan">Visites vétérinaires</button></li>
                         <li><button class="dropdown-item" type="submit" name="action" value="fa_vetreg">Registre des Soins</button></li>
                     </form></ul>
                 </li>{% endif %}
-                {% if user.FAisREF %}<li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Opérations refuge</a>
-                    <ul class="dropdown-menu"><form class="form-inline" action="/refuge" method="POST">
-                        <li><a class="dropdown-item" href="/refpec">Prise en charge</a></li>
-                        <li><a class="dropdown-item" href="/refbsc">Bon de stérilisation</a></li>
-                    </form><form class="form-inline" action="/cat" method="POST">
-                        <li><button class="dropdown-item" type="submit" name="action" value="adm_newcatref">Arrivee d'un chat</button></li>
-                    </form></ul>
-                </li>{% endif %}
-                {% if user.FAisVET %}<li class="nav-item dropdown">
+                {% if user.menuVET() %}<li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Vétérinaire</a>
                     <ul class="dropdown-menu"><form class="form-inline" action="/vet" method="POST">
                         <li><button class="dropdown-item" type="submit" name="action" value="vet_vilist">Visites prevues</button></li>
                         <li><button class="dropdown-item" type="submit" name="action" value="vet_vihist">Historique des visites</button></li>
                     </form></ul>
                 </li>{% endif %}
-                {% if user.FAisRF %}<li class="nav-item dropdown">
+                {% if user.menuRFA() %}<li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Réfèrent</a>
-                    <ul class="dropdown-menu"><form class="form-inline" action="/list" method="POST">
+                    <ul class="dropdown-menu">
+                        {% if user.hasReferent() %}<form class="form-inline" action="/list" method="POST">
                         <li><button class="dropdown-item" type="submit" name="action" value="sv_viewFAresp">FA sous ma responsabilité</button></li>
-                    </form><form class="form-inline" action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
-                        <li><button class="dropdown-item" name="FAid" value="{{FAids[3]}}">Chats au refuge</button></li>
-                        <li><button class="dropdown-item" name="FAid" value="{{FAids[0]}}">Chats adoptes</button></li>
-                        <li><button class="dropdown-item" name="FAid" value="{{FAids[1]}}">Chats décédés</button></li>
-                    </form></ul>
+                        </form>{% endif %}
+                        {% if user.hasRefuge() %}<form class="form-inline" action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
+                            <li><button class="dropdown-item" name="FAspec" value="ref">Chats au refuge</button></li>
+                        </form>{% endif %}
+                        {% if user.hasAdDcdRs() or user.hasHist() or user.hasReferentFAtemp() or user.hasSuperviseur() %}<form class="form-inline" action="/list" method="POST">
+                            <li><button class="dropdown-item" type="submit" name="action" value="sv_viewFA">Vision d'ensemble</button></li>
+                        </form>{% endif %}
+                        {% if user.hasSearch() %}<form class="form-inline" action="/search" method="GET">
+                            <li><button class="dropdown-item" type="submit">Recherche de chats</button></li>
+                        </form>{% endif %}
+                        {% if user.hasAddUnreg() %}<form class="form-inline" action="/cat" method="POST">
+                            <li><button class="dropdown-item" type="submit" name="action" value="adm_newcat">Arrivee d'un chat</button></li>
+                        </form>{% endif %}
+                    </ul>
                 </li>{% endif %}
-                {% if user.FAisOV %}<li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Superviseur</a>
-                    <ul class="dropdown-menu"><form class="form-inline" action="/list" method="POST">
-                        <li><button class="dropdown-item" type="submit" name="action" value="sv_viewFA">Vision par FA</button></li>
-                        <li><button class="dropdown-item" type="submit" name="action" value="sv_globalTab">Vision d'ensemble</button></li>
-                        <li><button class="dropdown-item" type="submit" name="action" value="sv_adoptTab">Chats a l'adoption</button></li>
-                    </form><form class="form-inline" action="/search" method="GET">
-                        <li><button class="dropdown-item" type="submit">Recherche de chats</button></li>
-                    </form></ul>
+                {% if user.menuPROC() %}<li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Procedures</a>
+                    <ul class="dropdown-menu">
+                        {% if user.hasBonSteril() %}<form class="form-inline" action="/proc" method="POST">
+                        <li><a class="dropdown-item" href="/procbsc">Bon de stérilisation</a></li>
+                        </form>{% endif %}
+                        {% if user.hasPriseEnCharge() %}<form class="form-inline" action="/proc" method="POST">
+                        <li><a class="dropdown-item" href="/procpec">Prise en charge</a></li>
+                        </form>{% endif %}
+                    </ul>
                 </li>{% endif %}
-                {% if user.PrivCOMPTA %}<li class="nav-item dropdown">
+                {% if user.menuCOMPTA() %}<li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Comptabilité</a>
                     <ul class="dropdown-menu"><form class="form-inline" action="/factures" method="GET">
                         <li><button class="dropdown-item" type="submit">Factures</button></li>
                     </form></ul>
                 </li>{% endif %}
-                {% if user.FAisADM %}<li class="nav-item dropdown">
+                {% if user.menuADMIN() %}<li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Administrateur</a>
-                    <ul class="dropdown-menu"><form class="form-inline" action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
-                        <li><button class="dropdown-item" name="FAid" value="{{FAids[2]}}">Historique</button></li>
-                    </form><form class="form-inline" action="/cat" method="POST">
-                        <li><button class="dropdown-item" type="submit" name="action" value="adm_newcat">Rajouter un chat</button></li>
-                    </form><form class="form-inline" action="/user" method="POST">
-                        <li><button class="dropdown-item" type="submit" name="action" value="adm_listusers">Gestion utilisateurs</button></li>
-                    </form><form class="form-inline" action="/admin" method="POST">
-                        <li><button class="dropdown-item" type="submit" name="action" value="adm_admin">Operations systeme</button></li>
-                    </form></ul>
+                    <ul class="dropdown-menu">
+                        {% if user.hasUsers() %}<form class="form-inline" action="/user" method="POST">
+                            <li><button class="dropdown-item" type="submit" name="action" value="adm_listusers">Gestion utilisateurs</button></li>
+                        </form>{% endif %}
+                        {% if user.hasAdmin() %}<form class="form-inline" action="/admin" method="POST">
+                            <li><button class="dropdown-item" type="submit" name="action" value="adm_admin">Operations systeme</button></li>
+                        </form>{% endif %}
+                    </ul>
                 </li>{% endif %}
             </ul>
             <ul class="nav navbar-nav navbar-right">

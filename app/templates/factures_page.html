@@ -1,3 +1,4 @@
+<!doctype html>
 <html>
     <head>
         <title>Familles d'accueil ERA</title>
@@ -11,9 +12,6 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
     </head>
     <script>
-        function confirmDialog() {
-            return confirm("Effectuer l'annulation?");
-        }
         function clearFilter() {
             document.getElementById("opt_unpaid").checked = true;
             document.getElementById("opt_paid").checked = true;
@@ -22,9 +20,44 @@
             for (var i = 0; i < dateids.length; ++i) {
                 document.getElementById(dateids[i]).value = "";
             }
-            {% if not user.PrivCOMPTASELF %}document.getElementById("opt_clinic").value = "";{% endif %}
+            {% if user.hasCompta() %}document.getElementById("opt_clinic").value = "";{% endif %}
         }
-        {% if user.PrivCOMPTAMOD %}function copyFac(c, n, t) {
+        {% if user.hasComptaMod() %}
+        async function setState(id, newState, c='', n='', t='') {
+            // for "Annuler", demander confirmation
+            if (newState == "cnc" && !confirm("Effectuer l'annulation?"))
+            {
+                return;
+            }
+            // indicate processing
+            const el = document.getElementById(`st_bt-${id}`);
+            prevHTML = el.innerHTML;
+            el.innerHTML = "Traitement...";
+            const response = await fetch(`/api/factures/${id}/set-state`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ state: newState })
+            });
+            if (response.ok) {
+                // Success: swap in the new buttons
+                const html = await response.text();
+                el.innerHTML = html;
+
+                // fill the clipboard if we went into reg state
+                if (newState == 'reg')
+                {
+                    var tf = t.replace('.', ',');
+                    navigator.clipboard.writeText("ERAFAC;" + c + ";" + n + ";" + tf);
+                }
+            } else {
+                // Error: parse the JSON error message and alert the user
+                const data = await response.json();
+                alert(data.error); // or a nicer toast/modal if you prefer
+                // update the current state
+                setState(id, 'rfr');
+            }
+        }
+        function copyFac(c, n, t) {
             var tf = t.replace('.', ',');
             navigator.clipboard.writeText("ERAFAC;" + c + ";" + n + ";" + tf);
             alert("Information copiee");
@@ -59,7 +92,7 @@
                 <label class="checkbox-inline mx-2"><input type="checkbox" id="opt_unpaid" name="opt_unpaid"{% if facfilter[0] %} checked{% endif %}>Impayees</label>
                 <label class="checkbox-inline mx-2"><input type="checkbox" id="opt_paid" name="opt_paid"{% if facfilter[1] %} checked{% endif %}>Payees</label>
                 <label class="checkbox-inline mx-2"><input type="checkbox" id="opt_reconciled" name="opt_reconciled"{% if facfilter[2] %} checked{% endif %}>Rapprochees</label>
-                {% if not current_user.PrivCOMPTASELF %} | Clinique: <input class="border border-dark" type="text" id="opt_clinic" name="opt_clinic"{% if facfilter[3] %} value="{{facfilter[3]}}"{% endif %}>{% endif %}
+                {% if user.hasCompta() %} | Clinique: <input class="border border-dark" type="text" id="opt_clinic" name="opt_clinic"{% if facfilter[3] %} value="{{facfilter[3]}}"{% endif %}>{% endif %}
             </div>
             <div class="col-sm-1">
                 <button class="btn btn-secondary" type="button" onClick="clearFilter()">RAZ</button>
@@ -88,7 +121,7 @@
                 <input type="date" class="form-control border border-dark" name="d_reg0" id="d_reg0" {% if facfilter[6] %}value="{{ facfilter[6] }}"{% else %}placeholder="debut"{% endif %}>
             </div>
             <div class="col-sm-2">
-                <input type="date" class="form-control border border-dark" name="d_reg1" id="d_reg1" {% if facfilter[7] %}value="{{ facfilter[7] }}"{% else %}placeholder="fin"{% endif %}>
+                <input type="date" class="form-control border border-dark mb-3" name="d_reg1" id="d_reg1" {% if facfilter[7] %}value="{{ facfilter[7] }}"{% else %}placeholder="fin"{% endif %}>
             </div>
         </div>
     </form>
@@ -99,22 +132,13 @@
                 {{ fac.fdate.strftime("%Y-%m-%d")}} :
             </div>
             <div class="col-sm-3">{% if fac.clinic_id %}<span class="bg-success-subtle">{% endif %}
-                {% if user.PrivCOMPTAMOD %}<a href="javascript:void(0);" onClick="copyFac('{{ fac.clinic }}','{{ fac.facnumber }}','{{ fac.total }}')">{% endif %}
                 <b>{{ fac.clinic }} {{ fac.facnumber }}{% if fac.duplicata %} [{{ fac.duplicata }}]{% endif %}</b>{% if fac.clinic_id %}</span>{% endif %}
-                {% if user.PrivCOMPTAMOD %}</a>{% endif %}
             </div>
             <div class="col-sm-1">
                 <i>{{ fac.total }}&nbsp;€</i>
             </div>
-            <div class="col-sm-6"><form action="/factures" {% if fac.isPaid() %}onsubmit="return confirmDialog()"{% endif %} method="POST">
-                {% if fac.isFrozen() %}En attente{% elif fac.isUnpaid() %}A payer{% elif fac.isPaid() %}<span class="bg-success-subtle"><i>réglée le {{ fac.pdate.strftime("%Y-%m-%d %H:%M") }}</i></span>{% endif %}
-                {% if user.PrivCOMPTAMOD %}
-                <input type="hidden" name="factid" value="{{fac.id}}">
-                {% if fac.isFrozen() %}<button class="btn btn-secondary btn-sm" type="submit" name="action" value="fact_unfreeze">Mettre en reglement</button>
-                {% elif fac.isUnpaid() %}<button class="btn btn-warning btn-sm" type="submit" name="action" value="fact_paid">Indiquer réglée</button> <button class="btn btn-secondary btn-sm" type="submit" name="action" value="fact_freeze">Mettre en attente</button>
-                {% elif fac.isPaid() and not fac.isReconciled()%}<button class="btn btn-danger btn-sm" type="submit" name="action" value="fact_unpaid">Annuler</button>{% endif %}
-                {% endif %}{% if fac.isReconciled() %}<span class="text-success"><i>OK BANQUE le {{ fac.rdate.strftime("%Y-%m-%d") }}</i></span>{% endif %}
-                </form>
+            <div class="col-sm-6 mb-2" id="st_bt-{{ fac.id }}">
+                {% include '_fac_st_bt.html' %}
             </div>
         </div>
     {% endfor %}

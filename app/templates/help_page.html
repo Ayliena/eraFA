@@ -1,21 +1,22 @@
-<html>
+<!doctype html>
+<html lang="fr">
     <head>
         <title>Familles d'accueil ERA</title>
         <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
 
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
     </head>
 <body>
     {% include 'navbar.html' %}
 
     <div class="container">
         <h2>Aide a l'utilisation</h2>
-        {% if user.FAisFA %}
+        {% if user.typeFA() %}
         <p>En tant que FA de l'association, vous pouvez:</p>
         <ul>
             <li><b>Visualiser la liste de chats sous votre responsabilité</b> (vous pouvez toujours revenir à cette liste en cliquant sur votre nom en haut).  La liste indique:</li>
@@ -62,7 +63,7 @@
             <li><b>Vous ne pouvez pas indiquer le transfert vers une autre FA, ni rajouter un nouveau chat,</b> ces opérations doivent être effectuées par un responsable de l'association</li>
         </ul>
         {% endif %}
-        {% if user.FAisRF %}
+        {% if user.hasReferent() %}
         <h3>Opérations possibles pour un responsable FA</h3>
         <ul>
             <li>En tant que responsable FA, vous avez accès aux informations des FA sous votre responsabilité: la liste de ces FA étant accessible avec le bouton correspondant</li>
@@ -73,7 +74,7 @@
             <li>Vous avez aussi accès aux les listes des chats actuellement au refuge aussi bien que aux récemment adoptés ou décédés</li>
         </ul>
         {% endif %}
-        {% if user.FAisOV %}
+        {% if user.hasSuperviseur() %}
         <h3>Opérations possibles pour un superviseur</h3>
         <ul>
             <li>Visualiser les informations de toutes les FA (liste des chats, visites)</li>
@@ -82,7 +83,7 @@
             <li>Vous ne pouvez en aucun cas modifier les informations relatives aux chats, ni les déplacer</li>
         </ul>
         {% endif %}
-        {% if user.FAisADM %}
+        {% if user.hasAdmin() %}
         <h3>Opérations possibles un gestionnaire registre</h3>
         <ul>
             <li>Rajouter un chat dans le système, soit manuellement soit par copier-coller d'un dossier Refugilys (il y a un format spécifique à respecter!)</li>

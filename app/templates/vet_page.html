@@ -1,3 +1,4 @@
+<!doctype html>
 <html>
     <head>
         <title>Familles d'accueil ERA</title>
@@ -59,7 +60,7 @@
                     <div class="col-sm-10">
                         <input class="form-check-input border border-dark" type="checkbox" name="re_{{v.id}}" id="re_{{v.id}}">
                         <label class="form-check-label" for="re_{{v.id}}">
-                            {{ v.vdate.strftime("%d/%m/%y") }} {% if v.cat.owner_id == FAids[4] %}[{{ v.cat.temp_owner }}]{% endif %}
+                            {{ v.vdate.strftime("%d/%m/%y") }} {% if v.cat.owner.typeFAtemp() %}[{{ v.cat.temp_owner }}]{% endif %}
                             visite de <a href="{{ url_for('catpage') }}/{{ v.cat.id }}"><span id="rn_{{v.cat.id}}">{{ v.cat.regStr() }}</span></a>
                         </label>
                             ( {{ v.cat.name }} / {{ v.cat.identif }} ) chez {{ v.vet.FAname }} pour:
@@ -132,6 +133,7 @@
             </form>
         {% else %}
             {% if not cats and not catVet %}
+                {% if viewuser != user %} <h2>{% if viewuser.typeFA() %}Situation FA : {% endif %}{{ viewuser.FAname }}</h2>{% endif %}
                 <h3>Aucune visite vétérinaire planifiée</h3>
                 <form action="/vet" method="POST">
                 <div class="row pt-2 pb-2 border-2 border-top border-black"><div class="col-sm-3">
@@ -163,7 +165,7 @@
                         {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})
                     </div>
                     <div class="col-sm-2"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
-                    {% if cat.owner_id == FAids[4] %}<div class="col-sm-2">
+                    {% if cat.owner.typeFAtemp() %}<div class="col-sm-2">
                         {{ cat.temp_owner }}
                     </div>{% endif %}
                 </div>

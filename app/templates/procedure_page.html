@@ -1,0 +1,464 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Familles d'accueil ERA</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+    </head>
+    <script>
+{% include 'functions.html' %}
+        {% if pagetype==2 %}function checkClipboard() {
+            try {
+                navigator.clipboard.readText().then(data => {if (data.startsWith("AD_BSC")) {document.getElementById("bcs_data").value = data; {% if not msg %}document.getElementById("bcs_submit").click();{% endif %}}});
+                navigator.clipboard.writeText("");
+            } catch (err) {
+                console.error('Failed to read clipboard contents: ', err);
+            }
+        }{% endif %}
+        window.onload=function() {
+        {% if pagetype==2 %}checkClipboard();
+        populatecolor("bcs_color");{% elif pagetype==1 %}
+        populatecolor("pec_color1");
+        populatecolor("pec_color2");
+        populatecolor("pec_color3");
+        populatecolor("pec_color4");
+        populatecolor("pec_color5");
+        populatecolor("pec_color6");{% endif %}
+        }
+    </script>
+    <style>
+   hr {
+       border-top: 1px dotted #000000 !important;
+       margin-bottom:10px !important;
+       margin-top:5px !important;
+   }
+    </style>
+<body>
+{% include 'navbar.html' %}
+
+    <div class="container">
+    {% if devsite %}<div class="row">
+	   <div class="alert alert-danger">ATTENTION: ce site est la version en developpement du logiciel FA, les informations sur les chats de ce site ne correspondent
+        pas a la realite.  Le site officiel est
+        <a href="https://erafa.pythonanywhere.com/fa">https://erafa.pythonanywhere.com/fa</a></div>
+    </div>{% endif %}
+    {% if msg %}{% for m in  msg %}
+        {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
+        {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
+        {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
+        {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
+        {{ m[1] }}</div>
+    {% endfor %}{% endif %}
+
+        {% if pagetype==2 %}
+            <h2>Bon de castration/stérilisation post-adoption</h2>
+
+            <form action="/proc" method="POST">
+                <div class="form-group"><label for="bcs_data">Coller ci-dessus le résultat du click sur "Gen BonSteril" fait dans la page de refugilys:</label>
+                <input type="text" class="form-control border border-dark" id="bcs_data" name="bcs_data"></div>
+                <button type="submit" class="mt-2 btn btn-secondary mx-1" id="bcs_submit" name="action" value="proc_genbonSter">Générer</button>
+            </form>
+            <p class="mt-2 pt-2 border-2 border-top border-black">
+            Alternativement, pour generer un bon pour un contrat papier, remplir les informations suivantes:<br>
+            <i>(il est fortement conseille d'enregistrer l'indivudu dans refugilys et ensuite utiliser Copy from Refu/Paste in siteFA)</i></p>
+            <form class="form-horizontal" id="inpform" name="inpform" action="/refuge" method="POST">
+                <div class="row form-group">
+                    <label class="control-label col-sm-2" for="bcs_addate">Date contrat:</label>
+                    <div class="col-sm-2"><input type="date" class="form-control border border-dark" name="bcs_addate" id="bcs_addate" required="required"></div>
+                    </div>
+                <div class="row form-group">
+                    <label class="control-label col-sm-2" for="ind_nom">Nom adoptant:</label>
+                    <div class="col-sm-8"><input id="ind_nom" name="ind_nom" type="text" class="form-control border border-dark" required="required"></div>
+                </div>
+                <div class="row form-group">
+                    <label class="control-label col-sm-2" for="ind_prenom">Prenom adoptant:</label>
+                    <div class="col-sm-8"><input id="ind_prenom" name="ind_prenom" type="text" class="form-control border border-dark" required="required"></div>
+                </div>
+                 <div class="row form-group">
+                    <label class="control-label col-sm-2" for="ind_adresse">Adresse adoptant:</label>
+                    <div class="col-sm-8"><input id="ind_adresse" name="ind_adresse" type="text" class="form-control border border-dark" required="required"></div>
+                </div>
+                <div class="row form-group">
+                    <label class="control-label col-sm-2" for="ind_cp">Code postal:</label>
+                    <div class="col-sm-4"><input id="ind_cp" name="ind_cp" type="text" class="form-control border border-dark" required="required"></div>
+                </div>
+                <div class="row form-group">
+                    <label class="control-label col-sm-2" for="ind_ville">Ville:</label>
+                    <div class="col-sm-4"><input id="ind_ville" name="ind_ville" type="text" class="form-control border border-dark" required="required"></div>
+                </div>
+                <div class="row form-group">
+                    <label class="control-label col-sm-2" for="ind_tel">Telephone:</label>
+                    <div class="col-sm-4"><input id="ind_tel" name="ind_tel" type="text" class="form-control border border-dark" required="required"></div>
+                </div>
+                <div class="row form-group">
+                    <label class="control-label col-sm-2" for="ind_email">E-mail:</label>
+                    <div class="col-sm-4"><input id="ind_email" name="ind_email" type="text" class="form-control border border-dark" required="required"></div>
+                </div>
+                <div class="row form-group">
+                    <label class="control-label col-sm-2" for="bcs_name">Nom du chat:</label>
+                    <div class="col-sm-4"><input id="bcs_name" name="bcs_name" type="text" class="form-control border border-dark" required="required"></div>
+                </div>
+                <div class="row form-group">
+                    <label class="control-label col-sm-2" for="bcs_regnum">Numero ERA:</label>
+                    <div class="col-sm-4"><input id="bcs_regnum" name="bcs_regnum" type="text" class="form-control border border-dark" required="required"></div>
+                </div>
+                <div class="row form-group">
+                    <label class="control-label col-sm-2" for="bcs_id">Identification:</label>
+                    <div class="col-sm-4"><input id="bcs_id" name="bcs_id" type="text" class="form-control border border-dark" required="required"></div>
+                </div>
+                <div class="row form-group">
+                    <label class="control-label col-sm-2" for="bcs_race">Race:</label>
+                    <div class="col-sm-4"><input id="bcs_race" name="bcs_race" type="text" class="form-control border border-dark" required="required" value="EUROPEENNE"></div>
+                </div>
+                 <div class="row form-group">
+                    <label class="control-label col-sm-2" for="bcs_sex">Sexe:</label>
+                    <div class="col-sm-2"><select class="form-select border border-dark" id="bcs_sex" name="bcs_sex" class="form-control border border-dark">
+                        <option value="F">FEMELLE</option>
+                        <option value="M">MALE</option></select></div>
+                </div>
+                <div class="row form-group">
+                    <label class="control-label col-sm-2" for="bcs_color">Couleur:</label>
+                    <div class="col-sm-2"><select class="form-select border border-dark" class="form-control border border-dark" name="bcs_color" id="bcs_color"></select></div>
+                </div>
+                <div class="row form-group">
+                    <label class="control-label col-sm-2" for="bcs_hlen">Poil:</label>
+                    <div class="col-sm-2"><select class="form-select border border-dark" class="form-control border border-dark" name="bcs_hlen" id="bcs_hlen">
+                        <option value="C">COURT</option>
+                        <option value="M">MI-LONG</option>
+                        <option value="L">LONG</option></select></div>
+                </div>
+                <div class="row form-group">
+                    <label class="control-label col-sm-2" for="bcs_bdate">Date de naissance:</label>
+                    <div class="col-sm-2"><input type="date" class="form-control border border-dark" name="bcs_bdate" id="bcs_bdate" required="required"></div>
+                </div>
+                <div class="row form-group mt-2 pt-2 border-2 border-top border-black">
+                    <div class="col-sm-3">
+                        <button type="submit" class="btn btn-secondary mx-1" id="bcs_submit" name="action" value="proc_genbonSterMan">Générer</button>
+                    </div>
+                </div>
+            </form>
+        {% endif %}
+        {% if pagetype==1 %}
+            <h2>Document de prise en charge</h2>
+
+            <form class="form-horizontal" id="inpform" name="inpform" action="/proc" method="POST">
+                <div class="row form-group">
+                    <div class="col-sm-4">
+                        <div class="form-check">
+                            <input class="form-check-input border border-dark" type="radio" name="pec_type" id="pec_type1" value="T" checked>
+                            <label class="form-check-label" for="pec_type">Chats trouvés</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input border border-dark" type="radio" name="pec_type" id="pec_type2" value="A">
+                            <label class="form-check-label" for="pec_type">Chats abandonnés</label>
+                        </div>
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="control-label" for="pec_date">Date: (vide = aujourd'hui)</label>
+                        <input type="date" class="form-control border border-dark" name="pec_date" id="pec_date">
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-12">
+                        <label class="control-label" for="pec_why">Motif de prise en charge (lieu oú ils ont été trouvés / motif de l'abandon / ...) :</label>
+                        <textarea class="form-control  border border-dark" rows="3" id="pec_why" name="pec_why" required></textarea>
+                    </div>
+                </div>
+
+                <h3 class="mt-2 pt-2 border-2 border-top border-black">AMENANT</h3>
+                <div class="row form-group">
+                    <div class="col-sm-6">
+                        <input type="hidden" name="ind_id">
+                        <label class="control-label" for="ind_nom">Nom:</label>
+                        <input type="text" class="form-control border border-dark" id="ind_nom" name="ind_nom" type="text" required="required">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="control-label" for="ind_prenom">Prenom:</label>
+                        <input type="text" class="form-control border border-dark" id="ind_prenom" name="ind_prenom" type="text" required="required">
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-12">
+                        <label class="control-label" for="ind_adresse">Adresse:</label>
+                        <input type="text" class="form-control border border-dark" id="ind_adresse" name="ind_adresse" type="text" required="required">
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-5">
+                        <label class="control-label" for="ind_cp">CP:</label>
+                        <input type="text" class="form-control border border-dark" id="ind_cp" name="ind_cp" type="text" required="required">
+                    </div>
+                    <div class="col-sm-7">
+                        <label class="control-label" for="ind_ville">Ville:</label>
+                        <input type="text" class="form-control border border-dark" id="ind_ville" name="ind_ville" type="text" required="required">
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-5">
+                        <label class="control-label" for="ind_tel">Tel.:</label>
+                        <input type="text" class="form-control border border-dark" id="ind_tel" name="ind_tel" type="text" required="required">
+                    </div>
+                    <div class="col-sm-7">
+                        <label class="control-label" for="ind_email">E-Mail:</label>
+                        <input type="text" class="form-control border border-dark" id="ind_email" name="ind_email" type="text">
+                    </div>
+                </div>
+
+                <h3 class="mt-2 pt-2 border-2 border-top border-black">CHATS</h3>
+                <p>(Note: le nom du chat <emph>doit etre reinseigne</emph> pour que la ligne soit prise en compte!)</p>
+                <div class="row form-group">
+                    <div class="col-sm-2">
+                        <label class="control-label" for="pec_name1">Nom:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_name1" name="pec_name1" required="required">
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="control-label" for="pec_sex1">Sexe:</label>
+                        <select class="form-select border border-dark" id="pec_sex1" name="pec_sex1" class="form-control">
+                            <option value="?">INCONNU</option>
+                            <option value="F">FEMELLE</option>
+                            <option value="M">MALE</option></select>
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="control-label" for="pec_color1">Couleur:</label>
+                        <select class="form-select border border-dark" id="pec_color1" name="pec_color1" class="form-control"></select>
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="control-label" for="pec_age1">Age:</label>
+                        <select class="form-select border border-dark" id="pec_age1" name="pec_age1" class="form-control">
+                            <option value="A">ADULTE</option>
+                            <option value="C">CHATON</option></select>
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="control-label" for="pec_id1">N. de puce:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_id1" name="pec_id1">
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="control-label" for="pec_spec1">Signes particuliers:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_spec1" name="pec_spec1">
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-2">
+                        <label class="control-label" for="pec_name2">Nom:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_name2" name="pec_name2">
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="control-label" for="pec_sex2">Sexe:</label>
+                        <select class="form-select border border-dark" id="pec_sex2" name="pec_sex2" class="form-control">
+                            <option value="?">INCONNU</option>
+                            <option value="F">FEMELLE</option>
+                            <option value="M">MALE</option></select>
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="control-label" for="pec_color2">Couleur:</label>
+                        <select class="form-select border border-dark" id="pec_color2" name="pec_color2" class="form-control"></select>
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="control-label" for="pec_age2">Age:</label>
+                        <select class="form-select border border-dark" id="pec_age2" name="pec_age2" class="form-control">
+                            <option value="A">ADULTE</option>
+                            <option value="C">CHATON</option></select>
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="control-label" for="pec_id2">N. de puce:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_id2" name="pec_id2">
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="control-label" for="pec_spec2">Signes particuliers:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_spec2" name="pec_spec2">
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-2">
+                        <label class="control-label" for="pec_name3">Nom:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_name3" name="pec_name3">
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="control-label" for="pec_sex3">Sexe:</label>
+                        <select class="form-select border border-dark" id="pec_sex3" name="pec_sex3" class="form-control">
+                            <option value="?">INCONNU</option>
+                            <option value="F">FEMELLE</option>
+                            <option value="M">MALE</option></select>
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="control-label" for="pec_color3">Couleur:</label>
+                        <select class="form-select border border-dark" id="pec_color3" name="pec_color3" class="form-control"></select>
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="control-label" for="pec_age3">Age:</label>
+                        <select class="form-select border border-dark" id="pec_age3" name="pec_age3" class="form-control">
+                            <option value="A">ADULTE</option>
+                            <option value="C">CHATON</option></select>
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="control-label" for="pec_id3">N. de puce:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_id3" name="pec_id3">
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="control-label" for="pec_spec3">Signes particuliers:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_spec3" name="pec_spec3">
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-2">
+                        <label class="control-label" for="pec_name4">Nom:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_name4" name="pec_name4">
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="control-label" for="pec_sex4">Sexe:</label>
+                        <select class="form-select border border-dark" id="pec_sex4" name="pec_sex4" class="form-control">
+                            <option value="?">INCONNU</option>
+                            <option value="F">FEMELLE</option>
+                            <option value="M">MALE</option></select>
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="control-label" for="pec_color4">Couleur:</label>
+                        <select class="form-select border border-dark" id="pec_color4" name="pec_color4" class="form-control"></select>
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="control-label" for="pec_age4">Age:</label>
+                        <select class="form-select border border-dark" id="pec_age4" name="pec_age4" class="form-control">
+                            <option value="A">ADULTE</option>
+                            <option value="C">CHATON</option></select>
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="control-label" for="pec_id4">N. de puce:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_id4" name="pec_id4">
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="control-label" for="pec_spec4">Signes particuliers:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_spec4" name="pec_spec4">
+                    </div>
+                </div>
+                 <div class="row form-group">
+                    <div class="col-sm-2">
+                        <label class="control-label" for="pec_name5">Nom:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_name5" name="pec_name5">
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="control-label" for="pec_sex5">Sexe:</label>
+                        <select class="form-select border border-dark" id="pec_sex5" name="pec_sex5" class="form-control">
+                            <option value="?">INCONNU</option>
+                            <option value="F">FEMELLE</option>
+                            <option value="M">MALE</option></select>
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="control-label" for="pec_color5">Couleur:</label>
+                        <select class="form-select border border-dark" id="pec_color5" name="pec_color5" class="form-control"></select>
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="control-label" for="pec_age5">Age:</label>
+                        <select class="form-select border border-dark" id="pec_age5" name="pec_age5" class="form-control">
+                            <option value="A">ADULTE</option>
+                            <option value="C">CHATON</option></select>
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="control-label" for="pec_id5">N. de puce:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_id5" name="pec_id5">
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="control-label" for="pec_spec5">Signes particuliers:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_spec5" name="pec_spec5">
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-2">
+                        <label class="control-label" for="pec_name6">Nom:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_name6" name="pec_name6">
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="control-label" for="pec_sex6">Sexe:</label>
+                        <select class="form-select border border-dark" id="pec_sex6" name="pec_sex6" class="form-control">
+                            <option value="?">INCONNU</option>
+                            <option value="F">FEMELLE</option>
+                            <option value="M">MALE</option></select>
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="control-label" for="pec_color6">Couleur:</label>
+                        <select class="form-select border border-dark" id="pec_color6" name="pec_color6" class="form-control"></select>
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="control-label" for="pec_age6">Age:</label>
+                        <select class="form-select border border-dark" id="pec_age6" name="pec_age6" class="form-control">
+                            <option value="A">ADULTE</option>
+                            <option value="C">CHATON</option></select>
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="control-label" for="pec_id6">N. de puce:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_id6" name="pec_id6">
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="control-label" for="pec_spec6">Signes particuliers:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_spec6" name="pec_spec6">
+                    </div>
+                </div>
+
+                <h3 class="mt-2 pt-2 border-2 border-top border-black">SITUATION VETERINAIRE</h3>
+                <p>Pour les chats abandonnes:</p>
+                <div class="row form-group">
+                    <div class="col-sm-4">
+                        <div class="form-check">
+                            <input class="form-check-input border border-dark" type="checkbox" name="pec_carnet" id="pec_carnet">
+                            <label class="form-check-label" for="pec_carnet">déposés avec carnet vétérinaire</label>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="form-check">
+                            <input class="form-check-input border border-dark" type="checkbox" name="pec_icad" id="pec_icad">
+                            <label class="form-check-label" for="pec_icad">déposés avec fiche ICad signée</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-4">
+                        <label class="control-label" for="pec_vetv">Vaccin/rappel:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_vetv" name="pec_vetv">
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="control-label" for="pec_vett">Test FIV/FeLV:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_vett" name="pec_vett">
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="control-label" for="pec_vets">Sterilisation:</label>
+                        <input type="text" class="form-control border border-dark" id="pec_vets" name="pec_vets">
+                    </div>
+                </div>
+
+                <h3 class="mt-2 pt-2 border-2 border-top border-black">LOCALISATION</h3>
+                <div class="row form-group">
+                    <div class="col-sm-4">
+                        <div class="form-check">
+                            <input class="form-check-input border border-dark" type="radio" name="pec_where" id="pec_where1" value="R" checked>
+                            <label class="form-check-label" for="pec_where">Chats au refuge (piece/cage):</label>
+                        </div>
+                        <input class="form-control border border-dark" id="pec_refwhere" name="pec_refwhere" type="text" class="form-control">
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="form-check">
+                            <input class="form-check-input border border-dark" type="radio" name="pec_where" id="pec_where2" value="F">
+                            <label class="form-check-label" for="pec_where">Chats partis en FA (nom de la FA):</label>
+                        </div>
+                        <input class="form-control border border-dark" id="pec_fawhere" name="pec_fawhere" type="text" class="form-control">
+                    </div>
+                </div>
+                <div class="row form-group mt-2 pt-2 border-2 border-top border-black">
+                    <div class="col-sm-3">
+                        <button type="submit" class="btn btn-secondary mx-1" id="pec_gen" name="action" value="proc_genprise">Générer le document</button>
+                    </div>
+                    <div class="col-sm-3">
+                        <button type="submit" class="btn btn-secondary mx-1" id="pec_gensave" name="action" value="proc_genprisesave">Générer le document et enregistrer les chats</button>
+                    </div>
+                </div>
+            </form>
+        {% endif %}
+        {% include 'bottom.html' %}
+     </div><!-- /.container -->
+</body>
+</html>

@@ -48,7 +48,7 @@
         {{ m[1] }}</div>
     {% endfor %}{% endif %}
 
-        {% if viewuser.FAisVET %}
+        {% if viewuser.typeVeterinaire() %}
             {% if viewuser != user %} <h2>Situation veterinaire : {{ viewuser.FAname }}</h2>{% endif %}
 
             {% if visitmode == "planned" %}<h2>Visites prevues a la clinique</h2>
@@ -85,8 +85,8 @@
                         <div class="col-sm-3">
                             <input class="form-check-input border border-dark" type="checkbox" name="re_{{v.id}}" id="re_{{v.id}}">
                             <label class="form-check-label" for="re_{{v.id}}">
-                                {% if visitmode == "planned" %}{{ v.vdate.strftime("%d/%m/%y") }}, <b>{% if v.doneby_id == FAids[4] %}{{ v.cat.temp_owner }}{% else %}{{ v.doneby.FAname }}{% endif %}</b>
-                                {% else %}<b>{% if v.doneby_id == FAids[4] %}{{ v.cat.temp_owner }}{% else %}{{ v.doneby.FAname }}</b> le {{ v.vdate.strftime("%d/%m/%y") }}{% endif %}{% endif %}
+                                {% if visitmode == "planned" %}{{ v.vdate.strftime("%d/%m/%y") }}, <b>{% if v.doneby.typeFAtemp() %}{{ v.cat.temp_owner }}{% else %}{{ v.doneby.FAname }}{% endif %}</b>
+                                {% else %}<b>{% if v.doneby.typeFAtemp() %}{{ v.cat.temp_owner }}{% else %}{{ v.doneby.FAname }}</b> le {{ v.vdate.strftime("%d/%m/%y") }}{% endif %}{% endif %}
                             </label>
                         </div>
                         <div class="col-sm-9">
@@ -143,7 +143,7 @@
             {% else %}
                 <div class="row"><div class="col-sm-12">Aucune visite enregistree</div></div>
             {% endif %}
-        {% elif viewuser.FAisREF %}
+        {% elif viewuser.typeRefuge() %}
             {% set ns=namespace(curcage="",curroom="") %}
             {% if viewuser != user %} <h2>{% if viewuser.FAisFA %}Situation FA : {% endif %}{{ viewuser.FAname }}</h2>{% endif %}
 
@@ -183,10 +183,12 @@
             {% else %}
                 <div class="row"><div class="col-sm-12">Aucun</div></div>
             {% endfor %}
-        {% elif viewuser.FAisFA or viewuser.FAisAD or viewuser.FAisDCD or viewuser.FAisHIST %}
-            {% if viewuser != user %} <h2>{% if viewuser.FAisFA %}Situation FA : {% endif %}{{ viewuser.FAname }}</h2>{% endif %}
+        {% elif viewuser.typeManager() %}
+            <div class="row"><div class="col-sm-12">Choisir une action avec le menu</div></div>
+        {% else %}
+            {% if viewuser != user %} <h2>{% if viewuser.typeFA() %}Situation FA : {% endif %}{{ viewuser.FAname }}</h2>{% endif %}
 
-            {% if viewuser.FAisFA %}<h2>Chats detenus</h2>{% endif %}
+            {% if viewuser.typeFA() %}<h2>Chats detenus</h2>{% endif %}
             {% if cats %}<p><a href="#" onClick="showHideAllDescs();">Montrer/cacher toutes les commentaires</a></p>{% endif %}
             {% for cat in cats %}
                 <form action="/cat" method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
@@ -201,10 +203,10 @@
                         {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %},
                         {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})</div>
                     <div class="col-sm-1"><p class="text-nowrap" style="font-family:monospace;">{{ cat.vetshort }}</p></div>
-                    {% if cat.owner_id == FAids[4] %}<div class="col-sm-2">
+                    {% if cat.owner.typeFAtemp() %}<div class="col-sm-2">
                         {{ cat.temp_owner }}
                     </div>{% endif %}
-                    {% if viewuser.FAisHIST %}
+                    {% if viewuser.typeHistorique() %}
                     <div class="col-sm-4">
                         Sortie: {{ cat.lastop.strftime("%d/%m/%y") }}
                     </div>
@@ -222,9 +224,10 @@
                     <div class="row">
                         <div class="col-sm-1"></div>
                         <div class="col-sm-3">
-                            {% if viewuser.FAisAD %}<button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_histcat">Confirmer l'adoption et déplacer le chat dans l'historique</button>{% endif %}
-                            {% if viewuser.FAisDCD %}<button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_histcat">Confirmer le décès et déplacer le chat dans l'historique</button>{% endif %}
-                            {% if viewuser.FAisHIST %}<button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_deletecat">EFFACER LE CHAT DU SYSTEME (ATTENTION: IRREVERSIBLE)</button>{% endif %}
+                            {% if viewuser.typeAdoptes() %}<button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_histcat">Confirmer l'adoption et déplacer le chat dans l'historique</button>{% endif %}
+                            {% if viewuser.typeDecedes() %}<button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_histcat">Confirmer le décès et déplacer le chat dans l'historique</button>{% endif %}
+                            {% if viewuser.typeRelaches() %}<button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_histcat">Confirmer la relache et déplacer le chat dans l'historique</button>{% endif %}
+                            {% if viewuser.typeHistorique() %}<button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_deletecat">EFFACER LE CHAT DU SYSTEME (ATTENTION: IRREVERSIBLE)</button>{% endif %}
                         </div>
                     </div>
                     </form>
@@ -232,8 +235,6 @@
             {% else %}
                 <div class="row"><div class="col-sm-12">Aucun</div></div>
             {% endfor %}
-        {% else %}
-            <div class="row"><div class="col-sm-12">Choisir une action avec le menu</div></div>
         {% endif %}
 
         {% include 'bottom.html' %}

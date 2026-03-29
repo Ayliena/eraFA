@@ -1,3 +1,4 @@
+<!doctype html>
 <html>
     <head>
         <title>Familles d'accueil ERA</title>
@@ -18,20 +19,35 @@
             {% if cat.color %} document.getElementById("c_color").value = {{ cat.color }}; {% endif %}
             {% if cat.longhair %} document.getElementById("c_hlen").value = {{ cat.longhair }}; {% endif %}
             {% if cat.adoptable %} document.getElementById("c_adoptable").value = 1; {% endif %}
-            {% if cat.owner_id==FAids[3] %}populateCages("c_cage");
-            document.getElementById("c_cage").value = "{{ cat.temp_owner }}";{% endif %}
+            {% if (not cat.owner and current_user.typeRefuge()) %}populateCages("c_cage");document.getElementById("c_cage").value = "AXX";{% endif %}
+            {% if (cat.owner and cat.owner.typeRefuge()) %}populateCages("c_cage");document.getElementById("c_cage").value = "{{ cat.temp_owner }}";{% endif %}
 
-            var sel = document.getElementById("sel_FA");
+            {% if falist %}
+            var sel1 = document.getElementById("sel_FA");
+            var sel2 = document.getElementById("sel_FAref");
             var i = 0;
 
             var faid = [  {% for fa in falist %} "{{fa.id}}", {% endfor %} ];
             var fas = [ {% for fa in falist %} "{{fa.FAname}}", {% endfor %} ];
-            for (i = 0; i < fas.length; ++i) {
-                option = document.createElement('option');
-                option.value = faid[i];
-                option.text = fas[i];
-                sel.add(option);
+            if (sel1)
+            {
+                for (i = 0; i < fas.length; ++i) {
+                    option = document.createElement('option');
+                    option.value = faid[i];
+                    option.text = fas[i];
+                    sel1.add(option);
+                }
             }
+            if (sel2)
+            {
+                for (i = 0; i < fas.length; ++i) {
+                    option = document.createElement('option');
+                    option.value = faid[i];
+                    option.text = fas[i];
+                    sel2.add(option);
+                }
+            }
+            {% endif %}
 
             populatevets("visit_vet");
             {% for vv in cat.vetvisits %}{% if vv.planned %}
@@ -46,6 +62,21 @@
                 return false;
             }
             return true;
+        }
+        function selectFAtemp() {
+            var sel = document.getElementById("sel_FAref");
+            if (sel.text == "FA temporaires") {
+                return;
+            }
+
+            var opts = sel.options;
+
+            for (let i = 0; i < opts.length; i++) {
+                if (opts[i].text === "FA temporaires") {
+                    sel.selectedIndex = i;
+                    break;
+                }
+            }
         }
     </script>
     <style>
@@ -91,25 +122,33 @@
                     <div class="col-sm-6">
                         {% if cat.isPrivate() %}<p>Chat privé</p>{% else %}
                         {% if cat.regnum>0 %}<p class="form-control-static"><b><span id="rn_cat">{{ cat.regStr() }}</span></b> (N{{cat.id}})</p>
-                        {% else %}{% if user.FAisADM %}<input class="form-control border border-dark" type="text" id="c_registre" name="c_registre" placeholder="xxx-xx">  {% endif %}(N{{cat.id}}){% endif %}{% endif %}
+                        {% else %}{% if user.hasRegNum() %}<input class="form-control border border-dark" type="text" id="c_registre" name="c_registre" placeholder="xxx-xx">  {% endif %}(N{{cat.id}}){% endif %}{% endif %}
                     </div>
                     {% else %}
                     <div class="col-sm-8">Registre: non enregistre</div>
                     {% endif %}
-                    <div class="col-sm-4">{% if not cat.isPrivate() %}<select class="form-select border border-dark" name="c_adoptable" id="c_adoptable" {% if readonly %}disabled{% endif %}>                        <option value="0">Non adoptable</option>
+                    <div class="col-sm-4">{% if not cat.isPrivate() %}<select class="form-select border border-dark" name="c_adoptable" id="c_adoptable" {% if readonly %}disabled{% endif %}>
+                        <option value="0">Non adoptable</option>
                         <option value="1">Disponible a l'adoption</option></select>{% endif %}
                     </div>
                 </div>
-                {% if cat.owner_id==FAids[3] %}<div class="row form-group align-items-baseline my-1">
-                    <label class="col-sm-2 control-label" for="c_cage">Cage:</label>
-                    <div class="col-sm-6"><select class="form-select border border-dark" name="c_cage" id="c_cage" {% if readonly %}disabled{% endif %}></select></div>
+                <div class="row form-group align-items-baseline my-1">
+                {% if not cat.owner %}
+                    {% if current_user.typeRefuge() %}<label class="col-sm-2 control-label" for="c_cage">Cage:</label>
+                        <div class="col-sm-6"><select class="form-select border border-dark" name="c_cage" id="c_cage" {% if readonly %}disabled{% endif %}></select></div>
+                    {% else %}
+                        <label class="col-sm-3 control-label" for="c_fatemp">FA temporaire:</label>
+                        <div class="col-sm-9"><input class="form-control border border-dark" type="text" id="c_fatemp" name="c_fatemp" value="{{ cat.temp_owner }}" {% if readonly %}disabled{% endif %}></div>
+                    {% endif %}
+                {% else %}
+                    {% if cat.owner.typeRefuge() %}<label class="col-sm-2 control-label" for="c_cage">Cage:</label>
+                        <div class="col-sm-6"><select class="form-select border border-dark" name="c_cage" id="c_cage" {% if readonly %}disabled{% endif %}></select></div>
+                    {% else %}
+                        <label class="col-sm-3 control-label" for="c_fatemp">FA temporaire:</label>
+                        <div class="col-sm-9"><input class="form-control border border-dark" type="text" id="c_fatemp" name="c_fatemp" value="{{ cat.temp_owner }}" {% if readonly %}disabled{% endif %}></div>
+                    {% endif %}
+                {% endif %}
                 </div>
-                {% elif not cat.regnum or cat.owner_id == FAids[4] %}<div class="row form-group my-1">
-                    <label class="col-sm-3 control-label" for="c_fatemp">FA temporaire:</label>
-                    <div class="col-sm-9">
-                        <input class="form-control border border-dark" type="text" id="c_fatemp" name="c_fatemp" value="{{ cat.temp_owner }}" {% if readonly %}disabled{% endif %}>
-                    </div>
-                </div>{% endif %}
                 <div class="row form-group align-items-baseline my-1">
                     <label class="col-sm-2 control-label" for="c_name">Nom:</label>
                     <div class="col-sm-4">
@@ -287,7 +326,7 @@
             {% endif %}
         {% endif %}
 
-        {% if cat.regnum and user.FAisADM %}
+        {% if cat.regnum and user.hasEvents() %}
         <div class="row mt-2 pt-2 border-2 border-top border-black"></div>
             <h3>Historique du chat{% if cat.lastop %} <small>(Dernière modification: {{ cat.lastop.strftime("%d/%m/%Y %H:%M") }})</small>{%endif %}</h3>
             {% for ev in cat.events %}
@@ -308,17 +347,27 @@
             <div class="col-sm-2"><button class="btn btn-secondary mx-1" style="white-space: normal;" type="submit" name="action" value="fa_modcat">Mettre à jour les informations et revenir à la liste</button></div>
             <div class="col-sm-2"><button class="btn btn-secondary mx-1" style="white-space: normal;" type="submit" name="action" value="fa_modcatr">Mettre à jour les informations et rester sur la page</button></div>
             <div class="col-sm-2"><button class="btn btn-secondary mx-1" style="white-space: normal;" type="submit" name="action" value="fa_return">Annuler les changements et revenir à la liste</button></div>
-            <div class="col-sm-2">{% if cat.owner.FAisREF %}<button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_anonfa">FA: chat parti en famille d'accueil</button>{% endif %}</div>
-            {% if cat.owner_id != FAids[2] %}
-            <div class="col-sm-2">{% if cat.regnum != -2 and cat.owner_id != FAids[0] %}<button class="btn btn-secondary mx-1" style="white-space: normal;" type="submit" name="action" value="fa_adopted">Adoption: indiquer que le chat a été adopté</button>{% endif %}</div>
-            <div class="col-sm-2">{% if cat.owner_id != FAids[1] %}<button class="btn btn-secondary mx-1" style="white-space: normal;" type="submit" name="action" value="fa_dead">Décès: Indiquer que le chat est décédé</button>{% endif %}</div>
+            <div class="col-sm-1"></div>
+            {% if not cat.owner.typeHistorique() %}
+            <div class="col-sm-3 d-flex flex-column gap-1">
+                {% if cat.owner.typeRefuge() %}<button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_tofa">Parti en FA</button>
+                    <select class="form-select border border-dark" id="sel_FAref" name="sel_FAref"></select>
+                    <input class="form-control border border-dark" type="text" id="FAtempname" name="FAtempname" oninput="selectFAtemp()">{% endif %}
+                {% if (cat.owner.typeFA() or cat.owner.typeFAtemp()) and not cat.isPrivate() %}
+                    <button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_torefu">Parti au refuge</button>{% endif %}
+            </div>
+            <div class="col-sm-2 d-flex flex-column gap-1">
+                {% if not cat.isPrivate() %}<button class="btn btn-secondary mx-1" style="white-space: normal;" type="submit" name="action" value="fa_adopted">Sortie: adopté</button>
+                <button class="btn btn-secondary mx-1" style="white-space: normal;" type="submit" name="action" value="fa_rsite">Sortie: relâché</button>{% endif %}
+                <button class="btn btn-secondary mx-1" style="white-space: normal;" type="submit" name="action" value="fa_dead">Sortie: décédé</button>
+            </div>
             {% endif %}
             {% endif %}
         </div>
-        {% if user.FAisADM %}
+        {% if user.hasMove() %}
             <div class="row form-group my-1">
                 <div class="col-sm-3"><button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_putcat">Transférer le chat chez:</button></div>
-                <div class="col-sm-4"><select class="form-select border border-dark" id="sel_FA" name="FAid"></select></div>
+                <div class="col-sm-3"><select class="form-select border border-dark" id="sel_FA" name="sel_FA"></select></div>
         </div>
         {% endif %}
         {% else %}
@@ -345,14 +394,11 @@
             Une fois les informations remplies:
         </div>
         <div class="row form-group my-1">
-            <div class="col-sm-12>">
-                <button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_addcathere">Rajouter le chat ici</button>
-            </div>
+            <div class="col-sm-2"><button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_addcathere">Rajouter le chat ici</button></div>
+            {% if falist %}<div class="col-sm-2"><button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_addcatputFA">Placer le chat chez:</button></div>
+                 <div class="col-sm-3"><select class="form-select border border-dark" id="sel_FA" name="FAid"></select></div>{% endif %}
+            <div class="col-sm-1"></div><div class="col-sm-2"><button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_addcancel">Annuler</button></div>
         </div>
-        {% if falist %}<div class="row form-group my-1">
-             <div class="col-sm-2"><button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_addcatputFA">Placer le chat chez:</button></div>
-             <div class="col-sm-4"><select class="form-select border border-dark" id="sel_FA" name="FAid"></select></div>
-        </div>{% endif %}
         {% endif %}
     </form>
 
