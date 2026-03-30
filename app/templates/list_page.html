@@ -88,7 +88,7 @@
                 </div>
             {% endfor %}
             </form>
-        {% else %}
+        {% elif refugfa %}
             <h2>Listes spéciales</h2>
 
             {% if user.hasAdDcdRs() %}<form action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
@@ -146,6 +146,8 @@
                 {% endfor %}
                 </form>
             {% endif %}
+        {% else %}
+            <h2>Aucune liste a afficher</h2>
         {% endif %}
 
         {% include 'bottom.html' %}

@@ -172,7 +172,7 @@ def apicallcats():
                 # fix the temp_owner for a cat arriving in REF, don't touch temp_faname in case of temp FA
                 if theFA.typeRefuge():
                     temp_faname = TabCage[0][0]
-                elif not theFA.typeFATemp():
+                elif not theFA.typeFAtemp():
                     temp_faname = theFA.FAname
             else:
                 # we don't have a FA
@@ -321,7 +321,7 @@ def apicallcats():
                 if faname:
                     retstatus.append("0/Numéro de registre {} deplace de {}{} vers {}{}".format(registre,
                                 theCat.owner.FAname, "["+theCat.temp_owner+"]" if theCat.owner.typeFAtemp() else '',
-                                theFA.FAname, faname if theFA.typeFATemp() else ''))
+                                theFA.FAname, faname if theFA.typeFAtemp() else ''))
                     theCat.lastop = datetime.now()
 
                     # generate an event
@@ -434,7 +434,7 @@ def apicallcats():
             theCat.vetshort = r_vetshort
 
             # generate the event
-            retstatus.append("0/Chat {} importé de Refugilys chez {}{}".format(registre, theFA.FAname, "[{}]".format(theCat.temp_owner) if theFA.typeFATemp() else ""))
+            retstatus.append("0/Chat {} importé de Refugilys chez {}{}".format(registre, theFA.FAname, "[{}]".format(theCat.temp_owner) if theFA.typeFAtemp() else ""))
             theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="API: importé de Refugilys")
             db.session.add(theEvent)
             rv[datline] = ", ".join(retstatus)

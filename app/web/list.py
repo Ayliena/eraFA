@@ -29,9 +29,9 @@ def listpage():
 
     if cmd == "sv_viewFAresp" and current_user.hasReferent():
         # FA list for a referent (no specials)
-
         FAlist=User.query.filter_by(FAresp_id=current_user.id).order_by(User.FAid).all()
 
+        # if no FA is there, then return an empty list
         return render_template("list_page.html", devsite=devel_site, user=current_user, rfalist=FAlist)
 
 #    if cmd == "sv_viewFAresp" and (current_user.FAisRF):
