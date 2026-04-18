@@ -35,18 +35,7 @@
 {% include 'navbar.html' %}
 
     <div class="container">
-    {% if devsite %}<div class="row">
-	<div class="alert alert-danger">ATTENTION: ce site est la version en developpement du logiciel FA, les informations sur les chats de ce site ne correspondent
-        pas a la realite.  Le site officiel est
-        <a href="https://erafa.pythonanywhere.com/fa">https://erafa.pythonanywhere.com/fa</a></div>
-    </div>{% endif %}
-    {% if msg %}{% for m in  msg %}
-        {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
-        {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
-        {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
-        {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
-        {{ m[1] }}</div>
-    {% endfor %}{% endif %}
+{% include '_messages.html' %}
 
         {% if viewuser.typeVeterinaire() %}
             {% if viewuser != user %} <h2>Situation veterinaire : {{ viewuser.FAname }}</h2>{% endif %}
@@ -145,7 +134,7 @@
             {% endif %}
         {% elif viewuser.typeRefuge() %}
             {% set ns=namespace(curcage="",curroom="") %}
-            {% if viewuser != user %} <h2>{% if viewuser.FAisFA %}Situation FA : {% endif %}{{ viewuser.FAname }}</h2>{% endif %}
+            {% if viewuser != user %} <h2>{% if viewuser.typeFA() %}Situation FA : {% endif %}{{ viewuser.FAname }}</h2>{% endif %}
 
             <h2>Chats au refuge</h2>
             {% if cats %}<p><a href="#" onClick="showHideAllDescs();">Montrer/cacher toutes les commentaires</a></p>{% endif %}
@@ -219,8 +208,8 @@
                     <div class="col-sm-11"><p class="small">{{ cat.comments }}</p></div>
                 </div>
                 </form>
-                {% if (viewuser.FAisAD or viewuser.FAisDCD or viewuser.FAisHIST) and user.FAisADM %}
-                    <form action="/fa" method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
+                {% if (viewuser.typeAdoptes() or viewuser.typeDecedes() or viewuser.typeRelaches() or viewuser.typeHistorique()) and user.hasAdmin() %}
+                    <form action="/" method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
                     <div class="row">
                         <div class="col-sm-1"></div>
                         <div class="col-sm-3">

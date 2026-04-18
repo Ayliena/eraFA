@@ -32,6 +32,8 @@ class User(UserMixin, db.Model):
     FAresp_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     FAresp = db.relationship('User', foreign_keys=FAresp_id, remote_side=[id], backref='managedFAs')
     numcats = db.Column(db.Integer)
+    APIkey = db.Column(db.String(64))
+    APIkey_exp = db.Column(db.DateTime)
 #    cats = db.relationship('Cat', backref='owner_id', lazy='dynamic')
 #    icats = db.relationship('Cat', backref='nextowner_id', lazy='dynamic')
 

@@ -11,8 +11,7 @@ def load_user(user_id):
     return User.query.filter_by(username=user_id).first()
 
 
-@app.route('/', methods=["GET", "POST"])
-@app.route('/index', methods=["GET", "POST"])
+@app.route('/adoptions', methods=["GET", "POST"])
 def index():
     cats = Cat.query.filter_by(adoptable=True).all();
 

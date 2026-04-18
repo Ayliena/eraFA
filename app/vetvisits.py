@@ -475,3 +475,45 @@ def cat_executedPostProcess(theCat, vvisit):
         vres = vres + " +aP[{}]".format(vtype)
 
     return vres
+
+#
+# scan the vet visits and return the dates for: V 1 R P T S
+# - None is returned if the date is not done, otherwise it's the date
+# - 'ok' is returned if the visit was done before arriving
+#
+def cat_getVisitDates(theCat):
+    dates = [None, None, None, None, None, None]
+
+    vetvisits = VetInfo.query.filter_by(cat_id=theCat.id)
+
+    for vv in vetvisits:
+        if vv.planned:
+            continue
+
+        if vetIsPrimo(vv.vtype):
+            dates[0] = vv.vdate
+        if vetIsRappel1(vv.vtype):
+            dates[1] = vv.vdate
+        if vetIsRappelAnn(vv.vtype):
+            dates[2] = vv.vdate
+        if vetIsIdent(vv.vtype):
+            dates[3] = vv.vdate
+        if vetIsTest(vv.vtype):
+            dates[4] = vv.vdate
+        if vetIsSteril(vv.vtype):
+            dates[5] = vv.vdate
+
+    # now fill with whatever is left
+    if not dates[0] and vetIsPrimo(theCat.vetshort):
+        dates[0] = 'ok'
+    if not dates[1] and vetIsRappel1(theCat.vetshort):
+        dates[1] = 'ok'
+    if not dates[3] and vetIsIdent(theCat.vetshort):
+        dates[3] = 'ok'
+    if not dates[4] and vetIsTest(theCat.vetshort):
+        dates[4] = 'ok'
+    if not dates[5] and vetIsSteril(theCat.vetshort):
+        dates[5] = 'ok'
+
+    return dates
+

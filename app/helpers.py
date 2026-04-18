@@ -204,6 +204,42 @@ def canAccessCats(owner, user):
     return ACC_NONE
 
 
+def validateAPItoken(username, token, mode):
+    # locate the user
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return False
+
+    # check if we have permission
+    if mode == 'read':
+        if not user.hasAPIread():
+            return False
+
+    elif mode == 'write':
+        if not user.hasAPIwrite():
+            return False
+
+    elif mode == 'ignore':
+        pass
+
+    else:
+        return False
+
+    # if we don't even have an APIkey, then bye
+    if user.APIkey == None:
+        return False
+
+    # if the token is expired, fail immediately
+    curr = datetime.now()
+
+    if curr > user.APIkey_exp:
+        user.APIkey = None
+        db.session.commit()
+        return False
+
+    # check that the token works
+    return (token == user.APIkey)
+
 # def updatePrivilege(oldpriv, priv):
 #     return max(oldpriv, priv)
 

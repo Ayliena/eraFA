@@ -21,18 +21,7 @@
     {% include 'navbar.html' %}
 
     <div class="container">
-    {% if devsite %}<div class="row">
-	<div class="alert alert-danger">ATTENTION: ce site est la version en developpement du logiciel FA, les informations sur les chats de ce site ne correspondent
-        pas a la realite.  Le site officiel est
-        <a href="https://erafa.pythonanywhere.com/fa">https://erafa.pythonanywhere.com/fa</a></div>
-    </div>{% endif %}
-    {% if msg %}{% for m in  msg %}
-        {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
-        {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
-        {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
-        {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
-        {{ m[1] }}</div>
-    {% endfor %}{% endif %}
+{% include '_messages.html' %}
 
         {% if listtitle %}
             <h2>{{ listtitle }}</h2>
@@ -72,7 +61,7 @@
             </div>{% endif %}
         {% elif rfalist %}
             <h2>Familles d'accueil</h2>
-            <form action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
+            <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
             {% for fa in rfalist %}
                 <div class="row">
                     <div class="col-sm-2"><button class="btn btn-outline-dark" name="FAid" value="{{fa.id}}">{{ fa.FAid }}</button> :</div>
@@ -91,7 +80,7 @@
         {% elif refugfa %}
             <h2>Listes spéciales</h2>
 
-            {% if user.hasAdDcdRs() %}<form action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
+            {% if user.hasAdDcdRs() %}<form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
                 <div class="row form-group">
                     <div class="col-sm-2"><button class="btn btn-outline-dark" name="FAspec" value="ad">Chats adoptés</button></div>
                     <div class="col-sm-2"><button class="btn btn-outline-dark" name="FAspec" value="dcd">Chats décédés</button></div>
@@ -105,7 +94,7 @@
                     <div class="col-sm-2"><button class="btn btn-outline-dark" type="submit" name="action" value="sv_adoptTab">Chats a l'adoption</button></div>
                 </div>
             </form>{% endif %}
-            {% if user.hasRefuge() %}<form action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
+            {% if user.hasRefuge() %}<form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
                 <div class="row form-group mt-2">
                     <div class="col-sm-2"><button class="btn btn-outline-dark" name="FAspec" value="ref">{{ refugfa.FAid }}</button> :</div>
                     <div class="col-sm-3">{{ refugfa.FAname }}</div>
@@ -114,7 +103,7 @@
                     </div>
                 </div>
             </form>{% endif %}
-            {% if user.hasReferentFAtemp() %}<form action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
+            {% if user.hasReferentFAtemp() %}<form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
                 <div class="row form-group mt-2">
                     <div class="col-sm-2"><button class="btn btn-outline-dark" name="FAspec" value="fatemp">{{ tempfa.FAid }}</button> :</div>
                     <div class="col-sm-3">{{ tempfa.FAname }}</div>
@@ -126,7 +115,7 @@
 
             {% if falist %}
                 <h2 class="mt-4">Familles d'accueil</h2>
-                <form action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
+                <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
                 {% for fa in falist %}
                     <div class="row">
                         <div class="col-sm-2"><button class="btn btn-outline-dark" name="FAid" value="{{fa.id}}">{{ fa.FAid }}</button> :</div>

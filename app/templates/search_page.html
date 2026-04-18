@@ -18,6 +18,22 @@
             fixAllDates();
             //fixAllRegnums();
         }
+        function enableButtons()
+        {
+            var i, enbts = false;
+            var cbx = document.querySelectorAll('[id^="re_"]');
+            for (i = 0; i < cbx.length; ++i) {
+                if (cbx[i].checked) {
+                    enbts = true;
+                    break;
+                }
+            }
+
+            var btns = document.querySelectorAll('[id^="gen_"]');
+            for (i = 0; i < btns.length; ++i) {
+                btns[i].disabled = !enbts;
+            }
+        }
 function toggleTooltip(icon) {
     const tooltip = icon.nextElementSibling;
     const isCurrentlyOpen = tooltip.classList.contains('show');
@@ -81,18 +97,7 @@ document.addEventListener('click', function(event) {
 {% include 'navbar.html' %}
 
     <div class="container">
-    {% if devsite %}<div class="row">
-	<div class="alert alert-danger">ATTENTION: ce site est la version en développement du logiciel FA, les informations sur les chats de ce site ne correspondent
-        pas à la réalité.  Le site officiel est
-        <a href="https://erafa.pythonanywhere.com/fa">https://erafa.pythonanywhere.com/fa</a></div>
-    </div>{% endif %}
-    {% if msg %}{% for m in  msg %}
-        {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
-        {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
-        {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
-        {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
-        {{ m[1] }}</div>
-    {% endfor %}{% endif %}
+{% include '_messages.html' %}
 
         <h2>Recherche de chats</h2>
 
@@ -133,6 +138,7 @@ document.addEventListener('click', function(event) {
                 <span class="help-icon" onclick="toggleTooltip(this)">?</span>
                 <span class="tooltip">Cherche tous les chats dans des FA dont le nom contient le texte indique.<br>
                     "refuge" donne la liste des chats au refuge.<br>
+                    "mat" "grande" "petite" donnent la liste des chats dans les pieces du refuge<br>
                     Il est possible de chercher des chats dans une cage specifique du refuge
                     en utilisant l'identifiant de l'emplacement de la cage:<br>
                     AXX = cage non specifiee<br>
@@ -142,19 +148,19 @@ document.addEventListener('click', function(event) {
                 </div>
             </div>
             <div class="row mt-2">
-                <div class="col-sm-2"><button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_search">Rechercher (information)</button></div>
-                {% if user.hasBonVeto() %}<div class="col-sm-2"><button class="btn btn-secondary mx-1" type="submit" name="action" value="adm_searchs">Rechercher (selection)</button></div>
-                <div class="col-sm-6">Utiliser "information" pour acceder aux informations des chats et<br>"selection" pour generer des bons veto relatifs aux chats.</div>{% endif %}
+                <div class="col-sm-2"><button class="btn btn-secondary mx-1 w-100" type="submit" name="action" value="search-info">Rechercher (information)</button></div>
+                {% if user.hasBonVeto() %}<div class="col-sm-2"><button class="btn btn-secondary mx-1 w-100" type="submit" name="action" value="search-bv">Rechercher<br>(bon vetetrinaire)</button></div>{% endif %}
+                {% if user.hasContratFA() %}<div class="col-sm-2"><button class="btn btn-secondary mx-1 w-100" type="submit" name="action" value="search-cfa">Rechercher<br>(contrat FA)</button></div>{% endif %}
             </div>
         </form>
         {% if listtitle %}<hr>
             <h2>{{ listtitle }}</h2>
-            {% if scatlist and user.hasBonVeto() %}
+            {% if bvcatlist and user.hasBonVeto() %}
                 <form action="/vet" method="POST">
-                {% for cat in scatlist %}
+                {% for cat in bvcatlist %}
                     <div class="row">
                         <div class="col-sm-1">
-                            <input class="form-check-input border-black" type="checkbox" name="re_{{cat.id}}" id="re_{{cat.id}}">
+                            <input class="form-check-input border-black" type="checkbox" onclick="enableButtons();" name="re_{{cat.id}}" id="re_{{cat.id}}">
                                 <label class="form-check-label" for="re_{{cat.id}}">
                                     <span id="rn_{{cat.id}}">{{ cat.regStr() }}</span>
                                 </label>
@@ -167,27 +173,34 @@ document.addEventListener('click', function(event) {
                             {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})
                         </div>
                         <div class="col-sm-1"><p class="text-nowrap" style="font-family:monospace;">{{ cat.vetshort }}</p></div>
-                        {% if cat.owner.typeFAtemp() %}[{{ cat.temp_owner }}]{% else %}{{ cat.owner.FAname }}{% endif %}
+                        <div class="col-sm-2">{{ cat.nameFA() }}</div>
                     </div>
                 {% endfor %}
                 <hr>
-                <div class="row form-group align-items-baseline">
+                <div class="row form-row align-items-baseline">
                     <div class="col-sm-3">Generer le bon pour une visite le</div>
-                    <div class="col-sm-2">
-                        <input type="date" class="form-control border border-dark" name="visit_date" id="visit_date" placeholder="aujourd'hui">
-                    </div>
+                    <div class="col-sm-2"><input type="date" class="form-control border border-dark" name="visit_date" id="visit_date"></div>
+                    <div class="col-sm-2">(vide = aujourd'hui)</div>
                 </div>
-                <div class="row form-group">
+                <div class="row form-group align-items-baseline my-1">
                     <div class="col-sm-12">
-                    <label class="checkbox-inline mx-2 border-black"><input type="checkbox" name="visit_pv">Primo vaccination</label>
-                    <label class="checkbox-inline mx-2 border-black"><input type="checkbox" name="visit_r1">1er rappel</label>
-                    <label class="checkbox-inline mx-2 border-black"><input type="checkbox" name="visit_rr">Rappel annuel</label>
-                    <label class="checkbox-inline mx-2 border-black"><input type="checkbox" name="visit_id">Identification</label>
-                    <label class="checkbox-inline mx-2 border-black"><input type="checkbox" name="visit_tf">Test FIV/FelV</label>
-                    <label class="checkbox-inline mx-2 border-black"><input type="checkbox" name="visit_sc">Stérilisation/Castration</label>
-                    <label class="checkbox-inline mx-2 border-black"><input type="checkbox" name="visit_gen">Soins / autre</label>
-                    <label class="checkbox-inline mx-2 border-black"><input type="checkbox" name="visit_ap">Déparasitage</label>
-                    </div>
+                    <input class="form-check-input border-black" type="checkbox" name="visit_pv" id="visit_pv">
+                        <label class="form-check-label" for="visit_pv">Primo vaccination&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="visit_r1" id="visit_r1">
+                        <label class="form-check-label">1er rappel&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="visit_rr" id="visit_rr">
+                        <label class="form-check-label">Rappel annuel&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="visit_id" id="visit_id">
+                        <label class="form-check-label">Identification&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="visit_tf" id="visit_tf">
+                        <label class="form-check-label">Test FIV/FelV&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="visit_sc" id="visit_sc">
+                        <label class="form-check-label">Stérilisation/Castration&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="visit_gen" id="visit_gen">
+                        <label class="form-check-label">Soins / autre&nbsp;&nbsp;&nbsp;&nbsp;</label>
+                    <input class="form-check-input border-black" type="checkbox" name="visit_ap" id="visit_ap">
+                        <label class="form-check-label">Déparasitage</label>
+                     </div>
                 </div>
                 <div class="row form-group">
                     <div class="col-sm-12">
@@ -196,9 +209,90 @@ document.addEventListener('click', function(event) {
                 </div>
                 <div class="row mt-2">
                     <div class="col-sm-2">
-                        <button class="btn btn-secondary mx-1" type="submit" name="action" value="fa_vetbonfast">Generer le bon</button>
+                        <button class="btn btn-secondary mx-1" type="submit" name="action" id="gen_bon" value="fa_vetbonfast" disabled>Generer le bon</button>
                     </div>
-                    <div class="col-sm-10">Remplacer la FA par : <input type="text" name="visit_faname"> (nom de l'adoptant pour une visite post-adoption)</div>
+                    <div class="col-sm-10">Remplacer la FA par : <input class="border border-dark" type="text" name="visit_faname"> (nom de l'adoptant pour une visite post-adoption)</div>
+                </div>
+                </form>
+            {% elif cfacatlist and user.hasContratFA() %}
+                <form id="inpform" name="inpform" action="/proc" method="POST">
+                {% for cat in cfacatlist %}
+                    <div class="row">
+                        <div class="col-sm-1">
+                            <input class="form-check-input border-black" type="checkbox" onclick="enableButtons();" name="re_{{cat.id}}" id="re_{{cat.id}}">
+                                <label class="form-check-label" for="re_{{cat.id}}">
+                                    <span id="rn_{{cat.id}}">{{ cat.regStr() }}</span>
+                                </label>
+                        </div>
+                        <div class="col-sm-2">{{ cat.identif }}</div>
+                        <div class="col-sm-4">
+                            <b>{% if cat.name %}{{ cat.name }}{% else %}<span class="bg-warning">sans nom</span>{% endif %}</b>
+                            ({% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}<span class="bg-warning">??sexe??</span>{% endif %},
+                            {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %},
+                            {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})
+                        </div>
+                        <div class="col-sm-1"><p class="text-nowrap" style="font-family:monospace;">{{ cat.vetshort }}</p></div>
+                        <div class="col-sm-2">{{ cat.nameFA() }}</div>
+                    </div>
+                {% endfor %}
+                <hr>
+                <h3 class="mt-2 pt-2 border-2 border-top border-black">FAMILLE D'ACCUEIL</h3>
+                <div class="row">
+                    <p>Si l'individu est déjà enregistré dans Refugilys (ou si on décide de l'enregistrer pour déjà avoir l'info dans le futur), on peut remplir
+                    automatiquement avec "Copier de Refugilys" dans la page individu et "Coller dans siteFA" ici.</p>
+                </div>
+                <div class="row form-group mt-2">
+                    <div class="col-sm-2">
+                        <label class="control-label" for="ind_id">Id:</label>
+                        <input type="text" class="form-control border border-dark" id="ind_id" name="ind_id" type="text">
+                    </div>
+                    <div class="col-sm-5">
+                        <label class="control-label" for="ind_nom">Nom:</label>
+                        <input type="text" class="form-control border border-dark" id="ind_nom" name="ind_nom" type="text" required="required">
+                    </div>
+                    <div class="col-sm-5">
+                        <label class="control-label" for="ind_prenom">Prenom:</label>
+                        <input type="text" class="form-control border border-dark" id="ind_prenom" name="ind_prenom" type="text" required="required">
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-12">
+                        <label class="control-label" for="ind_adresse">Adresse:</label>
+                        <input type="text" class="form-control border border-dark" id="ind_adresse" name="ind_adresse" type="text" required="required">
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-5">
+                        <label class="control-label" for="ind_cp">CP:</label>
+                        <input type="text" class="form-control border border-dark" id="ind_cp" name="ind_cp" type="text" required="required">
+                    </div>
+                    <div class="col-sm-7">
+                        <label class="control-label" for="ind_ville">Ville:</label>
+                        <input type="text" class="form-control border border-dark" id="ind_ville" name="ind_ville" type="text" required="required">
+                    </div>
+                </div>
+                <div class="row form-group">
+                    <div class="col-sm-5">
+                        <label class="control-label" for="ind_tel">Tel.:</label>
+                        <input type="text" class="form-control border border-dark" id="ind_tel" name="ind_tel" type="text" required="required">
+                    </div>
+                    <div class="col-sm-7">
+                        <label class="control-label" for="ind_email">E-Mail:</label>
+                        <input type="text" class="form-control border border-dark" id="ind_email" name="ind_email" type="text" required="required">
+                    </div>
+                </div>
+                <div class="row form-row align-items-baseline mt-2">
+                    <div class="col-sm-3">Date de depart des chats en FA : </div>
+                    <div class="col-sm-2"><input type="date" class="form-control border border-dark" name="cfa_date" id="cfa_date"></div>
+                    <div class="col-sm-2">(vide = aujourd'hui)</div>
+                </div>
+                 <div class="row mt-2">
+                    <div class="col-sm-2">
+                        <button class="btn btn-secondary mx-1" type="submit" name="action" id="gen_cfa" value="proc_cfa" disabled>Generer le contrat</button>
+                    </div>
+                    <div class="col-sm-3">
+                        <button class="btn btn-secondary mx-1" type="submit" name="action" id="gen_cfas" value="proc_cfasave" disabled>Generer le contrat et indiquer les chats dans la FA</button>
+                    </div>
                 </div>
                 </form>
             {% else %}

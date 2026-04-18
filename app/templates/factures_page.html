@@ -67,18 +67,7 @@
     {% include 'navbar.html' %}
 
     <div class="container">
-    {% if devsite %}<div class="row">
-	<div class="alert alert-danger">ATTENTION: ce site est la version en developpement du logiciel FA, les informations sur les chats de ce site ne correspondent
-        pas a la realite.  Le site officiel est
-        <a href="https://erafa.pythonanywhere.com/fa">https://erafa.pythonanywhere.com/fa</a></div>
-    </div>{% endif %}
-    {% if msg %}{% for m in  msg %}
-        {% if m[0] == 1 %}<div class="alert alert-info">
-        {% elif m[0] == 2 %}<div class="alert alert-warning">
-        {% elif m[0] == 3 %}<div class="alert alert-danger">
-        {% else %}<div class="alert alert-success">{% endif %}
-        {{ m[1]|safe }}</div>
-    {% endfor %}{% endif %}
+{% include '_messages.html' %}
 
     <h2>Factures</h2>
     <h5>(impayeés {{ cumulative[0] }}&nbsp;€ + payées {{ cumulative[1] }}&nbsp;€ = {{ cumulative[2] }}&nbsp;€ total)</h5>

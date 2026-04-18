@@ -8,7 +8,7 @@ from sqlalchemy import and_
 from sqlalchemy.sql import text
 from datetime import datetime,timedelta
 
-@app.route('/fa', methods=["GET", "POST"])
+@app.route('/', methods=["GET", "POST"])
 def fapage():
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
@@ -36,7 +36,8 @@ def fapage():
             if (mode == "special-all" or mode == "special-adopt") and not current_user.hasSuperviseur():
                 mode = None
 
-            if mode == "special-search" and not current_user.hasSearch():
+            # search requiers the appropriate mode, but we just use "any of them"
+            if mode == "special-search" and not (current_user.hasSearch() or current_user.hasBonVeto() or current_user.hasContratFA()):
                 mode = None
 
             # this is only allowed for VET
@@ -159,10 +160,21 @@ def fapage():
                 cats = cats + Cat.query.filter(Cat.identif.contains(src_id)).order_by(Cat.temp_owner,Cat.regnum).all()
 
             if src_FAname:
-                # handle the special "refuge" case
-                if src_FAname.lower() == 'refuge':
+                # handle the special cases
+                lwrFA = src_FAname.lower()
+                if lwrFA == 'refuge':
                     theFA = getSpecialUser('ref')
                     cats = cats + Cat.query.filter_by(owner_id=theFA.id).order_by(Cat.temp_owner,Cat.regnum).all()
+                elif lwrFA == 'mat' or lwrFA == 'grande' or lwrFA == 'petite':
+                    theFA = getSpecialUser('ref')
+                    if lwrFA == 'mat':
+                        cagespec = "B"
+                    elif lwrFA == 'grande':
+                        cagespec = "G"
+                    else:
+                        cagespec = "P"
+
+                    cats = cats + Cat.query.filter(and_(Cat.owner_id==theFA.id,Cat.temp_owner.startswith(cagespec))).order_by(Cat.temp_owner,Cat.regnum).all()
                 else:
                     cats = cats + Cat.query.filter(Cat.temp_owner.contains(src_FAname)).order_by(Cat.temp_owner,Cat.regnum).all()
 
@@ -172,10 +184,13 @@ def fapage():
             defaultvalues = [src_regnum, src_name, src_id, src_FAname];
 
             # we reuse the search page to display the list
-            if src_mode == "select":
+            if src_mode == "search-bv":
                 return render_template("search_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    listtitle="Résultat de la recherche", scatlist=cats, msg=message, defval=defaultvalues, lastreg=max_regnum, lastdate=globaldata.LastImportDate, syncdate=globaldata.LastSyncDate)
-            else:
+                    listtitle="Résultat de la recherche", bvcatlist=cats, msg=message, defval=defaultvalues, lastreg=max_regnum, lastdate=globaldata.LastImportDate, syncdate=globaldata.LastSyncDate)
+            elif src_mode == "search-cfa":
+                return render_template("search_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                    listtitle="Résultat de la recherche", cfacatlist=cats, msg=message, defval=defaultvalues, lastreg=max_regnum, lastdate=globaldata.LastImportDate, syncdate=globaldata.LastSyncDate)
+            else: # == "search-info":
                 return render_template("search_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
                     listtitle="Résultat de la recherche", catlist=cats, msg=message, defval=defaultvalues, lastreg=max_regnum, lastdate=globaldata.LastImportDate, syncdate=globaldata.LastSyncDate)
 

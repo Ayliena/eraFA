@@ -1,8 +1,9 @@
 from app import app, db, devel_site
-from app.staticdata import DBTabColor
+from app.staticdata import DBTabColor, TabColor, TabSex, TabHair, NO_VISIT, NO_VET, GEN_VET, DEFAULT_VET
 from app.helpers import ERAsum, cat_associate_to_FA, getSpecialUser
-from app.models import User, Cat, Event
-from flask import render_template, redirect, request, url_for
+from app.vetvisits import cat_getVisitDates
+from app.models import Cat, Event
+from flask import render_template, redirect, request, session, url_for
 from flask_login import login_required, current_user
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -234,5 +235,100 @@ def proc_page():
 
         pdfname = "PeC-{} {}-{}".format(amdata[0], amdata[1], date.strftime("%Y-%m-%d"))
         return render_template("pecform_page.html", user=current_user, msg=messages, pectitle=pdfname, pec_type=ptype, pec_date=date, pec_motif=motif, amenant=amdata, peccats=cats, pec_carnet=carnet, pec_icad=icad, pec_vet=vet, pec_refuge=locref, pec_FA=locFA)
+
+    # contrat FA - generate the document
+    if cmd == "proc_cfa" or cmd == "proc_cfasave":
+        if not current_user.hasContratFA():
+            return render_template("error_page.html", user=current_user, errormessage="missing privilege")
+
+        messages = []
+
+        try:
+            date = datetime.strptime(request.form["cfa_date"], "%Y-%m-%d")
+        except ValueError:
+            date = datetime.now()
+
+        fadata = [request.form[k] for k in ('ind_id', 'ind_nom', 'ind_prenom', 'ind_adresse', 'ind_cp', 'ind_ville', 'ind_tel', 'ind_email')]
+
+        fadata[1] = fadata[1].upper()
+        fadata[2] = fadata[2].capitalize()
+        # generate the list of cats
+        catlist = []
+
+        # iterate on the checkboxes to see which cats are to be processed
+        for key in request.form.keys():
+            if key[0:3] == 're_':
+                catid = int(key[3:])
+                theCat = Cat.query.filter_by(id=catid).first()
+
+                if theCat:
+                    vdates = cat_getVisitDates(theCat)
+                    # adjust the vdates when possible, converting all which is already done to 'fait' and calculating/indicating when
+                    # to do the rest
+                    # this is done back-to-front to avoid killing V when we still need it to calculate 1
+                    if vdates[5]:
+                        vdates[5] = 'fait'
+                    else:
+                        vdates[5] = 'à faire à 6+ mois'
+
+                    if vdates[4]:
+                        vdates[4] = 'fait'
+                    else:
+                        vdates[4] = 'à faire'
+
+                    if vdates[3]:
+                        vdates[3] = 'fait'
+                    else:
+                        vdates[3] = 'à faire'
+
+                    # R is not used
+
+                    # V and 1 are intermixed and must be processed at the same time
+                    if vdates[1]:
+                        # 1 done, assume all done
+                        vdates[1] = 'fait'
+                        vdates[0] = 'fait'
+                    else:
+                        # 1 not done, if no V then both are to do
+                        if not vdates[0]:
+                            vdates[1] = 'à faire'
+                            vdates[0] = 'à faire'
+                        else:
+                            # V done, 1 not done, calculate the date
+                            r1date = vdates[0] + relativedelta(days=28)
+                            vdates[0] = 'fait'
+                            vdates[1] = "à faire le {}".format(r1date.strftime("%d/%m/%y"))
+
+                    # for i in range(0,6):
+                    #     if vdates[i]:
+                    #         try:
+                    #             vdates[i] = vdates[i].strftime("%d/%m/%y")
+                    #         except:
+                    #             pass
+                    #     else:
+                    #         vdates[i] = 'None'
+
+                    catlist.append([theCat, vdates])
+
+        # if nothing was selected, return an error and stay here
+        if not catlist:
+            session["pendingmessage"] = [ [ 2, "Aucun chat selectionne" ] ]
+            return redirect(url_for('fapage'))
+
+        # move the cats in the FA -> note, this ALWAYS uses FAtemp and adds the (refu_id) if it's available
+        if cmd == "proc_cfasave":
+            theFA = getSpecialUser('fatemp')
+            tempFAname = "{} {}{}".format(fadata[1], fadata[2].upper(), " ("+fadata[0]+")" if fadata[0] else "")
+
+            for cd in catlist:
+                theCat = cd[0]
+                cat_associate_to_FA(theCat, theFA)
+                theCat.temp_owner = tempFAname
+                messages.append("Chat {}/{} transfere chez {}".format(theCat.regStr(), theCat.name, tempFAname))
+
+            db.session.commit()
+
+        pdfname = "ContratFA-{} {}-{}".format(fadata[1], fadata[2], date.strftime("%Y-%m-%d"))
+        return render_template("contratfa_page.html", user=current_user, msg=messages, cfatitle=pdfname, fa=fadata, cfadate=date, cats=catlist, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair)
 
     return render_template("error_page.html", user=current_user, errormessage="command error (/proc)")

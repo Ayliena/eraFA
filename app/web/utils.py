@@ -26,12 +26,12 @@ def searchpage():
 
     cmd = request.form["action"]
 
-    if cmd == "adm_search" or cmd == "adm_searchs":
+    if cmd == "search-info" or cmd == "search-bv" or cmd == "search-cfa":
         src_name = request.form["src_name"]
         src_regnum = request.form["src_regnum"]
         src_id = request.form["src_id"]
         src_FAname = request.form["src_faname"]
-        src_mode = "info" if cmd == "adm_search" else "select"
+        src_mode = cmd
 
         # if they are all empty => complain
         if not src_name and not src_regnum and not src_id and not src_FAname:

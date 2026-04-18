@@ -26,11 +26,6 @@
             }
             else return Math.floor(days/365).toString()+"a";
         }
-        function readableRegistre(regnum) {
-            var ry = Math.floor(regnum/10000);
-            var rn = regnum - 10000*ry;
-            return rn.toString()+"-"+ry.toString();
-        }
         function fixAllDates() {
             var i, dates = document.querySelectorAll('[id^="bd_"]');
             var today = new Date().getTime() / 1000;

@@ -44,18 +44,7 @@
 {% include 'navbar.html' %}
 
     <div class="container">
-    {% if devsite %}<div class="row">
-	   <div class="alert alert-danger">ATTENTION: ce site est la version en developpement du logiciel FA, les informations sur les chats de ce site ne correspondent
-        pas a la realite.  Le site officiel est
-        <a href="https://erafa.pythonanywhere.com/fa">https://erafa.pythonanywhere.com/fa</a></div>
-    </div>{% endif %}
-    {% if msg %}{% for m in  msg %}
-        {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
-        {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
-        {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
-        {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
-        {{ m[1] }}</div>
-    {% endfor %}{% endif %}
+{% include '_messages.html' %}
 
         {% if pagetype==2 %}
             <h2>Bon de castration/stérilisation post-adoption</h2>
@@ -149,6 +138,10 @@
             <h2>Document de prise en charge</h2>
 
             <form class="form-horizontal" id="inpform" name="inpform" action="/proc" method="POST">
+                <div class="row">
+                    <p>Si l'individu est déjà enregistré dans Refugilys (ou si on décide de l'enregistrer pour déjà avoir l'info dans le futur), on peut remplir
+                    automatiquement avec "Copier de Refugilys" dans la page individu et "Coller dans siteFA" ici.</p>
+                </div>
                 <div class="row form-group">
                     <div class="col-sm-4">
                         <div class="form-check">
