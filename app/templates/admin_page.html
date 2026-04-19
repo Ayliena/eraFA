@@ -1,3 +1,4 @@
+<!doctype html>
 <html>
     <head>
         <title>Familles d'accueil ERA</title>
@@ -31,13 +32,7 @@
 {% include 'navbar.html' %}
 
     <div class="container">
-    {% if msg %}{% for m in  msg %}
-        {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
-        {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
-        {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
-        {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
-        {{ m[1] }}</div>
-    {% endfor %}{% endif %}
+{% include '_messages.html' %}
 
         <h2>Utilitaires de systeme</h2>
 
@@ -47,6 +42,8 @@
         <form action="/admin" method="POST">
             <div class="row form-group">
                 <div class="col-sm-3"><button class="btn btn-secondary" type="submit" name="action" value="adm_vettab">Generer le vet hash map pour FawebHelper.pm</button></div>
+            </div>
+            <div class="row form-group mt-3">
                 <div class="col-sm-3"><button class="btn btn-secondary" type="submit" name="action" value="adm_numcats">Recalculer le nombre des chats dans chaque FA</button></div>
                 <div class="col-sm-3"><button class="btn btn-secondary" type="submit" name="action" value="adm_cleanup">Nettoyer l'historique en effacant tous les chats de l'annee derniere</button></div>
             </div>

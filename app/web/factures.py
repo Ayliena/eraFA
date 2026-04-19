@@ -1,143 +1,156 @@
 from app import app, db, devel_site
-from app.staticdata import FAidSpecial, FAC_FROZEN, FAC_UNPAID, FAC_PAID, FAC_RECONC
+from app.staticdata import FAC_FROZEN, FAC_UNPAID, FAC_PAID, FAC_RECONC, FAC_BEINGPAID
+from app.helpers import validateAPItoken
 from app.models import Facture, User
 from flask import render_template, request, redirect, url_for, jsonify, session, Response
-from flask_login import current_user
+from flask_login import login_required, current_user
 from datetime import datetime
 from sqlalchemy import and_, or_
 from decimal import Decimal
 #import json
 
-@app.route('/facupload', methods=["POST"])
+@app.route('/api/factures/upload', methods=["POST"])
 def factures_upload():
     # the data is received as a json dictionary
     jsondata = request.json
+    username = jsondata.get("username", "nil")
     apikey = jsondata.get("apikey", "nil")
 
-    if apikey != app.config['APIKEY']:
+    if not validateAPItoken(username, apikey, 'write'):
         rv = {
             "code": -1,
             "message": "unauthorized"
         }
         return jsonify(rv)
 
-    # see if it's new factures or it's a list of bank payments
-    cmd = jsondata.get("command", "none")
+    # process the request
+    rv = { "code": 1, "message": "data processed" }
 
-    if cmd == "newfact":
-        rv = { "code": 1, "message": "data processed" }
+    # get all the lines
+    i = 0
+    while True:
+        datline = "data{}".format(i)
+        i = i + 1
+        line = jsondata.get(datline, "")
+        if len(line) == 0:
+            break
 
-        # get all the lines
-        i = 0
-        while True:
-            datline = "data{}".format(i)
-            i = i + 1
-            line = jsondata.get(datline, "")
-            if len(line) == 0:
-                break
+        val = line.split(';')
 
-            val = line.split(';')
+        try:
+            facdate = datetime.strptime(val[0], "%Y-%m-%d")
+        except ValueError:
+            rv[datline] = "invalid date"
+            continue
 
-            try:
-                facdate = datetime.strptime(val[0], "%Y-%m-%d")
-            except ValueError:
-                rv[datline] = "invalid date"
-                continue
+        # decode the duplicata number
+        dupnum = 0
+        if val[4].startswith("Duplicata"):
+            dupnum = int(val[4][9])
 
-            # decode the duplicata number
-            dupnum = 0
-            if val[4].startswith("Duplicata"):
-                dupnum = int(val[4][9])
-
-            # add the data, if it doesn't already exist
-            theFact = Facture.query.filter(and_(Facture.clinic==val[1],Facture.facnumber==val[2])).first()
-            if theFact:
-                # already exists, update duplicata if needed
-                if dupnum > theFact.duplicata:
-                    theFact.duplicata = dupnum
-                    rv[datline] = "updated duplicata"
-                else:
-                    rv[datline] = "existing entry"
-
-                continue
+        # add the data, if it doesn't already exist
+        theFact = Facture.query.filter(and_(Facture.clinic==val[1],Facture.facnumber==val[2])).first()
+        if theFact:
+            # already exists, update duplicata if needed
+            if dupnum > theFact.duplicata:
+                theFact.duplicata = dupnum
+                rv[datline] = "updated duplicata"
             else:
-                # see if we can associate to a clinic
-                theClinicId = None
-                theClinic = User.query.filter_by(FAid=val[1]).first()
-                if theClinic:
-                    theClinicId = theClinic.id
+                rv[datline] = "existing entry"
 
-                theFact = Facture(fdate=facdate, clinic=val[1], clinic_id=theClinicId, facnumber=val[2], total=val[3], duplicata=dupnum, state=FAC_UNPAID)
-                db.session.add(theFact)
-                rv[datline] = "success"
+            continue
+        else:
+            # see if we can associate to a clinic
+            theClinicId = None
+            theClinic = User.query.filter_by(FAid=val[1]).first()
+            if theClinic:
+                theClinicId = theClinic.id
 
-        db.session.commit()
+            theFact = Facture(fdate=facdate, clinic=val[1], clinic_id=theClinicId, facnumber=val[2], total=val[3], duplicata=dupnum, state=FAC_UNPAID)
+            db.session.add(theFact)
+            rv[datline] = "success"
 
-    elif cmd == "bankreport":
-        rv = { "code": 1, "message": "data processed" }
-
-        # get all the lines
-        i = 0
-        while True:
-            datline = "data{}".format(i)
-            i = i + 1
-            line = jsondata.get(datline, "")
-            if len(line) == 0:
-                break
-
-            val = line.split(';')
-
-            try:
-                bankdate = datetime.strptime(val[0], "%Y-%m-%d")
-            except ValueError:
-                rv[datline] = "invalid date"
-                continue
-
-            theFact = Facture.query.filter(and_(Facture.clinic==val[1],Facture.facnumber==val[2])).first()
-
-            if theFact:
-                if theFact.state == FAC_RECONC:
-                    # attempt to re-reconcile, indicate possible problem (duplicate?)
-                    rv[datline] = "WARN: already reconciled: " + theFact.rdate.strftime("%Y-%m-%d")
-
-                elif theFact.state == FAC_PAID:
-                    # all is normal
-                    theFact.state = FAC_RECONC
-                    theFact.rdate = bankdate
-                    rv[datline] = "success"
-
-                elif theFact.state == FAC_UNPAID:
-                    # should have been marked paid....
-                    theFact.state = FAC_RECONC
-                    theFact.pdate = bankdate
-                    theFact.rdate = bankdate
-                    rv[datline] = "WARN: success, but force-marked paid: " + bankdate.strftime("%Y-%m-%d")
-
-                else: # FROZEN
-                    # no choice but to indicate done....
-                    theFact.state = FAC_RECONC
-                    theFact.pdate = bankdate
-                    theFact.rdate = bankdate
-                    rv[datline] = "ERROR: paid+reconciled on FROZEN " + bankdate.strftime("%Y-%m-%d")
-
-            else:
-                rv[datline] = "facture not found"
-
-        db.session.commit()
-
-    else:
-        rv = { "code": -2, "message": "invalid command" }
+    db.session.commit()
 
     return jsonify(rv)
 
 
-@app.route('/facdownload', methods=["POST"])
+@app.route('/api/factures/bankreport', methods=["POST"])
+def factures_bankreport():
+    # the data is received as a json dictionary
+    jsondata = request.json
+    username = jsondata.get("username", "nil")
+    apikey = jsondata.get("apikey", "nil")
+
+    if not validateAPItoken(username, apikey, 'write'):
+        rv = {
+            "code": -1,
+            "message": "unauthorized"
+        }
+        return jsonify(rv)
+
+    rv = { "code": 1, "message": "data processed" }
+
+    # get all the lines
+    i = 0
+    while True:
+        datline = "data{}".format(i)
+        i = i + 1
+        line = jsondata.get(datline, "")
+        if len(line) == 0:
+            break
+
+        val = line.split(';')
+
+        try:
+            bankdate = datetime.strptime(val[0], "%Y-%m-%d")
+        except ValueError:
+            rv[datline] = "invalid date"
+            continue
+
+        theFact = Facture.query.filter(and_(Facture.clinic==val[1],Facture.facnumber==val[2])).first()
+
+        if theFact:
+            if theFact.state == FAC_RECONC:
+                # attempt to re-reconcile, indicate possible problem (duplicate?)
+                rv[datline] = "WARN: already reconciled: " + theFact.rdate.strftime("%Y-%m-%d")
+
+            elif theFact.state == FAC_PAID:
+                # all is normal
+                theFact.state = FAC_RECONC
+                theFact.rdate = bankdate
+                rv[datline] = "success"
+
+            elif theFact.state == FAC_UNPAID:
+                # should have been marked paid....
+                theFact.state = FAC_RECONC
+                theFact.pdate = bankdate
+                theFact.rdate = bankdate
+                rv[datline] = "WARN: success, but force-marked paid: " + bankdate.strftime("%Y-%m-%d")
+
+            else: # FROZEN
+                # no choice but to indicate done....
+                theFact.state = FAC_RECONC
+                theFact.pdate = bankdate
+                theFact.rdate = bankdate
+                rv[datline] = "ERROR: paid+reconciled on FROZEN " + bankdate.strftime("%Y-%m-%d")
+
+        else:
+            rv[datline] = "facture not found"
+
+    db.session.commit()
+
+    return jsonify(rv)
+
+
+@app.route('/api/factures/download', methods=["POST"])
 def factures_download():
     # the data is received as a json dictionary
     jsondata = request.json
+    username = jsondata.get("username", "nil")
     apikey = jsondata.get("apikey", "nil")
 
-    if apikey != app.config['APIKEY']:
+    if not validateAPItoken(username, apikey, 'read'):
         rv = {
             "code": -1,
             "message": "unauthorized"
@@ -176,12 +189,90 @@ def factures_download():
     return jsonify(rv)
 
 
+@app.route('/api/factures/<int:id>/set-state', methods=['POST'])
+@login_required
+def factures_pay(id):
+    # check if we can
+    if not current_user.hasComptaMod():
+        return jsonify({'error': "missing privilege"}), 401
+
+    # get the data
+    fac = Facture.query.get(id)
+
+    if not fac:
+        return jsonify({'error': 'invalid fac_id'}), 404
+
+    # see what we must do
+    new_state = request.get_json()['state']
+
+    # consistency check on state transitions
+    if new_state == "frz":
+        if fac.state != FAC_UNPAID:
+            return jsonify({'error': 'Impossible de mettre en attente'}), 405
+
+        # everything seems to be ok, update the information
+        fac.state = FAC_FROZEN
+        db.session.commit()
+
+    elif new_state == "ufz":
+        if fac.state != FAC_FROZEN:
+            return jsonify({'error': 'La facture n\'est pas en attente'}), 405
+
+        # everything seems to be ok, update the information
+        fac.state = FAC_UNPAID
+        db.session.commit()
+
+    elif new_state == "reg":
+        # make sure noone-else is working on it
+        if fac.beingpaidby_id:
+            return jsonify({'error': "Deja en reglement par {}".format(fac.beingpaidby.FAname)}), 409
+
+        if fac.state != FAC_UNPAID:
+            return jsonify({'error': "Impossible de mettre en reglement"}), 405
+
+        # everything seems to be ok, update the information
+        fac.state = FAC_BEINGPAID
+        fac.beingpaidby_id = current_user.id
+        db.session.commit()
+
+    elif new_state == "rno":
+        if fac.state != FAC_BEINGPAID:
+            return jsonify({'error': "Impossible d'interrompre le reglement d'une facture qui n'etait pas en reglement"}), 405
+
+        # everything seems to be ok, update the information
+        fac.state = FAC_UNPAID
+        fac.beingpaidby_id = None
+        db.session.commit()
+
+    elif new_state == "rok":
+        if fac.state != FAC_BEINGPAID:
+            return jsonify({'error': "Impossible d'indiquer reglee une facture qui n'etait pas en reglement"}), 405
+
+        # everything seems to be ok, update the information
+        fac.state = FAC_PAID
+        fac.beingpaidby_id = None
+        fac.pdate = datetime.now()
+        db.session.commit()
+
+    elif new_state == "cnc":
+        if fac.state != FAC_PAID:
+            return jsonify({'error': "Impossible d'annuler le reglement"}), 405
+
+        # everything seems to be ok, update the information
+        fac.state = FAC_UNPAID
+        db.session.commit()
+
+    # this will be executed for all new_state, which includes the 'rfr' (refresh)
+    # update (or not...) the state
+    return render_template("_fac_st_bt.html", user=current_user, fac=fac)
+
+
 @app.route('/factures', methods=["GET", "POST"])
 def factures_page():
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
 
-    if not current_user.PrivCOMPTA:
+    if not (current_user.hasComptaSelf() or current_user.hasCompta()):
         return redirect(url_for('fapage'))
 
     if request.method == "POST":
@@ -191,73 +282,7 @@ def factures_page():
 
     message = []
 
-    if cmd == "fact_paid" and current_user.PrivCOMPTAMOD:
-        # find the facture
-        theFact = Facture.query.filter_by(id=request.form["factid"]).first()
-        if theFact == None:
-            return render_template("error_page.html", user=current_user, errormessage="invalid fact id", FAids=FAidSpecial)
-
-        if theFact.state == FAC_FROZEN:
-            message.append( [3, "Facture <a href=\"#fac{}\">{}/{}</a> EN ATTENTE".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
-
-        elif theFact.state == FAC_PAID:
-            message.append( [2, "Facture <a href=\"#fac{}\">{}/{}</a> DEJA indiquée payée".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
-
-        elif theFact.state == FAC_RECONC:
-            message.append( [3, "Facture <a href=\"#fac{}\">{}/{}</a> DEJA dans un extrait banquaire".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
-
-        else:
-            # indicate as paid
-            theFact.state = FAC_PAID
-            theFact.pdate = datetime.now()
-            db.session.commit()
-            message.append( [0, "Facture <a href=\"#fac{}\">{}/{}</a> indiquée payée".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
-
-    elif cmd == "fact_unpaid" and current_user.PrivCOMPTAMOD:
-        # find the facture
-        theFact = Facture.query.filter_by(id=request.form["factid"]).first()
-        if theFact == None:
-            return render_template("error_page.html", user=current_user, errormessage="invalid fact id", FAids=FAidSpecial)
-
-        if theFact.state == FAC_RECONC:
-            # you cannot indicate this unpaid!
-            message.append( [3, "Facture <a href=\"#fac{}\">{}/{}</a>: reglement deja indiqué sur le relevé bancaire!".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
-        else:
-            theFact.state = FAC_UNPAID
-            db.session.commit()
-            message.append( [2, "Facture <a href=\"#fac{}\">{}/{}</a> indiquée NON payée".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
-
-    elif cmd == "fact_freeze" and current_user.PrivCOMPTAMOD:
-        # find the facture
-        theFact = Facture.query.filter_by(id=request.form["factid"]).first()
-        if theFact == None:
-            return render_template("error_page.html", user=current_user, errormessage="invalid fact id", FAids=FAidSpecial)
-
-        if theFact.state >= FAC_PAID:
-            # you cannot indicate this unpaid!
-            message.append( [3, "Facture <a href=\"#fac{}\">{}/{}</a> DEJA indiquée payée!".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
-        elif theFact.state == FAC_UNPAID:
-            # freeze this
-            theFact.state = FAC_FROZEN
-            db.session.commit()
-            message.append( [2, "Facture <a href=\"#fac{}\">{}/{}</a> mise en attente".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
-
-    elif cmd == "fact_unfreeze" and current_user.PrivCOMPTAMOD:
-        # find the facture
-        theFact = Facture.query.filter_by(id=request.form["factid"]).first()
-        if theFact == None:
-            return render_template("error_page.html", user=current_user, errormessage="invalid fact id", FAids=FAidSpecial)
-
-        if theFact.state != FAC_FROZEN:
-            # uh?
-            message.append( [3, "Facture <a href=\"#fac{}\">{}/{}</a>: n'est pas en attente!".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
-        else:
-            # ufreeze this
-            theFact.state = FAC_UNPAID
-            db.session.commit()
-            message.append( [2, "Facture <a href=\"#fac{}\">{}/{}</a> règlement désormais possible".format(theFact.id, theFact.clinic, theFact.facnumber) ] )
-
-    elif cmd == "fact_filter":
+    if cmd == "fact_filter":
         # update the filter
 
         # store the options in the session data
@@ -275,7 +300,7 @@ def factures_page():
         pass
 
     elif cmd != "":
-      return render_template("error_page.html", user=current_user, errormessage="invalid command", FAids=FAidSpecial)
+      return render_template("error_page.html", user=current_user, errormessage="invalid command")
 
     # get the options from the session data (if available), otherwise use defaults
     if "optCOMPTA" in session:
@@ -294,7 +319,7 @@ def factures_page():
 
     fquery = Facture.query
 
-    if current_user.PrivCOMPTASELF:
+    if current_user.hasComptaSelf():
         fquery = fquery.filter(Facture.clinic_id==current_user.id)
 
     # make sure we keep the ones requested (note: frozen == unpaid)
@@ -354,10 +379,10 @@ def factures_page():
     # values are: unpaid, paid, grand total
     ftotal = [Decimal(0), Decimal(0), Decimal(0)]
     for f in facs:
-        if f.state < FAC_PAID:  # unpaid
-            ftotal[0] = ftotal[0] + f.total
-        if f.state > FAC_UNPAID: # paid, reconciled or not
+        if f.state == FAC_PAID or f.state == FAC_RECONC:  # paid
             ftotal[1] = ftotal[1] + f.total
+        else: # unpaid
+            ftotal[0] = ftotal[0] + f.total
         ftotal[2] = ftotal[2] + f.total
 
     if cmd == "fact_export":
@@ -375,4 +400,4 @@ def factures_page():
             headers={"Content-disposition":
                      "attachment; filename=facturesERA.csv"})
 
-    return render_template("factures_page.html", devsite=devel_site, user=current_user, msg=message, FAids=FAidSpecial, cumulative=ftotal, factures=facs, facfilter=[showUnpaid, showPaid, showReconciled, filtClinic]+filtDates)
+    return render_template("factures_page.html", devsite=devel_site, user=current_user, msg=message, cumulative=ftotal, factures=facs, facfilter=[showUnpaid, showPaid, showReconciled, filtClinic]+filtDates)

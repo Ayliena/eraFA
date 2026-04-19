@@ -56,9 +56,10 @@ PRIV_BVETO   = 29   # can generate bon veto/validate visit
 PRIV_RVETO   = 30   # can plan visits for refuge
 PRIV_APIR    = 31   # api read access
 PRIV_APIW    = 32   # api write access
+PRIV_EVENTS  = 33   # see events associated to a cat
 
 FIRST_PRIV = 10
-NUM_PRIVS = 33
+NUM_PRIVS = 34
 
 TabPrivs = [
     "MENU_FA",
@@ -93,5 +94,6 @@ TabPrivs = [
     "BVETO",
     "RVETO",
     "APIR",
-    "APIW"
+    "APIW",
+    "EVENTS"
 ]

@@ -1,0 +1,8 @@
+<i>{{ fac.statusText()|safe }}</i>{% if user.hasComptaMod() %}
+{% if fac.isFrozen() %}<button class="btn btn-secondary btn-sm" onclick="setState({{ fac.id }}, 'ufz')">Mettre en reglement</button>{% endif %}
+{% if fac.isUnpaid() %}<button class="btn btn-warning btn-sm" onclick="setState({{ fac.id }}, 'reg', '{{ fac.clinic }}','{{ fac.facnumber }}','{{ fac.total }}')">Regler</button>
+    <button class="btn btn-secondary btn-sm" onclick="setState({{ fac.id }}, 'frz')">Mettre en attente</button>{% endif %}
+{% if fac.isBeingPaid() %}{% if fac.beingpaidby_id == user.id %}<button class="btn btn-success btn-sm" onclick="setState({{ fac.id }}, 'rok')">Reglement fait</button>
+    <button class="btn btn-danger btn-sm" onclick="setState({{ fac.id }}, 'rno')">Reglement annule</button>{% else %}
+    <button class="btn btn-danger btn-sm" onclick="setState({{ fac.id }}, 'rfr')">Verifier etat</button>{% endif %}{% endif %}
+{% if fac.isPaid() %}<button class="btn btn-danger btn-sm" onclick="setState({{ fac.id }}, 'cnc')">Annuler</button>{% endif %}{% endif %}

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ cfatitle }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @page {
+             size: A4 portrait;
+             margin: 20mm;
+        }
+
+        .screen-only {
+            display: block;
+        }
+
+        .screen-only button {
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin: 5px;
+        }
+
+        .screen-only button:hover {
+            background-color: #0056b3;
+        }
+
+        .screen-only p {
+            font-size: 16px;
+            display: block;
+            background-color: lightgreen;
+        }
+
+        @media print {
+            .screen-only {
+                display: none !important;
+            }
+        }
+
+        body {
+            font-family: "Times New Roman", serif;
+            font-size: 11pt;
+            line-height: 1.3;
+            color: #000;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 16pt;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .contract-intro {
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        .party-info-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .party-info:first-child {
+            width: 40%;
+            margin-bottom: 0;
+        }
+        .party-info:last-child {
+            width: 60%;
+            margin-bottom: 0;
+        }
+
+        .form-line {
+            display: inline-block;
+            border-bottom: 1px solid #000;
+            min-width: 200px;
+            max-width: 100%;
+            margin: 0 5px;
+        }
+
+        .form-line-short {
+            display: inline-block;
+            border-bottom: 1px solid #000;
+            min-width: 150px;
+            max-width: 100%;
+            margin: 0 5px;
+        }
+
+        .cat-info {
+            margin: 15px 0;
+        }
+
+        .cat-info-row-top {
+            margin-bottom: 2px;
+        }
+
+        .cat-info-row-bottom {
+            margin-left: 25px;
+            margin-bottom: 10px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            margin: 15px 0 10px 0;
+        }
+
+        .space-after {
+            margin-right: 20px;
+        }
+
+        .underline {
+            display: inline-block;
+            min-width: 150px;
+            line-height: 11pt;
+            border-bottom: 1px solid #000;
+        }
+
+        ol {
+            max-width: 100%;
+            margin-left: 20px;
+            margin-bottom: 5px;
+        }
+
+        ol li {
+            margin-bottom: 4px;
+        }
+
+        ul {
+            margin-top: 5px;
+            max-width: 100%;
+            list-style-type: none;
+            margin-left: 20px;
+        }
+
+        ul li {
+            margin-bottom: 4px;
+            text-indent: -1.2em;
+            padding-left: 1.2em;
+        }
+
+        ul li:before {
+            content: "— ";
+        }
+
+        .signature-section {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .signature-box {
+            width: 45%;
+        }
+
+        .final-statement {
+            margin: 20px 0;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="screen-only">
+    {% for m in msg %}
+        <p class="messagegr">{{ m }}</p>
+    {% endfor %}
+    </div>
+
+    <div class="screen-only">
+        <button onclick="window.print()">Imprimer le document</button>
+        <a href="/"><button>Retour au site</button></a>
+    </div>
+
+<table style="width: 100%;">
+    <tr>
+        <td><img src="{{ url_for('static', filename='logo-ERA.png')}}" style="width:160px;" /></td>
+        <td style="white-space: pre;"><b>ERA Ethique et Respect Animal</b><br>
+1 rue des Zouaves
+67000 STRASBOURG
+Tel. 06 58 49 23 93
+E-mail: veterinaires@association-era.org
+Web: www.association-era.org</td>
+        <td style="width: 100%; text-align: center; font-size: 16pt; font-weight: bold;">CONTRAT FAMILLE D'ACCUEIL</td>
+    </tr>
+</table>
+
+    <div class="contract-intro">
+        Établi entre les soussignés :
+    </div>
+
+<div class="party-info-container">
+    <div class="party-info">
+        <p>Association ERA Ethique & Respect Animal</p>
+        <p>1 rue des Zouaves, 67000 Strasbourg</p>
+        <p>SIREN : 808 946 883</p>
+        <p>(ci-après « l'Association »)</p>
+    </div>
+
+    <div class="party-info">
+        <p><span class="space-after">Nom : {% if fa[1] %}{{ fa[1] }}{% else %}<span class="underline"></span>{% endif %}</span>
+            Prénom : {% if fa[2] %}{{ fa[2] }}{% else %}<span class="underline"></span>{% endif %}</p>
+        <p><span class="space-after">Adresse : {% if fa[3] %}{{ fa[3] }}{% else %}<span class="underline"></span>{% endif %}</span>
+            CP/Ville : {% if fa[4] %}{{ fa[4] }} {{ fa[5] }}{% else %}<span class="underline"></span>{% endif %}</p>
+        <p><span class="space-after">Tél. : {% if fa[6] %}{{ fa[6] }}{% else %}<span class="underline"></span>{% endif %}</span>
+            E-Mail : {% if fa[7] %}{{ fa[7] }}{% else %}<span class="underline"></span>{% endif %}</p>
+        <p>(ci-après « la FA »)</p>
+    </div>
+</div>
+
+    <div class="cat-info">
+        <p style="margin-bottom: 3pt;"><strong>Chat(s) concernés :</strong></p>
+        {% for cat in cats %}
+        <div class="cat-info-row-top">
+            — <i>{{ cat[0].regStr() }}</i> <b>{% if cat[0].name %}{{ cat[0].name }}{% else %}sans nom{% endif %}</b>:
+                {% if cat[0].sex %}{{ tabsex[cat[0].sex] }}{% else %}sexe?{% endif %},
+                {% if cat[0].birthdate %}{{ cat[0].birthdate.strftime("%d/%m/%y") }}{% else %}âge?{% endif %},
+                {% if cat[0].color %}{{ tabcol[cat[0].color] }}{% else %}couleur?{% endif %}{{ tabhair[cat[0].longhair] }},
+                {% if cat[0].identif %}{{ cat[0].identif }}{% else %}non identifié{% if cat[0].sex==1 %}e{% endif %}{% endif %}
+        </div>
+        <div class="cat-info-row-bottom">
+            Primo Vaccination: <b>{{ cat[1][0] }}</b>, Rappel: <b>{{ cat[1][1] }}</b>, Test FIV/FeLV: <b>{{ cat[1][3] }}</b>, Identification: <b>{{ cat[1][4] }}</b>, {% if cat[0].sex == 2 %}Castration{% else %}Sterilisation{% endif %}: <b>{{ cat[1][5] }}</b>
+        </div>
+        {% endfor %}
+        <div class="cat-info-row" style="margin-top: 10px;">
+            Date de prise en charge de(s) chat(s) par la famille d'accueil : {{ cfadate.strftime("%d/%m/%y") }}
+        </div>
+    </div>
+
+    <p style="margin: 5px 0;">Par ce contrat, les deux parties acceptent les conditions suivantes :</p>
+
+    <ol>
+        <li>La FA prend le ou les chats dans l'état de santé où ils se trouvent en toute connaissance de cause.</li>
+        <li>La FA reconnaît que l'animal continue d'appartenir à l'Association et que celle-ci peut le reprendre à tout moment si elle juge que les conditions de vie ne sont pas satisfaisantes ou si la FA ne respecte pas les clauses de ce contrat.</li>
+        <li>Les FAs sont bénévoles, en aucun cas il n'y aura de rémunération de notre part.</li>
+        <li>Les frais de déplacement essence ou autres ne sont pas couverts par l'Association.</li>
+        <li>Il revient à la FA de prendre financièrement en charge la nourriture de l'animal ainsi que sa litière.</li>
+        <li>L'Association ne saurait être tenue responsable des dégâts occasionnés par le chat, auprès de tiers ou au sein même de la FA.</li>
+        <li>La FA atteste être assurée en responsabilité civile.</li>
+        <li>La Famille d'accueil s'engage :
+            <ul>
+                <li>à accueillir le chat à son domicile et ce pour une période déterminée ou non.</li>
+                <li>à ne pas laisser le chat sortir que ce soit dans un jardin ou sur un balcon/terrasse et à être très vigilante à chaque ouverture de porte ou fenêtre menant à l'extérieur ; l'utilisation de fenêtres à oscillo-battant est proscrite.</li>
+                <li>à prendre soin du chat comme si il s'agissait du sien et à tenir ses vaccins à jour (l'original du carnet de santé sera remis à la famille d'accueil).</li>
+                <li>à veiller au bien être du chat, en lui apportant une attention quotidienne, l'éducation devra être au maximum fondée sur le renforcement de comportements positifs (à l'aide de caresses et de friandises) et elle ne devra donner lieu à aucun mauvais traitement.</li>
+                <li>à faire respecter sous son toit le bien être du chat par ses tiers et par ses propres enfants le cas échéant.</li>
+                <li>à faire vivre l'animal dans un lieu propre et sain : la litière devra être nettoyée quotidiennement et le bac lavé régulièrement, l'eau devra être propre, fraîche et renouvelée quotidiennement.</li>
+                <li>à nourrir suffisamment le chat, en respectant les consignes de l'Association concernant les types de croquettes à utiliser.</li>
+                <li>à prêter attention à tout signe de mauvaise santé de l'animal et à informer l'Association de ses doutes quant à d'éventuelles pathologies ou troubles du comportement.</li>
+                <li>à tenir un registre de soins indiquant tous les actes médicaux (visites vétérinaires, début/fin des traitements) et à conserver les ordonnances des médicaments utilisés.</li>
+                <li>à ne pas faire euthanasier le chat et pour quelques raisons que ce soit, sans l'accord de l'Association. En cas de décès, le chat sera incinéré.</li>
+                <li>à ne pas dégriffer le chat.</li>
+                <li>à accepter qu'un (ou plusieurs) contrôle de courtoisie soit fait à son domicile par l'Association ou par la Direction Départementale de la Protection des Populations (DDPP),</li>
+                <li>à ne pas consulter un vétérinaire ni à faire réaliser une intervention chirurgicale sans avoir reçu au préalable l'accord de l'association avant d'engager des frais vétérinaires, sauf en cas d'urgence vitale pour l'animal, l'association s'engageant dans ce cas à prendre en charge, sur remise des justificatifs des frais exposés, les frais vétérinaires qui ont été accordés. L'association dispose de vétérinaires partenaires avec lesquels la famille d'accueil doit travailler.</li>
+                <li>à prévenir l'association en cas de changement d'adresse.</li>
+                <li>à respecter 15 jours de préavis par écrit si, pour quelques raisons que ce soit, elle souhaite mettre fin à son rôle de FA, l'association s'engage alors à reprendre le ou les animaux au terme de ce délais.</li>
+            </ul>
+
+            <p style="margin: 10px 0;">En ce qui concerne l'adoption du chat, la FA s'engage :</p>
+            <ul>
+                <li>à ne pas donner ou faire adopter par un tiers l'animal sans l'accord préalable et obligatoire de l'Association,</li>
+                <li>à ne pas vendre le ou les chats.</li>
+                <li>à donner régulièrement des nouvelles du chat ainsi que un texte le présentant avec des photos, ceci afin de favoriser au maximum son adoption.</li>
+                <li>à accepter à son domicile la visite des adoptants potentiels.</li>
+                <li>à donner des précisions sur le passé du chat si celui ci a des spécificités (peur, phobie, craintif, s'il doit être placé seul ou pas, avec ou sans jardin/enfants etc...) mais aucunement les coordonnées de l'ancien maîtres du chat si toutefois elle les a.</li>
+                <li>lorsqu'un adoptant définitif est retenu, la FA aura alors à charge de lui faire remplir le certificat d'engagement et de l'inviter à contacter l'Association afin de fixer un rendez-vous au refuge pour signer le contrat d'adoption en lui indiquant les documents nécessaires : justificatif de domicile et pièce d'identité. Le chat ne doit en aucun cas quitter sa famille d'accueil sans que les documents aient été remplis et le règlement effectué. Un délai légal de une semaine est imposé entre la signature du certificat d'engagement et le départ de l'animal chez l'adoptant.</li>
+                <li>si la FA a le sentiment que l'adoptant ne convient pas pour le bien être du chat, elle a alors le droit de refuser l'adoption d'un commun accord avec l'Association,</li>
+                <li>la FA est prioritaire si celle-ci décide d'adopter le chat qu'elle a accueilli, aux mêmes conditions d'adoption de l'Association,</li>
+            </ul>
+        </li>
+
+        <li>l'Association s'engage à prendre en charge les frais vétérinaires en cas d'accord préalable ou sans demande d'accord préalable en cas d'urgence, dans tous les cas contre remise des justificatifs des frais exposés. L'Association se réserve le droit de refuser le remboursement de frais vétérinaires s'ils sont consécutifs à une négligence de la part de la FA.</li>
+    </ol>
+
+    <div class="final-statement">
+        La FA certifie avoir pris connaissance et accepte toutes les dispositions du contrat d'accueil signé par elle et dont un exemplaire lui a été remis.
+    </div>
+
+    <div class="signature-section">
+        <div class="signature-box">
+            <p>Fait à Strasbourg le {{ cfadate.strftime("%d/%m/%y") }}</span></p>
+        </div>
+    </div>
+
+    <div class="signature-section">
+        <div class="signature-box">
+            <p>Pour l'Association</p>
+            <br><br><br>
+        </div>
+        <div class="signature-box">
+            <p>Pour la FA</p>
+            <br><br><br>
+        </div>
+    </div>
+</body>
+</html>

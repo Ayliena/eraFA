@@ -1,3 +1,4 @@
+<!doctype html>
 <html>
     <head>
         <title>Familles d'accueil ERA</title>
@@ -25,21 +26,9 @@
     {% include 'navbar.html' %}
 
     <div class="container">
-    {% if devsite %}<div class="row">
-	<div class="alert alert-danger">ATTENTION: ce site est la version en developpement du logiciel FA, les informations sur les chats de ce site ne correspondent
-        pas a la realite.  Le site officiel est
-        <a href="https://fa.association-era.org/fa">https://fa.association-era.org/fa</a></div>
-    </div>{% endif %}
+{% include '_messages.html' %}
 
         {% if falist %}
-            {% if msg %}{% for m in  msg %}
-                {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
-                {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
-                {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
-                {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
-                {{ m[1] }}</div>
-            {% endfor %}{% endif %}
-
             <form action="/user" method="POST"><div class="row">
                 <div class="col-sm-12"><button class="btn btn-secondary mx-1" name="action" value="adm_newuser">Nouveau utilisateur
                                       </button><button class="btn btn-secondary mx-1" name="action" value="adm_expusers">Exporter le tableau</button></div>
@@ -54,7 +43,7 @@
                     <td>{% if fa.password_hash == 'nologin' %}<i>{{ fa.FAid }} ({{ fa.FAname }})</i>{% else %}{{ fa.FAid }} ({{ fa.FAname }}){% endif %}
                          <b>[{{ fa.usertypeStr() }}]</b></td>
                     <td>{% if fa.FAlastop %}Dernière activité: {{ fa.FAlastop.strftime("%d/%m/%Y %H:%M") }}{% endif %}</td>
-                    <td>{% if rftab and fa.FAresp_id %}(resp. {{ rftab[fa.FAresp_id] }}){% endif %}</td>
+                    <td>{% if fa.FAresp %}(resp. {{ fa.FAresp.FAname }}){% endif %}</td>
                 </tr>
                 <tr>
                     <td colspan="3">({{ fa.privilegesStr() }})</td>
@@ -120,85 +109,55 @@
             <div class="col-sm-4"><b>Acces:</b></div>
         </div>
         <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasRFA"{% if fauser.hasReferent() %} checked{% endif %}>Gestion d'autres familles d'accueil</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasRFATEMP"{% if fauser.hasReferentFAtemp() %} checked{% endif %}>Gestion de familles d'accueil temporaires</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasRFA"{% if fauser.hasReferent() %} checked{% endif %}>Gestion d'autres familles d'accueil</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasRFATEMP"{% if fauser.hasReferentFAtemp() %} checked{% endif %}>Gestion de familles d'accueil temporaires</label></div>
         </div>
         <div class="row form-group">
-            <div class="col-sm-4"><input class="form-check-input border-dark" type="checkbox" name="u_hasREF"{% if fauser.hasRefuge() %} checked{% endif %}><label class="form-check-label">Acces aux chats du refuge</label></div>
-            <div class="col-sm-4"><input class="form-check-input border-dark" type="checkbox" name="u_hasADR"{% if fauser.hasAdDcdRs() %} checked{% endif %}><label class="form-check-label">Acces aux AD/DCD/RS</label></div>
-            <div class="col-sm-4"><input class="form-check-input border-dark" type="checkbox" name="u_hasHIST"{% if fauser.hasHist() %} checked{% endif %}><label class="form-check-label">Acces a l'historique</label></div>
+            <div class="col-sm-4"><input class="form-check-input border-dark me-2" type="checkbox" name="u_hasREF"{% if fauser.hasRefuge() %} checked{% endif %}><label class="form-check-label">Acces aux chats du refuge</label></div>
+            <div class="col-sm-4"><input class="form-check-input border-dark me-2" type="checkbox" name="u_hasADR"{% if fauser.hasAdDcdRs() %} checked{% endif %}><label class="form-check-label">Acces aux AD/DCD/RS</label></div>
+            <div class="col-sm-4"><input class="form-check-input border-dark me-2" type="checkbox" name="u_hasHIST"{% if fauser.hasHist() %} checked{% endif %}><label class="form-check-label">Acces a l'historique</label></div>
         </div>
         <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasSUPER"{% if fauser.hasSuperviseur() %} checked{% endif %}>Superviseur (acces a tous les FA)</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasSEARCH"{% if fauser.hasSearch() %} checked{% endif %}>Recherche</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasSUPER"{% if fauser.hasSuperviseur() %} checked{% endif %}>Superviseur (acces a tous les FA)</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasSEARCH"{% if fauser.hasSearch() %} checked{% endif %}>Recherche</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasEVENTS"{% if fauser.hasEvents() %} checked{% endif %}>Historique des modifications</label></div>
         </div>
         <div class="row">
             <div class="col-sm-4"><b>Procedures:</b></div>
         </div>
         <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasPEC"{% if fauser.hasPriseEnCharge() %} checked{% endif %}>Prise en charge</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasBSC"{% if fauser.hasBonSteril() %} checked{% endif %}>Bon de sterilisation post-AD</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasADDCAT"{% if fauser.hasAddUnreg() %} checked{% endif %}>Rajouter un chat</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasPEC"{% if fauser.hasPriseEnCharge() %} checked{% endif %}>Prise en charge</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasBSC"{% if fauser.hasBonSteril() %} checked{% endif %}>Bon de sterilisation post-AD</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasADDCAT"{% if fauser.hasAddUnreg() %} checked{% endif %}>Rajouter un chat</label></div>
         </div>
         <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasBVETO"{% if fauser.hasBonVeto() %} checked{% endif %}>Generer des bons veterinaires</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasCFA"{% if fauser.hasContratFA() %} checked{% endif %}>Generer des contrats FA</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasCAD"{% if fauser.hasContratAD() %} checked{% endif %}>Generer des contrats d'adoption</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasBVETO"{% if fauser.hasBonVeto() %} checked{% endif %}>Generer des bons veterinaires</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasCFA"{% if fauser.hasContratFA() %} checked{% endif %}>Generer des contrats FA</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasCAD"{% if fauser.hasContratAD() %} checked{% endif %}>Generer des contrats d'adoption</label></div>
         </div>
         <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasMOVE"{% if fauser.hasMove() %} checked{% endif %}>Deplacer un chat</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasREGNUM"{% if fauser.hasRegNum() %} checked{% endif %}>Indiquer un numero de registre</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasRVETO"{% if fauser.hasRefugeVeto() %} checked{% endif %}>Gerer les visites veto du refuge</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasMOVE"{% if fauser.hasMove() %} checked{% endif %}>Deplacer un chat</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasREGNUM"{% if fauser.hasRegNum() %} checked{% endif %}>Indiquer un numero de registre</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasRVETO"{% if fauser.hasRefugeVeto() %} checked{% endif %}>Gerer les visites veto du refuge</label></div>
         </div>
         <div class="row">
             <div class="col-sm-4"><b>Comptabilite (factures):</b></div>
         </div>
         <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasCMSELF"{% if fauser.hasComptaSelf() %} checked{% endif %}>Acces a ses factures</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasCOMPTA"{% if fauser.hasCompta() %} checked{% endif %}>Acces a toutes les factures</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasCMMOD"{% if fauser.hasComptaMod() %} checked{% endif %}>Reglement des factures</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasCMSELF"{% if fauser.hasComptaSelf() %} checked{% endif %}>Acces a ses factures</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasCOMPTA"{% if fauser.hasCompta() %} checked{% endif %}>Acces a toutes les factures</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasCMMOD"{% if fauser.hasComptaMod() %} checked{% endif %}>Reglement des factures</label></div>
         </div>
         <div class="row">
             <div class="col-sm-4"><b>Gestion du site et API:</b></div>
         </div>
         <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasUSERS"{% if fauser.hasUsers() %} checked{% endif %}>Gestion des utilisateurs</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasADMIN"{% if fauser.hasAdmin() %} checked{% endif %}>Administration du site</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasUSERS"{% if fauser.hasUsers() %} checked{% endif %}>Gestion des utilisateurs</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasADMIN"{% if fauser.hasAdmin() %} checked{% endif %}>Administration du site</label></div>
         </div>
         <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasAPIR"{% if fauser.hasAPIread() %} checked{% endif %}>API: read</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_hasAPIW"{% if fauser.hasAPIwrite() %} checked{% endif %}>API: write/modify</label></div>
-        </div>
-        <hr>
-        <div class="row form-group">
-            <div class="col-sm-4"><b>Caracteristiques et acces:</b></div>
-        </div>
-        <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_isFA"{% if fauser.FAisFA %} checked{% endif %}>Famille d'accueil (= detient des chats)</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_isRF"{% if fauser.FAisRF %} checked{% endif %}>Responsable d'autres Familles d'accueil</label></div>
-        </div>
-        <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_isOV"{% if fauser.FAisOV %} checked{% endif %}>Superviseur (= vision de toutes les FA)</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_isADM"{% if fauser.FAisADM %} checked{% endif %} disabled>Administrateur/Gestion Registre</label></div>
-        </div>
-        <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_isVET"{% if fauser.FAisVET %} checked{% endif %}>Veterinaire</label></div>
-        </div>
-        <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="p_COMPTA"{% if fauser.PrivCOMPTA %} checked{% endif %}>Vue Comptabilité</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="p_COMPTAMOD"{% if fauser.PrivCOMPTAMOD %} checked{% endif %}>Accès Comptabilité</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="p_COMPTASELF"{% if fauser.PrivCOMPTASELF %} checked{% endif %}>Comptabilité: que ses factures</label></div>
-        </div>
-        <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_isAD"{% if fauser.FAisAD %} checked{% endif %} disabled>Special: chats adoptes</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_isREF"{% if fauser.FAisREF %} checked{% endif %} disabled>Special: refuge</label></div>
-        </div>
-        <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_isDCD"{% if fauser.FAisDCD %} checked{% endif %} disabled>Special: chats decedes</label></div>
-            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark" type="checkbox" name="u_isHIST"{% if fauser.FAisHIST %} checked{% endif %} disabled>Special: historique</label></div>
-        </div>
-        <div class="row form-group">
-            <div class="col-sm-4"><label class="checkbox-inline"><input type="checkbox" name="u_isTEMP"{% if fauser.FAisTEMP %} checked{% endif %} disabled>Special: FA temporaires</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasAPIR"{% if fauser.hasAPIread() %} checked{% endif %}>API: read</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasAPIW"{% if fauser.hasAPIwrite() %} checked{% endif %}>API: write/modify</label></div>
         </div>
         <hr>
         <div class="row form-group">

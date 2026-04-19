@@ -1,7 +1,7 @@
 from app import db
 from werkzeug.security import check_password_hash
-from app.permissions import NUM_MENUS, NUM_PRIVS, UT_FA, UT_MANAGER, UT_REFUGE, UT_AD, UT_DCD, UT_RS, UT_HIST, UT_FATEMP, UT_VETO, MENU_FA, MENU_VET, MENU_RFA, MENU_PROC, MENU_COMPTA, MENU_ADMIN, PRIV_RFA, PRIV_RFATEMP, PRIV_SUPER, PRIV_REF, PRIV_ADR, PRIV_HIST, PRIV_SEARCH, PRIV_PEC, PRIV_BSC, PRIV_ADDCAT, PRIV_COMPTA, PRIV_CMMOD, PRIV_CMSELF, PRIV_USERS, PRIV_ADMIN, PRIV_REGNUM, PRIV_MOVE, PRIV_BVETO, PRIV_RVETO, PRIV_APIR, PRIV_APIW, TabUserTypes, TabPrivs, PRIV_CFA, PRIV_CAD
-from app.staticdata import FAC_FROZEN, FAC_UNPAID, FAC_PAID, FAC_RECONC
+from app.permissions import NUM_MENUS, NUM_PRIVS, UT_FA, UT_MANAGER, UT_REFUGE, UT_AD, UT_DCD, UT_RS, UT_HIST, UT_FATEMP, UT_VETO, MENU_FA, MENU_VET, MENU_RFA, MENU_PROC, MENU_COMPTA, MENU_ADMIN, PRIV_RFA, PRIV_RFATEMP, PRIV_SUPER, PRIV_REF, PRIV_ADR, PRIV_HIST, PRIV_SEARCH, PRIV_PEC, PRIV_BSC, PRIV_ADDCAT, PRIV_COMPTA, PRIV_CMMOD, PRIV_CMSELF, PRIV_USERS, PRIV_ADMIN, PRIV_REGNUM, PRIV_MOVE, PRIV_BVETO, PRIV_RVETO, PRIV_APIR, PRIV_APIW, TabUserTypes, TabPrivs, PRIV_CFA, PRIV_CAD, PRIV_EVENTS
+from app.staticdata import FAC_FROZEN, FAC_UNPAID, FAC_PAID, FAC_RECONC, FAC_BEINGPAID
 from flask_login import UserMixin
 from datetime import datetime
 
@@ -30,21 +30,10 @@ class User(UserMixin, db.Model):
     FAemail = db.Column(db.String(128))
     FAlastop = db.Column(db.DateTime)
     FAresp_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    FAresp = db.relationship('User', foreign_keys=FAresp_id, remote_side=[id], backref='managedFAs')
     numcats = db.Column(db.Integer)
-    FAresp = db.relationship('User', foreign_keys=FAresp_id)
-    FAisFA = db.Column(db.Boolean, default=False)
-    FAisRF = db.Column(db.Boolean, default=False)
-    FAisOV = db.Column(db.Boolean, default=False)
-    FAisADM = db.Column(db.Boolean, default=False)
-    FAisAD = db.Column(db.Boolean, default=False)
-    FAisDCD = db.Column(db.Boolean, default=False)
-    FAisVET = db.Column(db.Boolean, default=False)
-    FAisHIST = db.Column(db.Boolean, default=False)
-    FAisREF = db.Column(db.Boolean, default=False)
-    FAisTEMP = db.Column(db.Boolean, default=False)
-    PrivCOMPTA = db.Column(db.Boolean, default=False)
-    PrivCOMPTAMOD = db.Column(db.Boolean, default=False)
-    PrivCOMPTASELF = db.Column(db.Boolean, default=False)
+    APIkey = db.Column(db.String(64))
+    APIkey_exp = db.Column(db.DateTime)
 #    cats = db.relationship('Cat', backref='owner_id', lazy='dynamic')
 #    icats = db.relationship('Cat', backref='nextowner_id', lazy='dynamic')
 
@@ -75,7 +64,7 @@ class User(UserMixin, db.Model):
         return self.usertype == UT_HIST
     def typeFAtemp(self):
         return self.usertype == UT_FATEMP
-    def typeVetoerinaire(self):
+    def typeVeterinaire(self):
         return self.usertype == UT_VETO
 
     # same as above, but for permissions and menus
@@ -138,6 +127,8 @@ class User(UserMixin, db.Model):
         return self.hasPrivilege(PRIV_APIR)
     def hasAPIwrite(self):
         return self.hasPrivilege(PRIV_APIW)
+    def hasEvents(self):
+        return self.hasPrivilege(PRIV_EVENTS)
 
 
     # check that the privilieges definition for this user is correct
@@ -176,7 +167,7 @@ class User(UserMixin, db.Model):
         return False
 
     def hasMenu(self, mn):
-        if mn > NUM_MENUS:
+        if mn > NUM_MENUS or mn >= len(self.PrivStr):
             return False
 
         if self.PrivStr[mn] == '1':
@@ -185,10 +176,6 @@ class User(UserMixin, db.Model):
         return False
 
     def defineMenus(self):
-        # this also fixes some random stuff
-        if self.hasComptaMod():
-            self.setPrivilege(PRIV_COMPTA)
-
         if self.usertype == UT_VETO:
             self.setPrivilege(MENU_FA, 0)
             self.setPrivilege(MENU_VET, 1)
@@ -199,12 +186,12 @@ class User(UserMixin, db.Model):
             self.setPrivilege(MENU_FA, 1)
             self.setPrivilege(MENU_VET, 0)
 
-        if self.hasPrivilegeAny([PRIV_RFA, PRIV_SUPER, PRIV_REF, PRIV_ADR, PRIV_HIST, PRIV_SEARCH]):
+        if self.hasPrivilegeAny([PRIV_RFA, PRIV_SUPER, PRIV_REF, PRIV_ADR, PRIV_HIST, PRIV_SEARCH, PRIV_ADDCAT]):
             self.setPrivilege(MENU_RFA, 1)
         else:
             self.setPrivilege(MENU_RFA, 0)
 
-        if self.hasPrivilegeAny([PRIV_PEC, PRIV_BSC, PRIV_CFA, PRIV_CAD, PRIV_ADDCAT]):
+        if self.hasPrivilegeAny([PRIV_PEC, PRIV_BSC, PRIV_CFA, PRIV_CAD]):
             self.setPrivilege(MENU_PROC, 1)
         else:
             self.setPrivilege(MENU_PROC, 0)
@@ -314,6 +301,12 @@ class Cat(db.Model):
         else:
             return False
 
+    def nameFA(self):
+        if self.owner.typeFAtemp():
+            return "[{}]".format(self.temp_owner)
+        if self.owner.typeRefuge():
+            return "Refuge/{}".format(self.temp_owner)
+        return self.owner.FAname
 
 # --------------- VETINFO CLASS
 
@@ -333,7 +326,7 @@ class VetInfo(db.Model):
     planned = db.Column(db.Boolean)
     requested = db.Column(db.Boolean)
     transferred = db.Column(db.Boolean)
-    validby_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    validby_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     validby = db.relationship('User', foreign_keys=validby_id)
     validdate = db.Column(db.DateTime)
     comments = db.Column(db.String(1024))
@@ -353,6 +346,8 @@ class Facture(db.Model):
     duplicata = db.Column(db.Integer)
     total = db.Column(db.Numeric(8,2))
     state = db.Column(db.Integer)
+    beingpaidby_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    beingpaidby = db.relationship('User', foreign_keys=beingpaidby_id)
     pdate = db.Column(db.DateTime)
     rdate = db.Column(db.DateTime)
 
@@ -360,11 +355,26 @@ class Facture(db.Model):
         return self.state == FAC_FROZEN
 
     def isUnpaid(self):
-        return self.state < FAC_PAID
+        return self.state == FAC_UNPAID
 
     def isPaid(self):
-        return self.state > FAC_UNPAID
+        return self.state == FAC_PAID
+
+    def isBeingPaid(self):
+        return self.state == FAC_BEINGPAID
 
     def isReconciled(self):
-        return self.state >= FAC_RECONC
+        return self.state == FAC_RECONC
+
+    def statusText(self):
+        if self.isUnpaid():
+            return "A payer"
+        elif self.isFrozen():
+            return '<span class="bg-warning-subtle">En attente</span>'
+        elif self.isBeingPaid():
+            return '<span class="bg-warning">En réglement ({})</span>'.format(self.beingpaidby.FAname)
+        elif self.isPaid():
+            return '<span class="bg-success-subtle">Réglée le {}</span>'.format(self.pdate.strftime("%Y-%m-%d %H:%M"))
+        elif self.isReconciled():
+            return '<span class="bg-success-subtle">Réglée le {}</span> <span class="text-success">OK BANQUE le {}</span>'.format(self.pdate.strftime("%Y-%m-%d %H:%M"), self.rdate.strftime("%Y-%m-%d"))
 

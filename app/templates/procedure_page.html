@@ -1,3 +1,4 @@
+<!doctype html>
 <html>
     <head>
         <title>Familles d'accueil ERA</title>
@@ -48,10 +49,10 @@
         {% if pagetype==2 %}
             <h2>Bon de castration/stérilisation post-adoption</h2>
 
-            <form action="/refuge" method="POST">
+            <form action="/proc" method="POST">
                 <div class="form-group"><label for="bcs_data">Coller ci-dessus le résultat du click sur "Gen BonSteril" fait dans la page de refugilys:</label>
                 <input type="text" class="form-control border border-dark" id="bcs_data" name="bcs_data"></div>
-                <button type="submit" class="mt-2 btn btn-secondary mx-1" id="bcs_submit" name="action" value="ref_genbonSter">Générer</button>
+                <button type="submit" class="mt-2 btn btn-secondary mx-1" id="bcs_submit" name="action" value="proc_genbonSter">Générer</button>
             </form>
             <p class="mt-2 pt-2 border-2 border-top border-black">
             Alternativement, pour generer un bon pour un contrat papier, remplir les informations suivantes:<br>
@@ -128,7 +129,7 @@
                 </div>
                 <div class="row form-group mt-2 pt-2 border-2 border-top border-black">
                     <div class="col-sm-3">
-                        <button type="submit" class="btn btn-secondary mx-1" id="bcs_submit" name="action" value="ref_genbonSterMan">Générer</button>
+                        <button type="submit" class="btn btn-secondary mx-1" id="bcs_submit" name="action" value="proc_genbonSterMan">Générer</button>
                     </div>
                 </div>
             </form>
@@ -136,7 +137,11 @@
         {% if pagetype==1 %}
             <h2>Document de prise en charge</h2>
 
-            <form class="form-horizontal" id="inpform" name="inpform" action="/refuge" method="POST">
+            <form class="form-horizontal" id="inpform" name="inpform" action="/proc" method="POST">
+                <div class="row">
+                    <p>Si l'individu est déjà enregistré dans Refugilys (ou si on décide de l'enregistrer pour déjà avoir l'info dans le futur), on peut remplir
+                    automatiquement avec "Copier de Refugilys" dans la page individu et "Coller dans siteFA" ici.</p>
+                </div>
                 <div class="row form-group">
                     <div class="col-sm-4">
                         <div class="form-check">
@@ -163,6 +168,7 @@
                 <h3 class="mt-2 pt-2 border-2 border-top border-black">AMENANT</h3>
                 <div class="row form-group">
                     <div class="col-sm-6">
+                        <input type="hidden" name="ind_id">
                         <label class="control-label" for="ind_nom">Nom:</label>
                         <input type="text" class="form-control border border-dark" id="ind_nom" name="ind_nom" type="text" required="required">
                     </div>
@@ -437,10 +443,10 @@
                 </div>
                 <div class="row form-group mt-2 pt-2 border-2 border-top border-black">
                     <div class="col-sm-3">
-                        <button type="submit" class="btn btn-secondary mx-1" id="pec_gen" name="action" value="ref_genprise">Générer le document</button>
+                        <button type="submit" class="btn btn-secondary mx-1" id="pec_gen" name="action" value="proc_genprise">Générer le document</button>
                     </div>
                     <div class="col-sm-3">
-                        <button type="submit" class="btn btn-secondary mx-1" id="pec_gensave" name="action" value="ref_genprisesave">Générer le document et enregistrer les chats</button>
+                        <button type="submit" class="btn btn-secondary mx-1" id="pec_gensave" name="action" value="proc_genprisesave">Générer le document et enregistrer les chats</button>
                     </div>
                 </div>
             </form>

@@ -1,14 +1,14 @@
 from app import app, db, devel_site
-from app.staticdata import TabColor, TabSex, TabHair, FAidSpecial, ACC_NONE, ACC_RO, ACC_MOD, ACC_FULL, ACC_TOTAL
+from app.staticdata import TabColor, TabSex, TabHair
 from app.models import GlobalData, User, Cat, VetInfo, Event
-from app.helpers import cat_delete, isFATemp, isRefuge, getViewUser, accessPrivileges
+from app.helpers import cat_delete, cat_associate_to_FA, getSpecialUser, getViewUser
 from flask import render_template, redirect, request, url_for, session
 from flask_login import login_required, current_user
 from sqlalchemy import and_
 from sqlalchemy.sql import text
 from datetime import datetime,timedelta
 
-@app.route('/fa', methods=["GET", "POST"])
+@app.route('/', methods=["GET", "POST"])
 def fapage():
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
@@ -25,25 +25,23 @@ def fapage():
         # display current user pages or alternate user's?
         FAid, theFA = getViewUser()
 
-        if not theFA:
-            return render_template("error_page.html", user=current_user, errormessage="invalid FA id", FAids=FAidSpecial)
-
-        catMode, vetMode, searchMode = accessPrivileges(theFA)
+        # note that both FAid and theFA are set here, either to the alternate FA or to self
 
         # decide which type of page to display
         mode = None
         if "otherMode" in session:
             mode = session["otherMode"]
 
-            # these are only allowed for SV/ADM
-            if (mode == "special-all" or mode == "special-adopt") and searchMode == ACC_NONE:
+            # these are only allowed for Superviseur
+            if (mode == "special-all" or mode == "special-adopt") and not current_user.hasSuperviseur():
                 mode = None
 
-            if mode == "special-search" and searchMode < ACC_FULL:
+            # search requiers the appropriate mode, but we just use "any of them"
+            if mode == "special-search" and not (current_user.hasSearch() or current_user.hasBonVeto() or current_user.hasContratFA()):
                 mode = None
 
             # this is only allowed for VET
-            if mode == "special-vethistory" and not current_user.FAisVET:
+            if mode == "special-vethistory" and not current_user.typeVeterinaire():
                 mode = None
 
         # handle special cases
@@ -51,18 +49,18 @@ def fapage():
             # query all vetinfo which are planned and associated with cats owned by the FA
             theVisits = VetInfo.query.filter(and_(VetInfo.doneby_id==FAid, VetInfo.planned==True)).order_by(VetInfo.vdate).all()
 
-            vetAuth = (vetMode >= ACC_FULL)
+            vetAuth = current_user.hasBonVeto()
 
             return render_template("vet_page.html", devsite=devel_site, user=current_user, viewuser=theFA, visits=theVisits, autoauth=vetAuth, canauth=vetAuth,
-                                   FAids=FAidSpecial, msg=message)
+                                   msg=message)
 
         elif mode == "special-all":
             return render_template("list_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                listtitle="Tableau global des chats", catlist=Cat.query.order_by(Cat.regnum).all(), FAids=FAidSpecial, msg=message)
+                listtitle="Tableau global des chats", catlist=Cat.query.order_by(Cat.regnum).all(), msg=message)
 
         elif mode == "special-adopt":
             return render_template("list_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                listtitle="Chats disponibles à l'adoption", catlist=Cat.query.filter_by(adoptable=True).order_by(Cat.regnum).all(), FAids=FAidSpecial, msg=message, adoptonly=True)
+                listtitle="Chats disponibles à l'adoption", catlist=Cat.query.filter_by(adoptable=True).order_by(Cat.regnum).all(), msg=message, adoptonly=True)
 
         elif mode == "special-vethistory":
             if "optVETOHIST" in session:
@@ -95,7 +93,7 @@ def fapage():
             visits = vquery.order_by(VetInfo.vdate.desc()).all()
 
             return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    vvisits=visits, visitmode="history", histfilter=histFilter, FAids=FAidSpecial, msg=message)
+                    vvisits=visits, visitmode="history", histfilter=histFilter, msg=message)
 
         elif mode == "special-search":
             searchfilter = session["searchFilter"]
@@ -162,9 +160,21 @@ def fapage():
                 cats = cats + Cat.query.filter(Cat.identif.contains(src_id)).order_by(Cat.temp_owner,Cat.regnum).all()
 
             if src_FAname:
-                # handle the special "refuge" case
-                if src_FAname.lower() == 'refuge':
-                    cats = cats + Cat.query.filter(Cat.owner_id==FAidSpecial[3]).order_by(Cat.temp_owner,Cat.regnum).all()
+                # handle the special cases
+                lwrFA = src_FAname.lower()
+                if lwrFA == 'refuge':
+                    theFA = getSpecialUser('ref')
+                    cats = cats + Cat.query.filter_by(owner_id=theFA.id).order_by(Cat.temp_owner,Cat.regnum).all()
+                elif lwrFA == 'mat' or lwrFA == 'grande' or lwrFA == 'petite':
+                    theFA = getSpecialUser('ref')
+                    if lwrFA == 'mat':
+                        cagespec = "B"
+                    elif lwrFA == 'grande':
+                        cagespec = "G"
+                    else:
+                        cagespec = "P"
+
+                    cats = cats + Cat.query.filter(and_(Cat.owner_id==theFA.id,Cat.temp_owner.startswith(cagespec))).order_by(Cat.temp_owner,Cat.regnum).all()
                 else:
                     cats = cats + Cat.query.filter(Cat.temp_owner.contains(src_FAname)).order_by(Cat.temp_owner,Cat.regnum).all()
 
@@ -174,77 +184,90 @@ def fapage():
             defaultvalues = [src_regnum, src_name, src_id, src_FAname];
 
             # we reuse the search page to display the list
-            if src_mode == "select":
+            if src_mode == "search-bv":
                 return render_template("search_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    listtitle="Résultat de la recherche", scatlist=cats, FAids=FAidSpecial, msg=message, defval=defaultvalues, lastreg=max_regnum, lastdate=globaldata.LastImportDate, syncdate=globaldata.LastSyncDate)
-            else:
+                    listtitle="Résultat de la recherche", bvcatlist=cats, msg=message, defval=defaultvalues, lastreg=max_regnum, lastdate=globaldata.LastImportDate, syncdate=globaldata.LastSyncDate)
+            elif src_mode == "search-cfa":
                 return render_template("search_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    listtitle="Résultat de la recherche", catlist=cats, FAids=FAidSpecial, msg=message, defval=defaultvalues, lastreg=max_regnum, lastdate=globaldata.LastImportDate, syncdate=globaldata.LastSyncDate)
+                    listtitle="Résultat de la recherche", cfacatlist=cats, msg=message, defval=defaultvalues, lastreg=max_regnum, lastdate=globaldata.LastImportDate, syncdate=globaldata.LastSyncDate)
+            else: # == "search-info":
+                return render_template("search_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                    listtitle="Résultat de la recherche", catlist=cats, msg=message, defval=defaultvalues, lastreg=max_regnum, lastdate=globaldata.LastImportDate, syncdate=globaldata.LastSyncDate)
 
         # default list, which is not the same for FAs or Vets
-        if theFA.FAisVET:
+        if theFA.typeVeterinaire():
             # display the visits, sorted by FA
             visits = VetInfo.query.filter(and_(VetInfo.vet_id==FAid, and_(VetInfo.planned==True,VetInfo.transferred==True))).order_by(VetInfo.doneby_id).all()
 
             return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    vvisits=visits, visitmode="planned", FAids=FAidSpecial, msg=message)
+                    vvisits=visits, visitmode="planned", msg=message)
 
-        elif theFA.FAisFA or theFA.FAisREF or theFA.FAisAD or theFA.FAisDCD or theFA.FAisHIST:
-            if isFATemp(FAid) or isRefuge(FAid):
-                theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.temp_owner,Cat.regnum).all()
-            else:
-                theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.regnum).all()
+        elif theFA.typeRefuge() or theFA.typeFAtemp():
+            theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.temp_owner,Cat.regnum).all()
 
             return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                    cats=theCats, FAids=FAidSpecial, msg=message)
+                    cats=theCats, msg=message)
+
+        elif theFA.typeFA() or theFA.typeAdoptes() or theFA.typeDecedes() or theFA.typeRelaches() or theFA.typeHistorique():
+            theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.regnum).all()
+
+            return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                    cats=theCats, msg=message)
 
         else:
             # display empty page
             return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                   FAids=FAidSpecial, msg=message)
+                   msg=message)
 
     # handle POST commands
     cmd = request.form["action"]
 
     # alternate GET command for another FA
     if cmd == "sv_fastate":
-        FAid = int(request.form["FAid"]);
-        # note: we do not perform any check on the validity of FAid or on the access privileges,
-        # since they will be performed by the GET method
+        # this can be called in two ways: either by giving directly a FAid or by
+        # using any of the special 'ad', 'dcd', 'rs', 'ref', 'hist', 'fatemp' for the special FAs
+        FAid = None
+        if "FAid" in request.form:
+            FAid = int(request.form["FAid"]);
+        elif "FAspec" in request.form:
+            FAspec = request.form["FAspec"];
 
-        session["otherMode"] = None
-        session["otherFA"] = FAid
+            theFA = getSpecialUser(FAspec)
+
+            if theFA:
+                FAid = theFA.id
+
+        # only set the other FA if we have it
+        if FAid:
+            # note: we do not perform any check on the validity of FAid or on the access privileges,
+            # since they will be performed by the GET method
+            session["otherMode"] = None
+            session["otherFA"] = FAid
+
         return redirect(url_for('fapage'))
 
     # get the cat
     theCat = Cat.query.filter_by(id=request.form["catid"]).first()
     if theCat == None:
-        return render_template("error_page.html", user=current_user, errormessage="invalid cat id", FAids=FAidSpecial)
+        return render_template("error_page.html", user=current_user, errormessage="invalid cat id")
         return redirect(url_for('fapage'))
 
-    catMode, vetMode, searchMode = accessPrivileges(theCat.owner)
-
     # check if you can access this
-    if catMode != ACC_TOTAL:
-        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data", FAids=FAidSpecial)
+    if not current_user.hasAdmin():
+        return render_template("error_page.html", user=current_user, errormessage="insufficient privileges to access cat data")
 #        return redirect(url_for('fapage'))
 
     if cmd == "adm_histcat":
         # move the cat to the historical list of cats
-        newFA = User.query.filter_by(id=FAidSpecial[2]).first()
-        theCat.owner.numcats -= 1
-        newFA.numcats += 1
-        theCat.owner_id = newFA.id
-        theCat.temp_owner = ""
-        theCat.adoptable = False
-        # delete all the planned visits
-        VetInfo.query.filter(and_(VetInfo.cat_id == theCat.id, VetInfo.planned == True)).delete()
-        theCat.lastop = datetime.now()
-        session["pendingmessage"] = [ [0, "Chat {} déplacé dans l'historique".format(theCat.asText())] ]
-        theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transféré dans l'historique".format(current_user.FAname))
-        db.session.add(theEvent)
-        current_user.FAlastop = datetime.now()
-        db.session.commit()
+        newFA = getSpecialUser('hist')
+        if newFA:
+            cat_associate_to_FA(theCat, newFA)
+
+            session["pendingmessage"] = [ [0, "Chat {} déplacé dans l'historique".format(theCat.asText())] ]
+            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transféré dans l'historique".format(current_user.FAname))
+            db.session.add(theEvent)
+            current_user.FAlastop = datetime.now()
+            db.session.commit()
 
     if cmd == "adm_deletecat":
         # erase the cat and all the associated information from the database

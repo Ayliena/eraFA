@@ -1,3 +1,4 @@
+<!doctype html>
 <html>
     <head>
         <title>Familles d'accueil ERA</title>
@@ -20,18 +21,7 @@
     {% include 'navbar.html' %}
 
     <div class="container">
-    {% if devsite %}<div class="row">
-	<div class="alert alert-danger">ATTENTION: ce site est la version en developpement du logiciel FA, les informations sur les chats de ce site ne correspondent
-        pas a la realite.  Le site officiel est
-        <a href="https://fa.association-era.org/fa">https://fa.association-era.org/fa</a></div>
-    </div>{% endif %}
-    {% if msg %}{% for m in  msg %}
-        {% if m[0] == 0 %}<div class="alert alert-success">{% endif %}
-        {% if m[0] == 1 %}<div class="alert alert-info">{% endif %}
-        {% if m[0] == 2 %}<div class="alert alert-warning">{% endif %}
-        {% if m[0] == 3 %}<div class="alert alert-danger">{% endif %}
-        {{ m[1] }}</div>
-    {% endfor %}{% endif %}
+{% include '_messages.html' %}
 
         {% if listtitle %}
             <h2>{{ listtitle }}</h2>
@@ -53,7 +43,7 @@
                 </div>
                 <div class="col-sm-1"><p class="text-nowrap" style="font-family:monospace;">{{ cat.vetshort }}</p></div>
                 <div class="col-sm-2">
-                    {% if cat.owner_id == FAids[4] %}[{{ cat.temp_owner }}]{% else %}{{ cat.owner.FAname }}{% endif %}
+                    {{ cat.nameFA() }}
                 </div>
                 {% if not adoptonly %}
                     <div class="col-sm-2">{% if cat.isPrivate() %}Privé{% else %}{% if cat.adoptable %}<span class="bg-success-subtle">Adoptable</span>{% else %}Non adoptable{% endif %}{% endif %}</div>
@@ -69,38 +59,14 @@
             {% if catlist %}<div class="row">
                 <a href="/listcsv{% if adoptonly %}a{%endif%}">Télécharger le tableau en CSV</a>
             </div>{% endif %}
-        {% else %}
-            <h2>Listes spéciales</h2>
-
-            <form action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
-                <div class="form-group"><button class="btn btn-outline-dark" name="FAid" value="{{FAids[0]}}">Chats adoptés</button>
-                    <button class="btn btn-outline-dark" name="FAid" value="{{FAids[1]}}">Chats décédés</button></div>
-                <div class="row">
-                    <div class="col-sm-2"><button class="btn btn-outline-dark" name="FAid" value="{{FAids[3]}}">{{ refugfa.FAid }}</button> :</div>
-                    <div class="col-sm-3">{{ refugfa.FAname }}</div>
-                    <div class="col-sm-1">
-                        {{ refugfa.numcats }} chat{% if refugfa.numcats != 1 %}s{% endif %}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-sm-2"><button class="btn btn-outline-dark" name="FAid" value="{{FAids[4]}}">{{ tempfa.FAid }}</button> :</div>
-                    <div class="col-sm-3">{{ tempfa.FAname }}</div>
-                    <div class="col-sm-1">
-                        {{ tempfa.numcats }} chat{% if tempfa.numcats != 1 %}s{% endif %}
-                    </div>
-                </div>
-            </form>
-
+        {% elif rfalist %}
             <h2>Familles d'accueil</h2>
-            <form action="/fa" method="POST"><input type="hidden" name="action" value="sv_fastate">
-            {% for fa in falist %}
+            <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+            {% for fa in rfalist %}
                 <div class="row">
                     <div class="col-sm-2"><button class="btn btn-outline-dark" name="FAid" value="{{fa.id}}">{{ fa.FAid }}</button> :</div>
-                    <div class="col-sm-3">{{ fa.FAname }} [
-                    {% if fa.FAisFA %} FA {% endif %}
-                    {% if fa.FAisRF %} RF {% endif %}
-                    {% if fa.FAisOV %} SV {% endif %}
-                    {% if fa.FAisADM %} GR {% endif %} ]
+                    <div class="col-sm-3">{{ fa.FAname }}
+                    {% if fa.menuRFA() %} (RF) {% endif %}
                     </div>
                     <div class="col-sm-1">
                         {{ fa.numcats }} chat{% if fa.numcats != 1 %}s{% endif %}
@@ -108,12 +74,69 @@
                     <div class="col-sm-3">
                         {% if fa.FAlastop %}Dernière activité: {{ fa.FAlastop.strftime("%d/%m/%Y %H:%M") }}{% endif %}
                     </div>
-                    <div class="col-sm-3">
-                        {% if rftab and fa.FAresp_id %}(resp. {{ rftab[fa.FAresp_id] }}){% endif %}
-                    </div>
                 </div>
             {% endfor %}
             </form>
+        {% elif refugfa %}
+            <h2>Listes spéciales</h2>
+
+            {% if user.hasAdDcdRs() %}<form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+                <div class="row form-group">
+                    <div class="col-sm-2"><button class="btn btn-outline-dark" name="FAspec" value="ad">Chats adoptés</button></div>
+                    <div class="col-sm-2"><button class="btn btn-outline-dark" name="FAspec" value="dcd">Chats décédés</button></div>
+                    <div class="col-sm-2"><button class="btn btn-outline-dark" name="FAspec" value="rs">Chats rélachés</button></div>
+                    <div class="col-sm-2"><button class="btn btn-outline-dark" name="FAspec" value="hist">Historique</button></div>
+                </div>
+            </form>{% endif %}
+            {% if user.hasSuperviseur() %}<form action="/list" method="POST">
+                <div class="row form-group mt-2">
+                    <div class="col-sm-2"><button class="btn btn-outline-dark" type="submit" name="action" value="sv_globalTab">Tableau global</button></div>
+                    <div class="col-sm-2"><button class="btn btn-outline-dark" type="submit" name="action" value="sv_adoptTab">Chats a l'adoption</button></div>
+                </div>
+            </form>{% endif %}
+            {% if user.hasRefuge() %}<form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+                <div class="row form-group mt-2">
+                    <div class="col-sm-2"><button class="btn btn-outline-dark" name="FAspec" value="ref">{{ refugfa.FAid }}</button> :</div>
+                    <div class="col-sm-3">{{ refugfa.FAname }}</div>
+                    <div class="col-sm-1">
+                        {{ refugfa.numcats }} chat{% if refugfa.numcats != 1 %}s{% endif %}
+                    </div>
+                </div>
+            </form>{% endif %}
+            {% if user.hasReferentFAtemp() %}<form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+                <div class="row form-group mt-2">
+                    <div class="col-sm-2"><button class="btn btn-outline-dark" name="FAspec" value="fatemp">{{ tempfa.FAid }}</button> :</div>
+                    <div class="col-sm-3">{{ tempfa.FAname }}</div>
+                    <div class="col-sm-1">
+                        {{ tempfa.numcats }} chat{% if tempfa.numcats != 1 %}s{% endif %}
+                    </div>
+                </div>
+            </form>{% endif %}
+
+            {% if falist %}
+                <h2 class="mt-4">Familles d'accueil</h2>
+                <form action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
+                {% for fa in falist %}
+                    <div class="row">
+                        <div class="col-sm-2"><button class="btn btn-outline-dark" name="FAid" value="{{fa.id}}">{{ fa.FAid }}</button> :</div>
+                        <div class="col-sm-3">{{ fa.FAname }}
+                        {% if fa.menuRFA() %} (RF) {% endif %}
+                        </div>
+                        <div class="col-sm-1">
+                            {{ fa.numcats }} chat{% if fa.numcats != 1 %}s{% endif %}
+                        </div>
+                        <div class="col-sm-3">
+                            {% if fa.FAlastop %}Dernière activité: {{ fa.FAlastop.strftime("%d/%m/%Y %H:%M") }}{% endif %}
+                        </div>
+                        <div class="col-sm-3">
+                            {% if fa.FAresp %}(resp. {{ fa.FAresp.FAname }}){% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+                </form>
+            {% endif %}
+        {% else %}
+            <h2>Aucune liste a afficher</h2>
         {% endif %}
 
         {% include 'bottom.html' %}
