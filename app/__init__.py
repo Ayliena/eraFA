@@ -7,7 +7,7 @@ import os
 app = Flask(__name__)
 
 # determine if we are on the developement site
-devel_site = '/ishark' in os.getcwd()
+devel_site = any(path in os.getcwd() for path in ['era-devel', '/ishark'])
 
 if devel_site:
     app.config.from_object('config-dev')
