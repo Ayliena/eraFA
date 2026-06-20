@@ -113,7 +113,7 @@ def factures_bankreport():
         if theFact:
             if theFact.state == FAC_RECONC:
                 # attempt to re-reconcile, indicate possible problem (duplicate?)
-                rv[datline] = "WARN: already reconciled: " + theFact.rdate.strftime("%Y-%m-%d")
+                rv[datline] = "WARN ({} {}): already reconciled: {}".format(theFact.clinic, theFact.facnumber, theFact.rdate.strftime("%Y-%m-%d"))
 
             elif theFact.state == FAC_PAID:
                 # all is normal
@@ -126,14 +126,14 @@ def factures_bankreport():
                 theFact.state = FAC_RECONC
                 theFact.pdate = bankdate
                 theFact.rdate = bankdate
-                rv[datline] = "WARN: success, but force-marked paid: " + bankdate.strftime("%Y-%m-%d")
+                rv[datline] = "WARN ({} {}): success, but force-marked paid: {}".format(theFact.clinic, theFact.facnumber, bankdate.strftime("%Y-%m-%d"))
 
             else: # FROZEN
                 # no choice but to indicate done....
                 theFact.state = FAC_RECONC
                 theFact.pdate = bankdate
                 theFact.rdate = bankdate
-                rv[datline] = "ERROR: paid+reconciled on FROZEN " + bankdate.strftime("%Y-%m-%d")
+                rv[datline] = "ERROR ({} {}): paid+reconciled on FROZEN {}".format(theFact.clinic, theFact.facnumber, bankdate.strftime("%Y-%m-%d"))
 
         else:
             rv[datline] = "facture not found"

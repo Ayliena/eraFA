@@ -89,10 +89,10 @@ def proc_page():
         # adapt according to sex
         if vals[4] == "F":
             optype = "stérilisation"
-            opcost = "70 euros"
+            opcost = "80 euros"
         elif vals[4] == "M":
             optype = "castration"
-            opcost = "36 euros"
+            opcost = "40 euros"
         else:
             message = [ [3, "Sexe du chat non indique!"] ]
             return render_template("procedure_page.html", devsite=devel_site, user=current_user, msg=message, pagetype=2)

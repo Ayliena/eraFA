@@ -262,9 +262,8 @@ def catpage(catid=-1):
         if theCat.identif != request.form["c_identif"].upper():
             newid = request.form["c_identif"].upper()
 
-
             # validate the id
-            if newid:
+            if newid and newid != "":
                 # this must either be [0-9]{15} or [A-Za-z]{3}[0-9]{3}/[0-9]{3}[A-Za-z]{3}
                 if not re.fullmatch(r"[0-9]{15}", newid) and not re.fullmatch(r"([A-Z]{3}[0-9]{3}|[0-9]{3}[A-Z]{3})", newid):
                     message.append([3, "Identification incorrecte (puce: 15 chiffres, tatouage: 3 chiffres+3 lettres ou l'inverse)!"])
@@ -272,6 +271,9 @@ def catpage(catid=-1):
                 else:
                     theCat.identif = newid
                     updated[2] = 'I'
+            else: # newid missing or empty
+                theCat.identif = ''
+                updated[2] = 'I'
 
         if theCat.comments != request.form["c_comments"]:
             theCat.comments = request.form["c_comments"]

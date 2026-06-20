@@ -233,7 +233,7 @@ Web: www.association-era.org</td>
                 {% if cat[0].identif %}{{ cat[0].identif }}{% else %}non identifié{% if cat[0].sex==1 %}e{% endif %}{% endif %}
         </div>
         <div class="cat-info-row-bottom">
-            Primo Vaccination: <b>{{ cat[1][0] }}</b>, Rappel: <b>{{ cat[1][1] }}</b>, Test FIV/FeLV: <b>{{ cat[1][3] }}</b>, Identification: <b>{{ cat[1][4] }}</b>, {% if cat[0].sex == 2 %}Castration{% else %}Sterilisation{% endif %}: <b>{{ cat[1][5] }}</b>
+            Primo Vaccination: <b>{{ cat[1][0] }}</b>, Rappel: <b>{{ cat[1][1] }}</b>, Test FIV/FeLV: <b>{{ cat[1][4] }}</b>, Identification: <b>{{ cat[1][3] }}</b>, {% if cat[0].sex == 2 %}Castration{% else %}Sterilisation{% endif %}: <b>{{ cat[1][5] }}</b>
         </div>
         {% endfor %}
         <div class="cat-info-row" style="margin-top: 10px;">

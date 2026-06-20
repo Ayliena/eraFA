@@ -19,8 +19,7 @@ SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostnam
 SQLALCHEMY_POOL_RECYCLE = 299
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-# Sendgrid API key and application "from" address
-SENDGRID_API_KEY='<your sendgrid API key>'
+# application "from" address
 FAWEB_MAILADDR='<email address>'
 
 # Application threads. A common general assumption is
