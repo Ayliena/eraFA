@@ -141,13 +141,13 @@
                 <div class="row form-group align-items-baseline my-1">
                     <label class="col-sm-2 control-label" for="c_name">Nom:</label>
                     <div class="col-sm-4">
-                        {% if cat.name %} <input class="form-control border border-dark" type="text" id="c_name" name="c_name" oninput="this.value = this.value.toUpperCase()" value="{{ cat.name }}" {% if readonly %}disabled{% endif %}>
-                        {% else %} <input class="form-control border border-dark" type="text" id="c_name" name="c_name" oninput="this.value = this.value.toUpperCase()" placeholder="Nom du chat" {% if readonly %}disabled{% endif %}> {% endif %}
+                        {% if cat.name %} <input class="form-control border border-dark" type="text" style="text-transform: uppercase;" id="c_name" name="c_name" value="{{ cat.name }}" {% if readonly %}disabled{% endif %}>
+                        {% else %} <input class="form-control border border-dark" type="text" style="text-transform: uppercase;" id="c_name" name="c_name" placeholder="Nom du chat" {% if readonly %}disabled{% endif %}> {% endif %}
                     </div>
                     <label class="col-sm-2 control-label" for="c_identif">Identification:</label>
                     <div class="col-sm-4">
-                        {% if cat.identif %} <input class="form-control border border-dark" type="text" id="c_identif" name="c_identif" value="{{ cat.identif }}" {% if readonly %}disabled{% endif %}>
-                        {% else %} <input class="form-control border border-dark" type="text" id="c_identif" name="c_identif" placeholder="numero de puce" {% if readonly %}disabled{% endif %}> {% endif %}
+                        {% if cat.identif %} <input class="form-control border border-dark" type="text" style="text-transform: uppercase;" pattern="^([A-Za-z]{3}[0-9]{3}|[0-9]{3}[A-Za-z]{3}|[0-9]{15})$" title="Tatouage (type ABC123 ou 123ABC) ou puce (15 chiffres)" id="c_identif" name="c_identif" value="{{ cat.identif }}" {% if readonly %}disabled{% endif %}>
+                        {% else %} <input class="form-control border border-dark" type="text" style="text-transform: uppercase;" pattern="^([A-Za-z]{3}[0-9]{3}|[0-9]{3}[A-Za-z]{3}|[0-9]{15})$" title="Tatouage (type ABC123 ou 123ABC) ou puce (15 chiffres)" id="c_identif" name="c_identif" placeholder="Numéro de puce" {% if readonly %}disabled{% endif %}> {% endif %}
                     </div>
                 </div>
                 <div class="row form-group align-items-baseline my-1">
@@ -158,7 +158,7 @@
                         <option value="2">MALE</option></select></div>
                     <label class="col-sm-2 control-label" for "c_birthdate">Naissance:</label>
                     <div class="col-sm-4">
-                        <input type="date" class="form-control border border-dark" name="c_birthdate" id="c_birthdate" {% if cat.birthdate %}value="{{ cat.birthdate.strftime("%Y-%m-%d") }}"{% else %}placeholder="date de naissance"{% endif %} {% if readonly %}disabled{% endif %}>
+                        <input type="date" class="form-control border border-dark" name="c_birthdate" id="c_birthdate" {% if cat.birthdate %}value="{{ cat.birthdate.strftime("%Y-%m-%d") }}"{% endif %} {% if readonly %}disabled{% endif %}>
                     </div>
                 </div>
                 <div class="row form-group align-items-baseline">

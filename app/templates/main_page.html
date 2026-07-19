@@ -132,46 +132,6 @@
             {% else %}
                 <div class="row"><div class="col-sm-12">Aucune visite enregistree</div></div>
             {% endif %}
-        {% elif viewuser.typeRefuge() %}
-            {% set ns=namespace(curcage="",curroom="") %}
-            {% if viewuser != user %} <h2>{% if viewuser.typeFA() %}Situation FA : {% endif %}{{ viewuser.FAname }}</h2>{% endif %}
-
-            <h2>Chats au refuge</h2>
-            {% if cats %}<p><a href="#" onClick="showHideAllDescs();">Montrer/cacher toutes les commentaires</a></p>{% endif %}
-            {% for cat in cats %}
-                {% if ns.curroom != cat.temp_owner[0] %}
-                    {% set ns.curroom = cat.temp_owner[0] %}
-                    {% if ns.curroom == "A" %}<h3 class="mt-2 pt-2 border-2 border-top border-black">Cage non definie</h3>{% endif %}
-                    {% if ns.curroom == "B" %}<h3 class="mt-3 pt-2 border-2 border-top border-black">Maternité</h3>{% endif %}
-                    {% if ns.curroom == "G" %}<h3 class="mt-3 pt-2 border-2 border-top border-black">Grande pièce</h3>{% endif %}
-                    {% if ns.curroom == "P" %}<h3 class="mt-3 pt-2 border-2 border-top border-black">Petite pièce</h3>{% endif %}
-                {% endif %}
-                {% if ns.curcage != cat.temp_owner and ns.curroom != "A" %}
-                    <h5 class="mt-2">Cage {{ cat.temp_owner[1:] }}</h5>
-                    {% set ns.curcage = cat.temp_owner %}
-                {% endif %}
-                <form action="/cat" method="POST"><input type="hidden" name="catid" value="{{cat.id}}">
-                <div class="row">
-                    <div class="col-sm-1">
-                        <button class="btn btn-outline-dark text-nowrap" type="submit" name="action" value="fa_viewcat"><strong><span id="rn_{{cat.id}}">{{ cat.regStr() }}</span></strong></button>
-                    </div>
-                    <div class="col-sm-2">{{ cat.identif }}</div>
-                    <div class="col-sm-4">
-                        <a href="#" onClick="showHide('desc_{{cat.id}}');"><b>{% if cat.name %}{{ cat.name }}{% else %}<span class="bg-warning">sans nom</span>{% endif %}</b></a>
-                        ({% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}<span class="bg-warning">??sexe??</span>{% endif %},
-                        {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %},
-                        {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})</div>
-                    <div class="col-sm-1"><p class="text-nowrap" style="font-family:monospace;">{{ cat.vetshort }}</p></div>
-                    <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success-subtle">Adoptable</span>{% else %}Non adoptable{% endif %}</div>
-                </div>
-                <div class="row" style="display: none;" id="desc_{{cat.id}}">
-                    <div class="col-sm-1"></div>
-                    <div class="col-sm-11"><p class="small">{{ cat.comments }}</p></div>
-                </div>
-                </form>
-            {% else %}
-                <div class="row"><div class="col-sm-12">Aucun</div></div>
-            {% endfor %}
         {% elif viewuser.typeManager() %}
             <div class="row"><div class="col-sm-12">Choisir une action avec le menu</div></div>
         {% else %}
@@ -190,7 +150,7 @@
                         <a href="#" onClick="showHide('desc_{{cat.id}}');"><b>{% if cat.name %}{{ cat.name }}{% else %}<span class="bg-warning">sans nom</span>{% endif %}</b></a>
                         ({% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}<span class="bg-warning">??sexe??</span>{% endif %},
                         {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %},
-                        {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})</div>
+                        {% if cat.color %}{{ TabCols[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})</div>
                     <div class="col-sm-1"><p class="text-nowrap" style="font-family:monospace;">{{ cat.vetshort }}</p></div>
                     {% if cat.owner.typeFAtemp() %}<div class="col-sm-2">
                         {{ cat.temp_owner }}

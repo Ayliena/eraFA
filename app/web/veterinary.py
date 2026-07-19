@@ -1,5 +1,5 @@
 from app import app, db, devel_site
-from app.staticdata import TabColor, TabSex, TabHair, NO_VISIT, NO_VET, GEN_VET, DEFAULT_VET
+from app.staticdata import TabColor, DBTabColor, TabSex, TabHair, NO_VISIT, NO_VET, GEN_VET, DEFAULT_VET
 from app.permissions import UT_VETO
 from app.models import User, Cat, VetInfo, Event
 from app.helpers import ERAsum, encodeRegnum, getViewUser, canAccessCat, canAccessCats, ACC_NONE, ACC_RO, ACC_MOD
@@ -8,7 +8,7 @@ from app.vetvisits import vetMapToString, vetAddStrings, vetIsPrimo, vetIsRappel
 from flask import render_template, redirect, request, url_for, session
 from markupsafe import Markup
 from flask_login import login_required, current_user
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from datetime import datetime
 from html import escape
 
@@ -25,6 +25,11 @@ def vetpage():
     if cmd == "fa_catlist":
         # just return to the default main page
         session["otherMode"] = None
+        return redirect(url_for('fapage'))
+
+    if cmd == "ref_reorg":
+        # generate the "reorganize" page
+        session["otherMode"] = "special-refreorg"
         return redirect(url_for('fapage'))
 
     # these two handle the main page for a vet clinic, swapping between current and history
@@ -167,12 +172,12 @@ def vetpage():
         if canAccessCats(theFA, current_user) == ACC_MOD:
             VETlist = User.query.filter_by(usertype=UT_VETO).all()
 
-            if theFA.typeFAtemp():
+            if theFA.typeFAtemp() or theFA.typeRefuge():
                 theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.temp_owner,Cat.regnum).all()
             else:
                 theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.regnum).all()
 
-            return render_template("vet_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+            return render_template("vet_page.html", devsite=devel_site, user=current_user, viewuser=theFA, TabCols=TabColor, tabsex=TabSex, tabhair=TabHair,
                 cats=theCats, VETids=VETlist, VETdef=DEFAULT_VET)
 
     # plan multiple visits (execute action)
@@ -198,7 +203,7 @@ def vetpage():
         vres = ""
 
         for key in request.form.keys():
-            if key[0:3] == 're_':
+            if key.startswith('re_'):
                 catid = int(key[3:])
 
                 # find the cat and make sure we can access it
@@ -217,11 +222,89 @@ def vetpage():
                 vres = vres + " " + theCat.regStr() + "{" + cat_addVetVisit(VETlist, theCat, VisitPlanned, VisitType, VisitVet, VisitDate, VisitComments) + "}"
 
         if not catregs:
-            session["pendingmessage"] = [ [ 2, "Aucun chat modifie" ] ]
+            session["pendingmessage"] = [ [ 2, "Aucun chat modifié" ] ]
         else:
-            session["pendingmessage"] = [ [ 0, "Visite {} enregistree pour les chats: {}".format(VisitType, ", ".join(catregs)) ] ]
+            session["pendingmessage"] = [ [ 0, "Visite {} enregistrée pour les chats: {}".format(VisitType, ", ".join(catregs)) ] ]
 
         # return to vet page
+        return redirect(url_for('fapage'))
+
+    # edit multiple cat id data (generate page)
+    # - possible if you have MOD access to the cats of the user
+    if cmd == "fa_mident":
+        if canAccessCats(theFA, current_user) == ACC_MOD:
+            if theFA.typeFAtemp() or theFA.typeRefuge():
+                theCats = Cat.query.filter(and_(Cat.owner_id==FAid,or_(Cat.identif==None,Cat.identif==''))).order_by(Cat.temp_owner,Cat.regnum).all()
+            else:
+                theCats = Cat.query.filter(and_(Cat.owner_id==FAid,or_(Cat.identif==None,Cat.identif==''))).order_by(Cat.regnum).all()
+
+            return render_template("vet_page.html", devsite=devel_site, user=current_user, viewuser=theFA, TabCols=DBTabColor, tabsex=TabSex, tabhair=TabHair,
+                catsid=theCats)
+
+    # plan multiple visits (execute action)
+    # - possible with MOD access to the cats
+    if cmd == "fa_mident_save":
+        # iterate and set all data (I assume something was changed, so always commit)
+
+        msg = ""
+
+        # we use the sex field (which is always defined) key and build the others
+        for key in request.form.keys():
+            if key.startswith("c_sex_"):
+                catid = key[6:]
+                updated = False
+
+                # get the info
+                k = "c_name_" + catid
+                c_name = (request.form[k].upper() if k in request.form else None)
+                k = "c_sex_" + catid
+                c_sex = int(request.form[k] if k in request.form else 0)
+                k = "c_col_" + catid
+                c_color = int(request.form[k] if k in request.form else 0)
+                k = "c_id_" + catid
+                c_identif = (request.form[k] if k in request.form else None)
+                k = "c_bd_" + catid
+                c_bdate = (request.form[k] if k in request.form else None)
+                try:
+                    c_bdate = datetime.strptime(c_bdate, "%Y-%m-%d")
+                except ValueError:
+                    c_bdate = None
+
+                # get the cat
+                catid = int(catid)
+                theCat = Cat.query.filter_by(id=catid).first()
+                # this should not happen, but let's not crash everything if it does
+                if not theCat:
+                    continue
+
+                if theCat.name != c_name:
+                    theCat.name = c_name
+                    updated = True
+
+                if theCat.sex != c_sex:
+                    theCat.sex = c_sex
+                    updated = True
+
+                if theCat.color != c_color:
+                    theCat.color = c_color
+                    updated = True
+                
+                if theCat.identif != c_identif:
+                    theCat.identif = c_identif
+                    updated = True
+
+                if theCat.birthdate != c_bdate:
+                    theCat.birthdate = c_bdate
+                    updated = True
+
+                if updated:
+                    msg = msg + " " + theCat.regStr()
+
+        db.session.commit()
+        
+        # return to the vetplan page
+        session["pendingmessage"] = [ [ 0, ("Informations mises à jour: "+msg) if msg else "Aucune information fournie" ] ]
+        session["otherMode"] = "special-vetplan"
         return redirect(url_for('fapage'))
 
     # action = request authorization

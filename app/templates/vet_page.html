@@ -16,7 +16,16 @@
         window.onload=function() {
             fixAllDates();
             populatevets('visit_vet');
-        }
+
+	    {% if catsid %}
+            var catcol = [ {% for c in catsid %} ["c_col_{{c.id}}", {{c.color}}], {% endfor %}];
+
+            for (i = 0; i < catcol.length; ++i) {
+		populatecolor(catcol[i][0]);
+		document.getElementById(catcol[i][0]).value = catcol[i][1];
+            }
+	    {% endif %}
+	}
     </script>
     <style>
    hr {
@@ -32,7 +41,7 @@
 {% include '_messages.html' %}
 
         {% if visits %}
-            {% if viewuser != user %} <h2>Situation FA : {{ viewuser.FAname }}</h2> {% endif %}
+            {% if viewuser != user %} <h2>{% if viewuser.typeFA() %}Situation FA : {% endif %}{{ viewuser.FAname }}</h2>{% endif %}
 
             <h2>Visites vétérinaires planifiées</h2>
 
@@ -87,6 +96,9 @@
                     <button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_vetmpl">Planifier/Indiquer une visite concernant plusieurs chats</button>
                 </div>
                 <div class="col-sm-3">
+                    <button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_mident">Saisie rapide d'informations d'identification</button>
+                </div>
+                <div class="col-sm-3">
                     <button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_vetmdel">Annuler les visites selectionnees</button>
                 </div>
             </div>
@@ -120,27 +132,52 @@
                 </div>
             </div>{% endif %}
             </form>
-        {% else %}
-            {% if not cats and not catVet %}
-                {% if viewuser != user %} <h2>{% if viewuser.typeFA() %}Situation FA : {% endif %}{{ viewuser.FAname }}</h2>{% endif %}
-                <h3>Aucune visite vétérinaire planifiée</h3>
-                <form action="/vet" method="POST">
-                <div class="row pt-2 pb-2 border-2 border-top border-black"><div class="col-sm-3">
-                    <button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_vetmpl">Planifier/Indiquer une visite concernant plusieurs chats</button>
-                </div></div>
-                </form>
-            {% endif %}
-        {% endif %}
-
-        {% if cats %}
-            {% if viewuser != user %} <h2>Situation FA : {{ viewuser.FAname }}</h2> {% endif %}
+        {% elif cats %}
+            {% if viewuser != user %} <h2>{% if viewuser.typeFA() %}Situation FA : {% endif %}{{ viewuser.FAname }}</h2>{% endif %}
 
             <h2>Visite pour plusieurs chats</h2>
 
             <form class="form-horizontal" action="/vet" method="POST">
-            {% for cat in cats %}
-                <div class="row">
-                    <div class="col-sm-2">
+	      {% if viewuser.typeRefuge() %}
+                {% set ns=namespace(curcage="",curroom="") %}
+                {% for cat in cats %}
+                  {% if ns.curroom != cat.temp_owner[0] %}
+                    {% set ns.curroom = cat.temp_owner[0] %}
+                    {% if ns.curroom == "A" %}<h3 class="mt-2 pt-2 border-2 border-top border-black">Cage non definie</h3>{% endif %}
+                    {% if ns.curroom == "B" %}<h3 class="mt-3 pt-2 border-2 border-top border-black">Maternité</h3>{% endif %}
+                    {% if ns.curroom == "G" %}<h3 class="mt-3 pt-2 border-2 border-top border-black">Grande pièce</h3>{% endif %}
+                    {% if ns.curroom == "P" %}<h3 class="mt-3 pt-2 border-2 border-top border-black">Petite pièce</h3>{% endif %}
+                  {% endif %}
+                  <div class="row">
+                    <div class="col-sm-1">
+                      {% if ns.curcage != cat.temp_owner and ns.curroom != "A" %}
+		        Cage {{ cat.temp_owner[1:] }}
+                        {% set ns.curcage = cat.temp_owner %}
+                      {% endif %}
+		    </div>
+                    <div class="col-sm-1">
+                        <input class="form-check-input border-black" type="checkbox" name="re_{{cat.id}}" id="re_{{cat.id}}">
+                            <label class="form-check-label" for="re_{{cat.id}}">
+                                <span id="rn_{{cat.id}}">{{ cat.regStr() }}</span>
+                            </label>
+                    </div>
+                    <div class="col-sm-2">{{ cat.identif }}</div>
+                    <div class="col-sm-4">
+                        <b>{% if cat.name %}{{ cat.name }}{% else %}<span class="bg-warning">sans nom</span>{% endif %}</b>
+                        ({% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}<span class="bg-warning">??sexe??</span>{% endif %},
+                        {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %},
+                        {% if cat.color %}{{ TabCols[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})
+                    </div>
+                    <div class="col-sm-2"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
+                    {% if cat.owner.typeFAtemp() %}<div class="col-sm-2">
+                        {{ cat.temp_owner }}
+                    </div>{% endif %}
+                  </div>
+                {% endfor %}
+	      {% else %}
+                {% for cat in cats %}
+                  <div class="row">
+                    <div class="col-sm-1">
                         <input class="form-check-input border-black" type="checkbox" name="re_{{cat.id}}" id="re_{{cat.id}}">
                             <label class="form-check-label" for="re_{{cat.id}}">
                                 <span id="rn_{{cat.id}}">{{ cat.regStr() }}</span>
@@ -151,14 +188,15 @@
                         <b>{% if cat.name %}{{ cat.name }}{% else %}<span class="bg-warning">sans nom</span>{% endif %}</b>
                         ({% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}<span class="bg-warning">??sexe??</span>{% endif %},
                         {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %},
-                        {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})
+                        {% if cat.color %}{{ TabCols[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})
                     </div>
                     <div class="col-sm-2"><p style="font-family:monospace;">{{ cat.vetshort }}</p></div>
                     {% if cat.owner.typeFAtemp() %}<div class="col-sm-2">
                         {{ cat.temp_owner }}
                     </div>{% endif %}
-                </div>
-            {% endfor %}
+                  </div>
+                {% endfor %}
+	      {% endif %}
             <hr>
                 <div class="row form-group align-items-baseline mt-2 pt-2 border-1 border-top border-black">
                     <label class="col-sm-2 control-label" for="visit_state">NOUVELLE VISITE</label>
@@ -206,9 +244,7 @@
                 </div>
             </div>
             </form>
-        {% endif %}
-
-        {% if catVet %}
+        {% elif catVet %}
             {% if catVet.owner_id != user.id %}
                 <h3>Chat chez {{ catVet.owner.FAname }}</h3>
             {% endif %}
@@ -289,8 +325,61 @@
                 </div>
             </div>
             </form>
-        {% endif %}
+        {% elif catsid %}
+            {% if viewuser != user %} <h2>{% if viewuser.typeFA() %}Situation FA : {% endif %}{{ viewuser.FAname }}</h2>{% endif %}
 
+            <h2>Saisie rapide d'identifications</h2>
+
+            <form class="form-horizontal" action="/vet" method="POST">
+                {% for cat in catsid %}
+                  <div class="row">
+                    <div class="col-sm-1">
+                      <b><span id="rn_{{cat.id}}">{{ cat.regStr() }}</span></b>
+                    </div>
+		    <div class="col-sm-2">
+		      <input class="form-control border border-dark" type="text" style="text-transform: uppercase;" id="c_name_{{cat.id}}" name="c_name_{{cat.id}}" {% if cat.name %}value="{{ cat.name }}" {% endif %}placeholder="sans nom">
+                    </div>
+		    <div class="col-sm-2">
+                      <select class="form-select border border-dark" name="c_sex_{{cat.id}}" id="c_sex_{{cat.id}}">
+                        <option value="0"{% if cat.sex == 0 %} selected{% endif %}>INCONNU</option>
+                        <option value="1"{% if cat.sex == 1 %} selected{% endif %}>FEMELLE</option>
+                        <option value="2"{% if cat.sex == 2 %} selected{% endif %}>MALE</option></select>
+                    </div>
+		    <div class="col-sm-2">
+                      <select class="form-select border border-dark" name="c_col_{{cat.id}}" id="c_col_{{cat.id}}"></select>
+                    </div>
+		    <div class="col-sm-2">
+		      <input class="form-control border border-dark" type="text" style="text-transform: uppercase;" pattern="^([A-Za-z]{3}[0-9]{3}|[0-9]{3}[A-Za-z]{3}|[0-9]{15})$" title="Tatouage (type ABC123 ou 123ABC) ou puce (15 chiffres)" id="c_id_{{cat.id}}" name="c_id_{{cat.id}}" {% if cat.identif %}value="{{ cat.identif }}" {% endif %}placeholder="identification">
+                    </div>
+		    <div class="col-sm-2">
+		      <input type="date" class="form-control border border-dark" name="c_bd_{{cat.id}}" id="c_bd_{{cat.id}}" {% if cat.birthdate %}value="{{ cat.birthdate.strftime("%Y-%m-%d") }}"{% endif %}>
+                    </div>
+                  </div>
+                {% endfor %}
+            <hr>
+            <div class="row form-group">
+                <div class="col-sm-2">
+                    <button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_mident_save">Enregistrer les informations</button>
+                </div>
+                <div class="col-sm-2">
+                    <button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_vetplan">Annuler</button>
+                </div>
+            </div>
+            </form>
+        {% else %}
+            {% if viewuser != user %} <h2>{% if viewuser.typeFA() %}Situation FA : {% endif %}{{ viewuser.FAname }}</h2>{% endif %}
+            <h3>Aucune information</h3>
+            <form action="/vet" method="POST">
+              <div class="row pt-2 pb-2 border-2 border-top border-black">
+		<div class="col-sm-3">
+                    <button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_vetmpl">Planifier/Indiquer une visite concernant plusieurs chats</button>
+                </div>
+                <div class="col-sm-3">
+                    <button class="btn btn-secondary" style="white-space: normal;" type="submit" name="action" value="fa_mident">Saisie rapide d'informations d'identification</button>
+                </div>
+	      </div>
+            </form>
+        {% endif %}
     {% include 'bottom.html' %}
     </div><!-- /.container -->
 </body>

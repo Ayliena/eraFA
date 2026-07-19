@@ -69,7 +69,7 @@ def catpage(catid=-1):
 
             fatemp = request.form["c_cage"] if current_user.typeRefuge() else request.form["c_fatemp"]
 
-            theCat = Cat(regnum=rn, temp_owner=fatemp, name=request.form["c_name"], sex=request.form["c_sex"], birthdate=bdate,
+            theCat = Cat(regnum=rn, temp_owner=fatemp, name=request.form["c_name"].upper(), sex=request.form["c_sex"], birthdate=bdate,
                         color=request.form["c_color"], longhair=request.form["c_hlen"], identif=request.form["c_identif"].upper(),
                         description=request.form["c_description"], comments=request.form["c_comments"], vetshort=vetstr,
                         adoptable=(request.form["c_adoptable"]=="1"))
@@ -218,7 +218,7 @@ def catpage(catid=-1):
                                        VETids=VETlist, VETdef=DEFAULT_VET, TabCols=DBTabColor, TabCages=TabCage)
 
         if theCat.name != request.form["c_name"]:
-            theCat.name = request.form["c_name"]
+            theCat.name = request.form["c_name"].upper()
             updated[1] = 'N'
 
         # only deal with this for FATEMP cats

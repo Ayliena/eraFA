@@ -1,5 +1,5 @@
 from app import app, db, devel_site
-from app.staticdata import TabColor, TabSex, TabHair
+from app.staticdata import TabColor, TabSex, TabHair, TabCage
 from app.models import GlobalData, User, Cat, VetInfo, Event
 from app.helpers import cat_delete, cat_associate_to_FA, getSpecialUser, getViewUser
 from flask import render_template, redirect, request, url_for, session
@@ -92,7 +92,7 @@ def fapage():
             # display the past visits, sorted by date
             visits = vquery.order_by(VetInfo.vdate.desc()).all()
 
-            return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+            return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, TabCols=TabColor, tabsex=TabSex, tabhair=TabHair,
                     vvisits=visits, visitmode="history", histfilter=histFilter, msg=message)
 
         elif mode == "special-search":
@@ -199,24 +199,36 @@ def fapage():
             # display the visits, sorted by FA
             visits = VetInfo.query.filter(and_(VetInfo.vet_id==FAid, and_(VetInfo.planned==True,VetInfo.transferred==True))).order_by(VetInfo.doneby_id).all()
 
-            return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+            return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, TabCols=TabColor, tabsex=TabSex, tabhair=TabHair,
                     vvisits=visits, visitmode="planned", msg=message)
 
-        elif theFA.typeRefuge() or theFA.typeFAtemp():
+        elif theFA.typeRefuge():
+            # handle special case of refuge
             theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.temp_owner,Cat.regnum).all()
 
-            return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+            if mode == "special-refreorg":
+                return render_template("refuge_page.html", devsite=devel_site, user=current_user, viewuser=theFA, refuge_mode=1, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                    TabCages=TabCage, cats=theCats, msg=message)
+            else: # normal display
+                return render_template("refuge_page.html", devsite=devel_site, user=current_user, viewuser=theFA, refuge_mode=0, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                    TabCages=TabCage, cats=theCats, msg=message)
+
+        elif theFA.typeFAtemp():
+            # handle special case of FAtemp
+            theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.temp_owner,Cat.regnum).all()
+
+            return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, TabCols=TabColor, tabsex=TabSex, tabhair=TabHair,
                     cats=theCats, msg=message)
 
         elif theFA.typeFA() or theFA.typeAdoptes() or theFA.typeDecedes() or theFA.typeRelaches() or theFA.typeHistorique():
             theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.regnum).all()
 
-            return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+            return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, TabCols=TabColor, tabsex=TabSex, tabhair=TabHair,
                     cats=theCats, msg=message)
 
         else:
             # display empty page
-            return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+            return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, TabCols=TabColor, tabsex=TabSex, tabhair=TabHair,
                    msg=message)
 
     # handle POST commands

@@ -6,10 +6,14 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                {% if user.menuFA() %}<li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Famille</a>
+                {% if (viewuser and viewuser.menuFA()) or (not viewuser and user.menuFA()) %}<li class="nav-item dropdown">
+                    {% if (viewuser and viewuser.typeRefuge()) or user.typeRefuge() %}<a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Refuge</a>
                     <ul class="dropdown-menu"><form class="form-inline" action="/vet" method="POST">
-                        <li><button class="dropdown-item" type="submit" name="action" value="fa_catlist">Chats detenus</button></li>
+                        <li><button class="dropdown-item" type="submit" name="action" value="fa_catlist">Chats au refuge</button></li>
+                        <li><button class="dropdown-item" type="submit" name="action" value="ref_reorg">Reorganisation cages</button></li>
+		    {% else %}<a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Famille</a>
+                    <ul class="dropdown-menu"><form class="form-inline" action="/vet" method="POST">
+                        <li><button class="dropdown-item" type="submit" name="action" value="fa_catlist">Chats detenus</button></li>{% endif %}
                         <li><button class="dropdown-item" type="submit" name="action" value="fa_vetplan">Visites vétérinaires</button></li>
                         <li><button class="dropdown-item" type="submit" name="action" value="fa_vetreg">Registre des Soins</button></li>
                     </form></ul>
