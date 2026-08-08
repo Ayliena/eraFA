@@ -3,7 +3,7 @@ from werkzeug.security import check_password_hash
 from app.permissions import NUM_MENUS, NUM_PRIVS, UT_FA, UT_MANAGER, UT_REFUGE, UT_AD, UT_DCD, UT_RS, UT_HIST, UT_FATEMP, UT_VETO, MENU_FA, MENU_VET, MENU_RFA, MENU_PROC, MENU_COMPTA, MENU_ADMIN, PRIV_RFA, PRIV_RFATEMP, PRIV_SUPER, PRIV_REF, PRIV_ADR, PRIV_HIST, PRIV_SEARCH, PRIV_PEC, PRIV_BSC, PRIV_ADDCAT, PRIV_COMPTA, PRIV_CMMOD, PRIV_CMSELF, PRIV_USERS, PRIV_ADMIN, PRIV_REGNUM, PRIV_MOVE, PRIV_BVETO, PRIV_RVETO, PRIV_APIR, PRIV_APIW, TabUserTypes, TabPrivs, PRIV_CFA, PRIV_CAD, PRIV_EVENTS
 from app.staticdata import FAC_FROZEN, FAC_UNPAID, FAC_PAID, FAC_RECONC, FAC_BEINGPAID
 from flask_login import UserMixin
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 
 class GlobalData(db.Model):
@@ -307,6 +307,71 @@ class Cat(db.Model):
         if self.owner.typeRefuge():
             return "Refuge/{}".format(self.temp_owner)
         return self.owner.FAname
+
+    def ageDays(self):
+        if not self.birthdate:
+            return -365
+        delta = date.today() - self.birthdate.date()
+
+        return delta.days
+
+    def vetVisitVac(self):
+        #
+        # scan the vet visits and return the type/days to/date of the next vaccine
+        # - if none was done, return "V" and 0,0 (as in "do in 0 days"
+        # - if V is done but 1 is not done, return "1" and the delay and planned date for 1
+        # - if 1 is done return "R" and the delay and planned date for R
+        # - if R is done return the next R (1 year delay)
+        #
+        dateV = None
+        date1 = None
+        dateR = None
+ 
+        # order by date, so that the last overwrites the data
+        vetvisits = VetInfo.query.filter_by(cat_id=self.id).order_by(VetInfo.vdate)
+
+        for vv in vetvisits:
+            if vv.planned:
+                continue
+
+            # if vetIsPrimo(vv.vtype):
+            if vv.vtype[0] == 'V':
+                dateV = vv.vdate
+            # if vetIsRappel1(vv.vtype):
+            if vv.vtype[1] == '1':
+                date1 = vv.vdate
+            # if vetIsRappelAnn(vv.vtype):
+            if vv.vtype[2] == 'R':
+                dateR = vv.vdate
+
+        # note: if the visits were done before, but we have no date, then no dates can
+        # be determined, in practice it means we ignore the vetshort
+
+        # determine all possible cases
+        if dateR:
+            # we have an annual, calculate the next
+            ndate = dateR + timedelta(days=365)
+            ndays = ndate.date() - date.today()
+
+            vaccvisit = ['R', ndays.days, ndate]
+        else:
+            # no annual, do we have 1?
+            if date1:
+                # I assume this is V1, so determine the next annual
+                ndate = date1 + timedelta(days=365)
+                ndays = ndate.date() - date.today()
+                vaccvisit = ['R', ndays.days, ndate]
+            else:
+                if dateV:
+                    # ok, V is done, determine the 1
+                    ndate = dateV + timedelta(days=28)
+                    ndays = ndate.date() - date.today()
+                    vaccvisit = ['1', ndays.days, ndate]
+                else:
+                    vaccvisit = ['V', 0, 0]
+                    
+        return vaccvisit
+
 
 # --------------- VETINFO CLASS
 

@@ -32,6 +32,11 @@ def vetpage():
         session["otherMode"] = "special-refreorg"
         return redirect(url_for('fapage'))
 
+    if cmd == "ref_sitvet":
+        # generate the "situation veterinaire" page
+        session["otherMode"] = "special-refsitvet"
+        return redirect(url_for('fapage'))
+
     # these two handle the main page for a vet clinic, swapping between current and history
     if cmd == "vet_vilist" and current_user.typeVeterinaire():
         session["otherMode"] = None

@@ -484,7 +484,7 @@ def cat_executedPostProcess(theCat, vvisit):
 def cat_getVisitDates(theCat):
     dates = [None, None, None, None, None, None]
 
-    vetvisits = VetInfo.query.filter_by(cat_id=theCat.id)
+    vetvisits = VetInfo.query.filter_by(cat_id=theCat.id).order_by(VetInfo.vdate)
 
     for vv in vetvisits:
         if vv.planned:
@@ -516,4 +516,3 @@ def cat_getVisitDates(theCat):
         dates[5] = 'ok'
 
     return dates
-

@@ -38,7 +38,7 @@
 
     <div class="container">
 {% include '_messages.html' %}
-        {% set ns=namespace(curcage="",curroom="") %}
+        {% set ns=namespace(curcage="",curroom="",vvd=0) %}
         {% if viewuser != user %} <h2>{% if viewuser.typeFA() %}Situation FA : {% endif %}{{ viewuser.FAname }}</h2>{% endif %}
 
         {% if refuge_mode == 0 %}
@@ -115,9 +115,88 @@
                 <div class="col-sm-2"><button class="btn btn-secondary mx-1" style="white-space: normal;" type="submit" name="action" value="ref_cancel">Annuler les changements</button></div>
             </div>
             </form>
-        </div>
-
-        {% endif %}
+        {% elif refuge_mode == 2 %}
+            <h2>Situation visites vétérinaires</h2>
+              {% for cat in cats %}
+                {% if ns.curroom != cat.temp_owner[0] %}
+                    {% set ns.curroom = cat.temp_owner[0] %}
+                    {% if ns.curroom == "A" %}<h3 class="mt-2 pt-2 border-2 border-top border-black">Cage non definie</h3>{% endif %}
+                    {% if ns.curroom == "B" %}<h3 class="mt-3 pt-2 border-2 border-top border-black">Maternité</h3>{% endif %}
+                    {% if ns.curroom == "G" %}<h3 class="mt-3 pt-2 border-2 border-top border-black">Grande pièce</h3>{% endif %}
+                    {% if ns.curroom == "P" %}<h3 class="mt-3 pt-2 border-2 border-top border-black">Petite pièce</h3>{% endif %}
+	            <div class="row">
+		      <div class="col-sm-1">Cage</div>
+		      <div class="col-sm-1"># ERA</div>
+		      <div class="col-sm-2">Nom</div>
+		      <div class="col-sm-1 text-center">Vaccin</div>
+		      <div class="col-sm-1 text-center">Puce</div>
+		      <div class="col-sm-1 text-center">Test</div>
+		      <div class="col-sm-1 text-center">Steril.</div>
+		    </div>
+                {% endif %}
+                {% if ns.curcage != cat.temp_owner and ns.curroom != "A" %}
+	          <div class="mt-1 pt-1 border-1 border-top border-black"></div>
+                  {% set ns.curcage = cat.temp_owner %}
+		{% endif %}
+                <div class="row">
+                    <div class="col-sm-1">{{ cat.temp_owner }}</div>
+                    <div class="col-sm-1">{{ cat.regStr() }}</div>
+                    <div class="col-sm-2">
+                      {% if cat.name %}{{ cat.name }}{% else %}<span class="bg-warning">sans nom</span>{% endif %}
+		    </div>
+		    {% set vvd=cat.vetVisitVac() %}
+		    {% if vvd[0] == 'V' %}
+		      <div class="col-sm-1 bg-danger text-white text-center"><b>X</b></div>
+		    {% elif vvd[0] == '1' %}
+		      {% if vvd[1] < -7 %}
+			<div class="col-sm-1 bg-danger text-white text-center"><b>{{ vvd[2].strftime("%d/%m") }}</b></div>
+		      {% elif vvd[1] < 8 %}
+			<div class="col-sm-1 bg-warning text-center"><b>{{ vvd[2].strftime("%d/%m") }}</b></div>
+		      {% else %}
+			<div class="col-sm-1 text-center"><b>{{ vvd[2].strftime("%d/%m") }}</b></div>
+		      {% endif %}
+		    {% else %}
+		      {% if vvd[1] < -30 %}
+			<div class="col-sm-1 bg-danger text-white text-center"><b>{{ vvd[2].strftime("%d/%m/%y") }}</b></div>
+		      {% elif vvd[1] < 8 %}
+			<div class="col-sm-1 bg-warning text-center"><b>{{ vvd[2].strftime("%d/%m") }}</b></div>
+		      {% elif vvd[1] > 30 %}
+			<div class="col-sm-1 bg-success text-white text-center"><b>OK</b></div>
+		      {% else %}
+			<div class="col-sm-1 text-center"><b>{{ vvd[2].strftime("%d/%m") }}</b></div>
+		      {% endif %}
+		    {% endif %}
+		    {% if cat.vetshort[3] == 'P' %}
+		      <div class="col-sm-1 bg-success text-white text-center"><b>OK</b></div>
+		    {% else %}
+		      <div class="col-sm-1 bg-danger text-white text-center"><b>X</b></div>
+		    {% endif %}
+		    {% if cat.vetshort[4] == 'T' %}
+		      <div class="col-sm-1 bg-success text-white text-center"><b>OK</b></div>
+		    {% else %}
+		      <div class="col-sm-1 bg-danger text-white text-center"><b>X</b></div>
+		    {% endif %}
+		    {% if cat.vetshort[5] == 'S' %}
+		      <div class="col-sm-1 bg-success text-white text-center"><b>OK</b></div>
+		    {% else %}
+		      {% set vvd = cat.ageDays() %}
+		      {% if vvd == -365 %}
+		        <div class="col-sm-1 bg-warning text-center"><b>??age??</b></div>
+		      {% elif vvd < 183 %}
+		        <div class="col-sm-1 text-center"><b>junior</b></div>
+		      {% else %}
+		        <div class="col-sm-1 bg-danger text-white text-center"><b>X</b></div>
+		      {% endif %}
+		    {% endif %}
+		    {% set vvd=cat.vetVisitVac() %}
+		    <div class="col-sm-1">{{ vvd[0] }}</div>
+		    <div class="col-sm-1">{{ vvd[1] }}</div>
+		    <div class="col-sm-1">{{ vvd[2] }}</div>
+		</div>
+              {% else %}
+                <div class="row"><div class="col-sm-12">Aucun</div></div>
+              {% endfor %}
+	{% endif %}
 {% include 'bottom.html' %}
      </div><!-- /.container -->
 </body>

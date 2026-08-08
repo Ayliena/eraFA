@@ -108,7 +108,8 @@ def fapage():
             if src_name:
                 # see if we have one name or more
                 cnames = src_name.split(',')
-
+                cnames = [x.strip() for x in cnames]
+                
                 for curcname in cnames:
                     cats = cats + Cat.query.filter(Cat.name.contains(curcname)).order_by(Cat.regnum).all()
 
@@ -208,6 +209,9 @@ def fapage():
 
             if mode == "special-refreorg":
                 return render_template("refuge_page.html", devsite=devel_site, user=current_user, viewuser=theFA, refuge_mode=1, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                    TabCages=TabCage, cats=theCats, msg=message)
+            elif mode == "special-refsitvet":
+                return render_template("refuge_page.html", devsite=devel_site, user=current_user, viewuser=theFA, refuge_mode=2, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
                     TabCages=TabCage, cats=theCats, msg=message)
             else: # normal display
                 return render_template("refuge_page.html", devsite=devel_site, user=current_user, viewuser=theFA, refuge_mode=0, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,

@@ -9,7 +9,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 # this page handles the requests for the menu "Procedures"
-
+1
 # this is to allow "back" from genbonSter/SterMan
 @app.route("/procbsc", methods=["GET"])
 @login_required
@@ -50,7 +50,7 @@ def proc_page():
             # data must start with AD_BCS
             if vals[0] != "AD_BSC" or len(vals) != 11:
                 message = [ [3, "Donnees non valables! {}/11".format(len(vals))] ]
-                return render_template("procedire_page.html", devsite=devel_site, user=current_user, msg=message, pagetype=2, TabCols=DBTabColor)
+                return render_template("procedure_page.html", devsite=devel_site, user=current_user, msg=message, pagetype=2, TabCols=DBTabColor)
 
             prop = vals[10].split("/")
             if len(prop) < 7:
