@@ -372,6 +372,28 @@ class Cat(db.Model):
                     
         return vaccvisit
 
+    def vetVisitSoins(self):
+        #
+        # scan the vet visits and return the days to/date/text of the next "Soins" visit (if any)
+        # otherwise return None
+        #
+        soinsvisit = None
+
+        # order by date, we will stop at the first
+        vetvisits = VetInfo.query.filter_by(cat_id=self.id).order_by(VetInfo.vdate)
+
+        for vv in vetvisits:
+            # we ignore stuff which was done and take the 1st planned
+            if not vv.planned:
+                continue
+
+            if vv.vtype[6] == 'X':
+                ndays = vv.vdate.date() - date.today()
+                soinsvisit = [ndays.days, vv.vdate, vv.comments]
+                break
+
+        return soinsvisit
+
 
 # --------------- VETINFO CLASS
 

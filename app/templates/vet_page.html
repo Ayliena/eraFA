@@ -24,8 +24,52 @@
 		populatecolor(catcol[i][0]);
 		document.getElementById(catcol[i][0]).value = catcol[i][1];
             }
+
+	    // associate the copy-paste function to the dates
+            var catbd = [ {% for c in catsid %} "c_bd_{{c.id}}", {% endfor %}];
+
+            for (i = 0; i < catbd.length; ++i) {
+		el =document.getElementById(catbd[i]);
+		if (el) {
+		    enableCopyPasteDate(el);
+		}
+            }
 	    {% endif %}
 	}
+    {% if catsid %}
+        function enableCopyPasteDate(el) {
+            // copy event
+            el.addEventListener('copy', (e) => {
+                e.preventDefault();
+                const val = el.value; // format = YYYY-MM-DD
+                if (val) {
+                    e.clipboardData.setData('text/plain', val);
+                }
+            });
+        
+            // paste event
+            el.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const txt = e.clipboardData.getData('text/plain').trim();
+                // stop if empty
+                if (!txt) return;
+        
+                // parse text as YYYY-MM-DD or DD/MM/YYYY
+                const theDate = new Date(txt);
+                // check if valid
+                if (!isNaN(theDate.getTime())) {
+                    // required format for the field is YYYY-MM-DD
+                    const yy = theDate.getFullYear();
+                    const mm = String(theDate.getMonth() + 1).padStart(2, '0'); // months are 0-based
+                    const dd = String(theDate.getDate()).padStart(2, '0');
+                    const isoDate = `${yy}-${mm}-${dd}`;
+                    el.value = isoDate;
+                } else {
+                    alert('Date non valable.');
+                }
+            });
+        }
+    {% endif %}
     </script>
     <style>
    hr {

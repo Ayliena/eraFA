@@ -25,6 +25,25 @@
             }
 	    {% endif %}
         }
+function toggleTooltip(icon) {
+    const tooltip = icon.nextElementSibling;
+    const isCurrentlyOpen = tooltip.classList.contains('show');
+
+    // Close all tooltips first
+    document.querySelectorAll('.tooltip.show').forEach(t => t.classList.remove('show'));
+
+    // If this tooltip wasn't open, open it now
+    if (!isCurrentlyOpen) {
+        tooltip.classList.add('show');
+    }
+}
+
+// Optional: close tooltip when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.classList.contains('help-icon')) {
+        document.querySelectorAll('.tooltip.show').forEach(t => t.classList.remove('show'));
+    }
+});
     </script>
     <style>
    hr {
@@ -32,6 +51,39 @@
        margin-bottom:10px !important;
        margin-top:5px !important;
    }
+.help-icon {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-color: #007bff;
+    color: white;
+    text-align: center;
+    line-height: 18px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.tooltip {
+    display: none;
+    position: absolute;
+    background-color: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    margin-left: 5px;
+    max-width: 500px;
+    white-space: normal;
+    word-wrap: break-word;
+    z-index: 1000;
+}
+
+.tooltip.show {
+    display: inline-block;
+}
     </style>
 <body>
 {% include 'navbar.html' %}
@@ -140,7 +192,7 @@
 		{% endif %}
                 <div class="row">
                     <div class="col-sm-1">{{ cat.temp_owner }}</div>
-                    <div class="col-sm-1">{{ cat.regStr() }}</div>
+                    <div class="col-sm-1"><a href="{{ url_for('catpage') }}/{{ cat.id }}">{{ cat.regStr() }}</a></div>
                     <div class="col-sm-2">
                       {% if cat.name %}{{ cat.name }}{% else %}<span class="bg-warning">sans nom</span>{% endif %}
 		    </div>
@@ -187,6 +239,20 @@
 		      {% else %}
 		        <div class="col-sm-1 bg-danger text-white text-center"><b>X</b></div>
 		      {% endif %}
+		    {% endif %}
+		    {% set vvd=cat.vetVisitSoins() %}
+		    {% if vvd %}
+			<div class="col-sm-1"></div>
+			{% if vvd[0] <= 0 %}
+			    <div class="col-sm-1 bg-danger text-white text-center">
+			{% elif vvd[0] < 8 %}
+			    <div class="col-sm-1 bg-warning text-center">
+			{% else %}
+			    <div class="col-sm-1">
+			{% endif %}
+			<b>{{ vvd[1].strftime("%d/%m") }}</b>
+			<span class="help-icon" onclick="toggleTooltip(this)">?</span>
+			<span class="tooltip">{{ vvd[2] }}</span></div>
 		    {% endif %}
 		</div>
               {% else %}
