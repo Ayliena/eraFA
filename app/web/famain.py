@@ -1,7 +1,8 @@
 from app import app, db, devel_site
 from app.staticdata import TabColor, TabSex, TabHair, TabCage
-from app.models import GlobalData, User, Cat, VetInfo, Event
+from app.models import GlobalData, User, Cat, VetInfo
 from app.helpers import cat_delete, cat_associate_to_FA, getSpecialUser, getViewUser
+from app.events import ET, addEvent
 from flask import render_template, redirect, request, url_for, session
 from flask_login import login_required, current_user
 from sqlalchemy import and_
@@ -9,10 +10,8 @@ from sqlalchemy.sql import text
 from datetime import datetime,timedelta
 
 @app.route('/', methods=["GET", "POST"])
+@login_required
 def fapage():
-    if not current_user.is_authenticated:
-        return redirect(url_for('login'))
-
     # generate the page
     if request.method == "GET":
         # handle any message
@@ -36,7 +35,7 @@ def fapage():
             if (mode == "special-all" or mode == "special-adopt") and not current_user.hasSuperviseur():
                 mode = None
 
-            # search requiers the appropriate mode, but we just use "any of them"
+            # search requires the appropriate mode, but we just use "any of them"
             if mode == "special-search" and not (current_user.hasSearch() or current_user.hasBonVeto() or current_user.hasContratFA()):
                 mode = None
 
@@ -59,8 +58,9 @@ def fapage():
                 listtitle="Tableau global des chats", catlist=Cat.query.order_by(Cat.regnum).all(), msg=message)
 
         elif mode == "special-adopt":
+            # TODO: list cats with an announce in catlist
             return render_template("list_page.html", devsite=devel_site, user=current_user, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
-                listtitle="Chats disponibles à l'adoption", catlist=Cat.query.filter_by(adoptable=True).order_by(Cat.regnum).all(), msg=message, adoptonly=True)
+                listtitle="Chats disponibles à l'adoption", catlist=[], msg=message, adoptonly=True)
 
         elif mode == "special-vethistory":
             if "optVETOHIST" in session:
@@ -210,8 +210,8 @@ def fapage():
             if mode == "special-refreorg":
                 return render_template("refuge_page.html", devsite=devel_site, user=current_user, viewuser=theFA, refuge_mode=1, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
                     TabCages=TabCage, cats=theCats, msg=message)
-            elif mode == "special-refsitvet":
-                return render_template("refuge_page.html", devsite=devel_site, user=current_user, viewuser=theFA, refuge_mode=2, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+            elif mode == "special-sitvet":
+                return render_template("vetstate_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
                     TabCages=TabCage, cats=theCats, msg=message)
             else: # normal display
                 return render_template("refuge_page.html", devsite=devel_site, user=current_user, viewuser=theFA, refuge_mode=0, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
@@ -224,7 +224,17 @@ def fapage():
             return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, TabCols=TabColor, tabsex=TabSex, tabhair=TabHair,
                     cats=theCats, msg=message)
 
-        elif theFA.typeFA() or theFA.typeAdoptes() or theFA.typeDecedes() or theFA.typeRelaches() or theFA.typeHistorique():
+        elif theFA.typeFA():
+            theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.regnum).all()
+
+            if mode == "special-sitvet":
+                return render_template("vetstate_page.html", devsite=devel_site, user=current_user, viewuser=theFA, tabcol=TabColor, tabsex=TabSex, tabhair=TabHair,
+                    cats=theCats, msg=message)
+            else: # normal display
+                return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, TabCols=TabColor, tabsex=TabSex, tabhair=TabHair,
+                    cats=theCats, msg=message)
+
+        elif theFA.typeAdoptes() or theFA.typeDecedes() or theFA.typeRelaches() or theFA.typeHistorique():
             theCats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.regnum).all()
 
             return render_template("main_page.html", devsite=devel_site, user=current_user, viewuser=theFA, TabCols=TabColor, tabsex=TabSex, tabhair=TabHair,
@@ -280,8 +290,7 @@ def fapage():
             cat_associate_to_FA(theCat, newFA)
 
             session["pendingmessage"] = [ [0, "Chat {} déplacé dans l'historique".format(theCat.asText())] ]
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transféré dans l'historique".format(current_user.FAname))
-            db.session.add(theEvent)
+            addEvent(theCat, ET.TRANSFER, "{}: transféré dans l'historique".format(current_user.FAname))
             current_user.FAlastop = datetime.now()
             db.session.commit()
 

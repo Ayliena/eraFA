@@ -25,25 +25,6 @@
             }
 	    {% endif %}
         }
-function toggleTooltip(icon) {
-    const tooltip = icon.nextElementSibling;
-    const isCurrentlyOpen = tooltip.classList.contains('show');
-
-    // Close all tooltips first
-    document.querySelectorAll('.tooltip.show').forEach(t => t.classList.remove('show'));
-
-    // If this tooltip wasn't open, open it now
-    if (!isCurrentlyOpen) {
-        tooltip.classList.add('show');
-    }
-}
-
-// Optional: close tooltip when clicking outside
-document.addEventListener('click', function(event) {
-    if (!event.target.classList.contains('help-icon')) {
-        document.querySelectorAll('.tooltip.show').forEach(t => t.classList.remove('show'));
-    }
-});
     </script>
     <style>
    hr {
@@ -51,39 +32,6 @@ document.addEventListener('click', function(event) {
        margin-bottom:10px !important;
        margin-top:5px !important;
    }
-.help-icon {
-    display: inline-block;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background-color: #007bff;
-    color: white;
-    text-align: center;
-    line-height: 18px;
-    font-size: 12px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-left: 5px;
-}
-
-.tooltip {
-    display: none;
-    position: absolute;
-    background-color: #333;
-    color: white;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-size: 13px;
-    margin-left: 5px;
-    max-width: 500px;
-    white-space: normal;
-    word-wrap: break-word;
-    z-index: 1000;
-}
-
-.tooltip.show {
-    display: inline-block;
-}
     </style>
 <body>
 {% include 'navbar.html' %}
@@ -120,7 +68,9 @@ document.addEventListener('click', function(event) {
                         {% if cat.birthdate %}<span id="bd_{{cat.id}}">{{ cat.birthdate.strftime("%s") }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %},
                         {% if cat.color %}{{ tabcol[cat.color] }}{% else %}<span class="bg-warning">??couleur??</span>{% endif %}{{ tabhair[cat.longhair] }})</div>
                     <div class="col-sm-1"><p class="text-nowrap" style="font-family:monospace;">{{ cat.vetshort }}</p></div>
-                    <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success-subtle">Adoptable</span>{% else %}Non adoptable{% endif %}</div>
+                    <div class="col-sm-2">
+		      <!-- indicate here if there's an announce associated to the cat -->
+		    </div>
                 </div>
                 <div class="row" style="display: none;" id="desc_{{cat.id}}">
                     <div class="col-sm-1"></div>
@@ -167,98 +117,7 @@ document.addEventListener('click', function(event) {
                 <div class="col-sm-2"><button class="btn btn-secondary mx-1" style="white-space: normal;" type="submit" name="action" value="ref_cancel">Annuler les changements</button></div>
             </div>
             </form>
-        {% elif refuge_mode == 2 %}
-            <h2>Situation visites vétérinaires</h2>
-              {% for cat in cats %}
-                {% if ns.curroom != cat.temp_owner[0] %}
-                    {% set ns.curroom = cat.temp_owner[0] %}
-                    {% if ns.curroom == "A" %}<h3 class="mt-2 pt-2 border-2 border-top border-black">Cage non definie</h3>{% endif %}
-                    {% if ns.curroom == "B" %}<h3 class="mt-3 pt-2 border-2 border-top border-black">Maternité</h3>{% endif %}
-                    {% if ns.curroom == "G" %}<h3 class="mt-3 pt-2 border-2 border-top border-black">Grande pièce</h3>{% endif %}
-                    {% if ns.curroom == "P" %}<h3 class="mt-3 pt-2 border-2 border-top border-black">Petite pièce</h3>{% endif %}
-	            <div class="row">
-		      <div class="col-sm-1">Cage</div>
-		      <div class="col-sm-1"># ERA</div>
-		      <div class="col-sm-2">Nom</div>
-		      <div class="col-sm-1 text-center">Vaccin</div>
-		      <div class="col-sm-1 text-center">Puce</div>
-		      <div class="col-sm-1 text-center">Test</div>
-		      <div class="col-sm-1 text-center">Steril.</div>
-		    </div>
-                {% endif %}
-                {% if ns.curcage != cat.temp_owner and ns.curroom != "A" %}
-	          <div class="mt-1 pt-1 border-1 border-top border-black"></div>
-                  {% set ns.curcage = cat.temp_owner %}
-		{% endif %}
-                <div class="row">
-                    <div class="col-sm-1">{{ cat.temp_owner }}</div>
-                    <div class="col-sm-1"><a href="{{ url_for('catpage') }}/{{ cat.id }}">{{ cat.regStr() }}</a></div>
-                    <div class="col-sm-2">
-                      {% if cat.name %}{{ cat.name }}{% else %}<span class="bg-warning">sans nom</span>{% endif %}
-		    </div>
-		    {% set vvd=cat.vetVisitVac() %}
-		    {% if vvd[0] == 'V' %}
-		      <div class="col-sm-1 bg-danger text-white text-center"><b>X</b></div>
-		    {% elif vvd[0] == '1' %}
-		      {% if vvd[1] < -7 %}
-			<div class="col-sm-1 bg-danger text-white text-center"><b>{{ vvd[2].strftime("%d/%m") }}</b></div>
-		      {% elif vvd[1] < 8 %}
-			<div class="col-sm-1 bg-warning text-center"><b>{{ vvd[2].strftime("%d/%m") }}</b></div>
-		      {% else %}
-			<div class="col-sm-1 text-center"><b>{{ vvd[2].strftime("%d/%m") }}</b></div>
-		      {% endif %}
-		    {% else %}
-		      {% if vvd[1] < -30 %}
-			<div class="col-sm-1 bg-danger text-white text-center"><b>{{ vvd[2].strftime("%d/%m/%y") }}</b></div>
-		      {% elif vvd[1] < 8 %}
-			<div class="col-sm-1 bg-warning text-center"><b>{{ vvd[2].strftime("%d/%m") }}</b></div>
-		      {% elif vvd[1] > 30 %}
-			<div class="col-sm-1 bg-success text-white text-center"><b>OK</b></div>
-		      {% else %}
-			<div class="col-sm-1 text-center"><b>{{ vvd[2].strftime("%d/%m") }}</b></div>
-		      {% endif %}
-		    {% endif %}
-		    {% if cat.vetshort[3] == 'P' %}
-		      <div class="col-sm-1 bg-success text-white text-center"><b>OK</b></div>
-		    {% else %}
-		      <div class="col-sm-1 bg-danger text-white text-center"><b>X</b></div>
-		    {% endif %}
-		    {% if cat.vetshort[4] == 'T' %}
-		      <div class="col-sm-1 bg-success text-white text-center"><b>OK</b></div>
-		    {% else %}
-		      <div class="col-sm-1 bg-danger text-white text-center"><b>X</b></div>
-		    {% endif %}
-		    {% if cat.vetshort[5] == 'S' %}
-		      <div class="col-sm-1 bg-success text-white text-center"><b>OK</b></div>
-		    {% else %}
-		      {% set vvd = cat.ageDays() %}
-		      {% if vvd == -365 %}
-		        <div class="col-sm-1 bg-warning text-center"><b>??age??</b></div>
-		      {% elif vvd < 183 %}
-		        <div class="col-sm-1 text-center"><b>junior</b></div>
-		      {% else %}
-		        <div class="col-sm-1 bg-danger text-white text-center"><b>X</b></div>
-		      {% endif %}
-		    {% endif %}
-		    {% set vvd=cat.vetVisitSoins() %}
-		    {% if vvd %}
-			<div class="col-sm-1"></div>
-			{% if vvd[0] <= 0 %}
-			    <div class="col-sm-1 bg-danger text-white text-center">
-			{% elif vvd[0] < 8 %}
-			    <div class="col-sm-1 bg-warning text-center">
-			{% else %}
-			    <div class="col-sm-1">
-			{% endif %}
-			<b>{{ vvd[1].strftime("%d/%m") }}</b>
-			<span class="help-icon" onclick="toggleTooltip(this)">?</span>
-			<span class="tooltip">{{ vvd[2] }}</span></div>
-		    {% endif %}
-		</div>
-              {% else %}
-                <div class="row"><div class="col-sm-12">Aucun</div></div>
-              {% endfor %}
-	{% endif %}
+        {% endif %}
 {% include 'bottom.html' %}
      </div><!-- /.container -->
 </body>

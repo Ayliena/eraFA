@@ -2,14 +2,23 @@ from app import app, db, devel_site
 from app.staticdata import DBTabColor, TabColor, TabSex, TabHair, NO_VISIT, NO_VET, GEN_VET, DEFAULT_VET
 from app.helpers import ERAsum, cat_associate_to_FA, getSpecialUser
 from app.vetvisits import cat_getVisitDates
-from app.models import Cat, Event
-from flask import render_template, redirect, request, session, url_for
+from app.models import Cat
+from app.events import ET, addEvent
+from flask import render_template, redirect, request, session, url_for, send_from_directory
 from flask_login import login_required, current_user
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+import os
 
-# this page handles the requests for the menu "Procedures"
-1
+# this function handles the requests for the menu "Procedures"
+
+# this is to protect the signature PNG files and only serve them to logged users
+@app.route('/protected/<path:filename>')
+@login_required
+def protected(filename):
+    return send_from_directory(app.config['SIGNATURE_FOLDER'], filename)
+
+
 # this is to allow "back" from genbonSter/SterMan
 @app.route("/procbsc", methods=["GET"])
 @login_required
@@ -216,7 +225,7 @@ def proc_page():
                 commstr = "PeC {}: amenant {} {}, {}".format(date.strftime("%d/%m/%y"), amdata[0], amdata[1], motif)
 
                 theCat = Cat(regnum=-1, temp_owner=fatemp, name=cd[0], sex=cd[6], color=cd[7], longhair=0, identif=cd[4],
-                    vetshort=vetstr, comments=commstr, description='', adoptable=False)
+                    vetshort=vetstr, comments=commstr, description='')
                 cat_associate_to_FA(theCat, theFA)
                 # don't overwrite AXX for refuge, and only define the FA name if we have it
                 if not theFA.typeRefuge() and locFA:
@@ -228,8 +237,7 @@ def proc_page():
 
                 # generate the event
                 messages.append("Chat N{}/{} rajoute dans le systeme".format(theCat.id, cd[0]))
-                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: auto-genere par prise en charge".format(current_user.FAname))
-                db.session.add(theEvent)
+                addEvent(theCat, ET.ADD, etext="{}: auto-genere par prise en charge".format(current_user.FAname))
 
             db.session.commit()
 

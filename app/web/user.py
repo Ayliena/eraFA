@@ -13,7 +13,7 @@ import secrets
 
 def defineUserPrivileges(user, form):
     for p in range(FIRST_PRIV, NUM_PRIVS):
-        user.setPrivilege(p, "u_has"+TabPrivs[p] in form)
+        user.setPrivilege(p, "u_has"+TabPrivs[p][0] in form)
 
     user.defineMenus()
 
@@ -55,7 +55,7 @@ def userpage():
 
     if request.method == "GET" or (request.method == "POST" and request.form["action"] == "adm_listusers") and current_user.hasUsers():
         # normal users
-        FAlist=User.query.order_by(User.FAid).all()
+        FAlist=User.query.order_by(User.usertype,User.FAid).all()
 
         # handle any message
         if "pendingmessage" in session:
@@ -217,4 +217,51 @@ def userpage():
         return redirect(url_for('userpage'))
 
     # default is indicate error
-    return render_template("error_page.html", user=current_user, errormessage="command error (/user)")
+    return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage="command error (/user)")
+
+
+#
+# user profile management
+#
+@app.route("/profile", methods=["GET", "POST"])
+@login_required
+def profilepage():
+    if request.method == "GET":
+        # generate profile page
+        # note that this does NOT allow an admin acting as another FA to open the FA's profile,
+        # access is always to your own (logged in) profile
+
+        # only generate RFtab if we need it
+        RFtab = {}
+
+        if current_user.FAresp_id:
+            RFlist = getReferentUsers()
+
+            for rf in RFlist:
+                RFtab[rf.id] = rf.FAname
+
+        # privilege descriptions
+        pdescs = current_user.privilegesStrDescs()
+                
+        return render_template("profile_page.html", devsite=devel_site, user=current_user, rftab=RFtab, TabUserTypes=TabUserTypes, PrivDescs=pdescs)
+
+    elif request.method == "POST":
+        if request.form["action"] == "prof_cancel":
+            return redirect(url_for('fapage'))
+
+        if request.form["action"] == "prof_update":
+            # update user data
+            email=request.form["u_email"]
+
+            # TODO: a extremely minimal check for validity ?
+            if email != current_user.FAemail:
+                current_user.FAemail = email
+                db.session.commit()
+                session["pendingmessage"] = [ [0, "Informations mises à jour" ] ]
+
+            else:
+                session["pendingmessage"] = [ [2, "Aucune information modifiée" ] ]
+
+            return redirect(url_for('fapage'))
+
+    return render_template("error_page.html", devsite=devel_site, user=current_user, errormessage="command error (/profile)")

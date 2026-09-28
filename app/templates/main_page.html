@@ -159,8 +159,6 @@
                     <div class="col-sm-4">
                         Sortie: {{ cat.lastop.strftime("%d/%m/%y") }}
                     </div>
-                    {% else %}
-                    <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success-subtle">Adoptable</span>{% else %}Non adoptable{% endif %}</div>
                     {% endif %}
                 </div>
                 <div class="row" style="display: none;" id="desc_{{cat.id}}">

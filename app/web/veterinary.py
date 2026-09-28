@@ -1,10 +1,11 @@
 from app import app, db, devel_site
 from app.staticdata import TabColor, DBTabColor, TabSex, TabHair, NO_VISIT, NO_VET, GEN_VET, DEFAULT_VET
 from app.permissions import UT_VETO
-from app.models import User, Cat, VetInfo, Event
+from app.models import User, Cat, VetInfo
 from app.helpers import ERAsum, encodeRegnum, getViewUser, canAccessCat, canAccessCats, ACC_NONE, ACC_RO, ACC_MOD
 from app.vetvisits import vetMapToString, vetAddStrings, vetIsPrimo, vetIsRappel1, vetIsRappelAnn, vetIsIdent, vetIsTest, vetIsSteril, \
     vetIsSoins, vetIsDepara, cat_addVetVisit, cat_executeVetVisit, cat_deleteVisit
+from app.events import ET, addEvent
 from flask import render_template, redirect, request, url_for, session
 from markupsafe import Markup
 from flask_login import login_required, current_user
@@ -32,9 +33,9 @@ def vetpage():
         session["otherMode"] = "special-refreorg"
         return redirect(url_for('fapage'))
 
-    if cmd == "ref_sitvet":
+    if cmd == "fa_sitvet":
         # generate the "situation veterinaire" page
-        session["otherMode"] = "special-refsitvet"
+        session["otherMode"] = "special-sitvet"
         return redirect(url_for('fapage'))
 
     # these two handle the main page for a vet clinic, swapping between current and history
@@ -562,8 +563,7 @@ def vetpage():
         # indicate that we did this
         for theCat,vtype in zip(catlist, catvtypes):
             # add it as event (planned or not)
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: bon imprime pour {} le {} chez {} ({})".format(current_user.FAname, vtype, vdate.strftime("%d/%m/%y"), VETname, FAname))
-            db.session.add(theEvent)
+            addEvent(theCat, EV.BVETO, "{}: bon imprime pour {} le {} chez {} ({})".format(current_user.FAname, vtype, vdate.strftime("%d/%m/%y"), VETname, FAname))
 
         db.session.commit()
 
@@ -683,8 +683,7 @@ def vetpage():
         # indicate that we did this
         for theCat,vtype in zip(catlist, catvtypes):
             # add it as event (planned or not)
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: bon imprime pour {} le {} ({})".format(current_user.FAname, vtype, bdate.strftime("%d/%m/%y"), FAname))
-            db.session.add(theEvent)
+            addEvent(theCat, ET.VET_BON, "{}: bon imprime pour {} le {} ({})".format(current_user.FAname, vtype, bdate.strftime("%d/%m/%y"), FAname))
 
         db.session.commit()
 
@@ -835,8 +834,7 @@ def vetpage():
                 vres += " -E[{}]".format(theVisit.vtype)
 
                 # we don't use deletevisit because the event message is completely wrong
-                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} du {} effacée".format(current_user.FAname, theVisit.vtype, theVisit.vdate.strftime('%d/%m/%y')))
-                db.session.add(theEvent)
+                addEvent(theCat, ET.VET_DEL, "{}: visite vétérinaire {} du {} effacée".format(current_user.FAname, theVisit.vtype, theVisit.vdate.strftime('%d/%m/%y')))
                 db.session.delete(theVisit)
 
         # we now rebuild the vetshort by adding any preexisting info we were given

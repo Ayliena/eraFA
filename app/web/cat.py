@@ -1,9 +1,10 @@
 from app import app, db, devel_site
 from app.staticdata import DBTabColor, TabCage, DEFAULT_VET
 from app.permissions import UT_FA, UT_REFUGE, UT_FATEMP, UT_VETO
-from app.models import User, Cat, Event
+from app.models import User, Cat
 from app.helpers import cat_associate_to_FA, getViewUser, getSpecialUser, isValidCage, canAccessCat, ACC_NONE, ACC_RO, ACC_MOD
 from app.vetvisits import vetMapToString, vetSubStrings, cat_addVetVisit, cat_updateVetVisit
+from app.events import ET, addEvent
 from flask import render_template, redirect, request, url_for, session
 from flask_login import login_required, current_user
 from sqlalchemy import or_
@@ -71,8 +72,7 @@ def catpage(catid=-1):
 
             theCat = Cat(regnum=rn, temp_owner=fatemp, name=request.form["c_name"].upper(), sex=request.form["c_sex"], birthdate=bdate,
                         color=request.form["c_color"], longhair=request.form["c_hlen"], identif=request.form["c_identif"].upper(),
-                        description=request.form["c_description"], comments=request.form["c_comments"], vetshort=vetstr,
-                        adoptable=(request.form["c_adoptable"]=="1"))
+                        description=request.form["c_description"], comments=request.form["c_comments"], vetshort=vetstr)
 
             # for valid regnums, make sure that we're not adding a duplicate
             if rn > 0:
@@ -122,8 +122,7 @@ def catpage(catid=-1):
 
             # generate the event
             session["pendingmessage"] = [ [0, "Chat {} rajouté dans le système".format(theCat.asText())] ]
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: rajoute dans le systeme".format(current_user.FAname))
-            db.session.add(theEvent)
+            addEvent(theCat, ET.ADD, "{}: rajoute dans le systeme".format(current_user.FAname))
 
             current_user.FAlastop = datetime.now()
             db.session.commit()
@@ -209,8 +208,7 @@ def catpage(catid=-1):
 
                 theCat.regnum = rn
                 # we indicate this as a separate event
-                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: enregistre comme {}".format(current_user.FAname, request.form["c_registre"]))
-                db.session.add(theEvent)
+                addEvent(theCat, ET.REGNUM, "{}: enregistre comme {}".format(current_user.FAname, request.form["c_registre"]))
                 updated[2] = 'R'
             else: # invalid regnum
                 message = [ [3, "Numéro de registre non valable!"] ]
@@ -225,16 +223,14 @@ def catpage(catid=-1):
         if theCat.owner.typeFAtemp():
             if theCat.temp_owner != request.form["c_fatemp"]:
                 # we indicate this as a transfer
-                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transféré de [{}] a [{}]".format(current_user.FAname, theCat.temp_owner, request.form["c_fatemp"]))
-                db.session.add(theEvent)
+                addEvent(theCat, ET.TRANSFER, "{}: transféré de [{}] a [{}]".format(current_user.FAname, theCat.temp_owner, request.form["c_fatemp"]))
                 theCat.temp_owner = request.form["c_fatemp"]
                 updated[10] = 'F'
 
         # only update the cage for refuge cats
         if theCat.owner.typeRefuge():
             if theCat.temp_owner != request.form["c_cage"]:
-                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: changé de cage de [{}] a [{}]".format(current_user.FAname, theCat.temp_owner, request.form["c_cage"]))
-                db.session.add(theEvent)
+                addEvent(theCat, ET.CAGE, "{}: changé de cage de [{}] a [{}]".format(current_user.FAname, theCat.temp_owner, request.form["c_cage"]))
                 theCat.temp_owner = request.form["c_cage"]
                 updated[10] = 'C'
 
@@ -283,36 +279,11 @@ def catpage(catid=-1):
             theCat.description = request.form["c_description"]
             updated[8] = 'D'
 
-        if theCat.adoptable != (request.form["c_adoptable"] == "1"):
-            theCat.adoptable = (request.form["c_adoptable"] == "1")
-            updated[0] = 'A'
-
-        if 'img_erase' in request.form:
-            # delete the file (existing or not....)
-            if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], "{}.jpg".format(theCat.regnum))):
-                os.remove(os.path.join(app.config['UPLOAD_FOLDER'], "{}.jpg".format(theCat.regnum)))
-                updated[9] = 'P'
-        else:
-           if 'img_file' in request.files:
-                img_file = request.files['img_file']
-
-                if img_file:
-                    filename = secure_filename(img_file.filename)
-                    img_file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
-                    # now rename the file and strip metadata (resize also???)
-                    theImage = Image.open(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                    theImage = ImageOps.exif_transpose(theImage)
-                    theImage.save(os.path.join(app.config['UPLOAD_FOLDER'], "{}.jpg".format(theCat.regnum)))
-                    os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                    updated[9] = 'P'
-
         # indicate moodification of the data
         updated = "".join(updated)
 
         if updated != "-----------":
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: mise à jour des informations {}".format(current_user.FAname, updated))
-            db.session.add(theEvent)
+            addEvent(theCat, ET.UPDATE, "{}: mise à jour des informations {}".format(current_user.FAname, updated))
             cat_updated = True
         else:
             cat_updated = False
@@ -391,8 +362,7 @@ def catpage(catid=-1):
             # generate the event
             message.append([0, "Chat {} transféré dans les adoptés".format(theCat.asText())])
             session["pendingmessage"] = message
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: donné aux adoptants".format(current_user.FAname))
-            db.session.add(theEvent)
+            addEvent(theCat, ET.ADOPTE, "{}: donné aux adoptants".format(current_user.FAname))
             current_user.FAlastop = datetime.now()
             db.session.commit()
             return redirect(url_for('fapage'))
@@ -404,8 +374,7 @@ def catpage(catid=-1):
             # generate the event
             message.append([0, "Chat {} rélaché sur site".format(theCat.asText())])
             session["pendingmessage"] = message
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: rélaché sur site".format(current_user.FAname))
-            db.session.add(theEvent)
+            addEvent(theCat, ET.RELACHE, etext="{}: rélaché sur site".format(current_user.FAname))
             current_user.FAlastop = datetime.now()
             db.session.commit()
             return redirect(url_for('fapage'))
@@ -417,8 +386,7 @@ def catpage(catid=-1):
             # generate the event
             message.append([0, "Chat {} indiqué décédé".format(theCat.asText())])
             session["pendingmessage"] = message
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: indiqué décédé".format(current_user.FAname))
-            db.session.add(theEvent)
+            addEvent(theCat, ET.DECEDE, "{}: indiqué décédé".format(current_user.FAname))
             current_user.FAlastop = datetime.now()
             db.session.commit()
             return redirect(url_for('fapage'))
@@ -433,8 +401,7 @@ def catpage(catid=-1):
             # generate the event
             message.append([0, "Chat {} transféré au refuge".format(theCat.asText())])
             session["pendingmessage"] = message
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transferé au refuge".format(current_user.FAname))
-            db.session.add(theEvent)
+            addEvent(theCat, ET.TRANSFER, "{}: transferé au refuge".format(current_user.FAname))
             current_user.FAlastop = datetime.now()
             db.session.commit()
             return redirect(url_for('fapage'))
@@ -461,8 +428,7 @@ def catpage(catid=-1):
             # generate the event
             message.append([0, "Chat {} transféré chez {}".format(theCat.asText(), newFAname)])
             session["pendingmessage"] = message
-            theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transferé chez {}".format(current_user.FAname, newFAname))
-            db.session.add(theEvent)
+            addEvent(theCat, ET.TRANSFER, etext="{}: transferé chez {}".format(current_user.FAname, newFAname))
             current_user.FAlastop = datetime.now()
             db.session.commit()
             return redirect(url_for('fapage'))
@@ -476,8 +442,7 @@ def catpage(catid=-1):
                 # generate the event
                 message.append([0, "Chat {} transféré chez {}".format(theCat.asText(), newFA.FAname)])
                 session["pendingmessage"] = message
-                theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: transféré de {} a {}".format(current_user.FAname, theCat.owner.FAname, newFA.FAname))
-                db.session.add(theEvent)
+                addEvent(theCat, ET.TRANSFER, "{}: transféré de {} a {}".format(current_user.FAname, theCat.owner.FAname, newFA.FAname))
                 # modify the FA
                 cat_associate_to_FA(theCat, newFA)
 

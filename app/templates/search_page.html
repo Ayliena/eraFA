@@ -316,7 +316,7 @@ document.addEventListener('click', function(event) {
                         {{ cat.nameFA() }}
                     </div>
                     {% if not adoptonly %}
-                        <div class="col-sm-2">{% if cat.adoptable %}<span class="bg-success-subtle">Adoptable</span>{% else %}Non adoptable{% endif %}</div>
+		      <!-- indicate here if there's an announce associated to the cat -->
                     {% endif %}
                 </div>
                 <div class="row" style="display: none;" id="desc_{{cat.id}}">

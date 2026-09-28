@@ -6,8 +6,9 @@ import os
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # set here the upload directory
-UPLOAD_FOLDER = '/home/<your username>/eraFA/static'
-ALLOWED_EXTENSIONS = set(['jpg'])
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'app/static')
+SIGNATURE_FOLDER = os.path.join(BASE_DIR, 'app/protected')
+ALLOWED_EXTENSIONS = set(['jpg', 'png'])
 
 # Define the database - we are working with
 SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(

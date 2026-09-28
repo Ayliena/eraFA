@@ -13,7 +13,7 @@ def load_user(user_id):
 
 @app.route('/adoptions', methods=["GET", "POST"])
 def index():
-    cats = Cat.query.filter_by(adoptable=True).all();
+    cats = []
 
     # TODO split in pages of 10 or something....
     return render_template("adopt_page.html", tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, catlist=cats, devsite=devel_site)

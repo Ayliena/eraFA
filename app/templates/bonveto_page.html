@@ -154,11 +154,15 @@ Web: www.association-era.org</td>
     <tr><td>&nbsp;</td></tr>
 </table>
 
-<table style="margin-left: auto; margin-right: auto;">
-    <tr>
-        <td>La présidente:</td>
-        <td><img src="{{ url_for('static', filename='signature-bon.png')}}" style="width:120px;" /></td>
-    </tr>
+<table>
+  <tr>
+    <td width="60%"></td>
+    <td>Signature et cachet association:</td>
+  </tr>
+  <tr>
+    <td width="60%"></td>
+    <td style="text-align: center";><img src="{{ url_for('protected', filename='signature-{}.png'.format(current_user.username)) }}" style="height:120px;" onError="this.onerror=null;this.src='{{ url_for('protected', filename='signature-default.png') }}';"></td>
+  </tr>
 </table>
 
 </body>

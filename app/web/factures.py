@@ -268,10 +268,8 @@ def factures_pay(id):
 
 
 @app.route('/factures', methods=["GET", "POST"])
+@login_required
 def factures_page():
-    if not current_user.is_authenticated:
-        return redirect(url_for('login'))
-
     if not (current_user.hasComptaSelf() or current_user.hasCompta()):
         return redirect(url_for('fapage'))
 

@@ -1,8 +1,9 @@
 from app import app, db, devel_site
 from app.staticdata import NO_VET, GEN_VET
 from app.permissions import UT_VETO
-from app.models import  GlobalData, Cat, User, Event, VetInfo
+from app.models import  GlobalData, Cat, User, VetInfo
 from app.helpers import cat_delete, getSpecialUser
+from app.events import ET, addEvent
 from flask import render_template, redirect, request, url_for, session
 from flask_login import login_required, current_user
 from sqlalchemy import and_
@@ -77,7 +78,9 @@ def adminpage():
 
     if cmd == "adm_numcats":
         s = text('UPDATE users SET numcats = ( SELECT COUNT(regnum) AS "Count" FROM cats WHERE cats.owner_id = users.id );')
-        db.engine.execute(s)
+        with db.engine.connect() as conn:
+            conn.execute(s)
+
         db.session.commit()
 
         return render_template("admin_page.html", devsite=devel_site, user=current_user, admresult="Nombre de chats mis a jour")
@@ -137,8 +140,7 @@ def adminpage():
 
             # modify the FA
             # generate the event
-            theEvent = Event(cat_id=c.id, edate=datetime.now(), etext="{}: transféré de {} a {}[{}] (userdel)".format(current_user.FAname, c.owner.FAname, FAtemp.FAname, tempname))
-            db.session.add(theEvent)
+            addEvent(c, ET.TRANSFER, "{}: transféré de {} a {}[{}] (userdel)".format(current_user.FAname, c.owner.FAname, FAtemp.FAname, tempname))
 
             FAtemp.numcats += 1
             c.owner_id = FAtemp.id
@@ -198,30 +200,6 @@ def adminpage():
 
     return render_template("error_page.html", user=current_user, errormessage="command error (/admin)")
 
-
-# @app.route("/unreg", methods=["POST", "GET"])
-# @login_required
-# def unregpage():
-#     catMode, vetMode, searchMode = accessPrivileges(current_user)
-#
-#     if searchMode != ACC_TOTAL:
-#         return render_template("error_page.html", user=current_user, errormessage="insufficient privileges", FAids=FAidSpecial)
-#
-#     # handle any message
-#     if "pendingmessage" in session:
-#         message = session["pendingmessage"]
-#         session.pop("pendingmessage")
-#     else:
-#         message = []
-#
-#     # get or post adm_unreg are the same
-#     # generate the unreg management page (for now, only gen bon veto)
-#     if request.method == "GET" or (request.method == "POST" and request.form["action"] == "adm_unreg"):
-#         return render_template("unreg_page.html", devsite=devel_site, user=current_user, msg=message, FAids=FAidSpecial, TabCols=DBTabColor)
-#
-# #    cmd = request.form["action"]
-#
-#     return render_template("error_page.html", user=current_user, errormessage="command error (/unreg)", FAids=FAidSpecial)
 
 
 @app.route("/help")

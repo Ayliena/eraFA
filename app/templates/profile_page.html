@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Familles d'accueil ERA</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+    </head>
+<body>
+    {% include 'navbar.html' %}
+
+    <div class="container">
+{% include '_messages.html' %}
+
+    <form action="/profile" id="u_form" method="POST">
+      <div class="row form-group">
+        <div class="col-sm-2">Utilisateur :</div>
+	<div class="col-sm-3">{{ user.username}}  [{{ user.id }}]</div>
+      </div>
+      <div class="row form-group">
+        <div class="col-sm-2">Nom publique :</div>
+        <div class="col-sm-3">{{ user.FAid }}</div>
+      </div>
+      <div class="row form-group">
+        <div class="col-sm-2">Nom interne :</div>
+        <div class="col-sm-3">{{ user.FAname }}</div>
+      </div>
+      <div class="row form-group">
+        <div class="col-sm-2">Adresse e-mail :</div>
+        <div class="col-sm-3">
+          {% if user.FAemail %} <input type="text" name="u_email" value="{{ user.FAemail }}">
+          {% else %} <input type="text" name="u_email" placeholder="E-mail">{% endif %}
+        </div>
+      </div>
+      <div class="row form-group">
+        <div class="col-sm-2">Type de compte :</div>
+        <div class="col-sm-3">{{ TabUserTypes[user.usertype] }}</div>
+      </div>
+      {% if user.FAresp_id %}
+      <div class="row form-group">
+        <div class="col-sm-1"></div>
+        <div class="col-sm-2">Réfèrent(e) :</div>
+        <div class="col-sm-3">
+          {% for k,v in rftab.items() %}{% if k == user.FAresp_id %}{{v}}{% endif %}{% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      <div class="row form-group">
+        <div class="col-sm-3">Caracterestiques du compte :</div>
+      </div>
+      {% for d in PrivDescs %}
+      <div class="row form-group">
+        <div class="col-sm-1"></div>
+        <div class="col-sm-6">{{ d }}</div>
+      </div>
+      {% endfor %}
+      <hr>
+      <div class="row form-group">
+        <div class="col-sm-2"><button class="btn btn-secondary mx-1" type="submit" name="action" value="prof_update">Enregistrer</button></div>
+        <div class="col-sm-2"><button class="btn btn-secondary mx-1" type="submit" name="action" value="prof_cancel">Annuler</button></div>
+      </div>
+    </form>
+
+      {% include 'bottom.html' %}
+    </div><!-- /.container -->
+</body>
+</html>

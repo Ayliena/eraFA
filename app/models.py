@@ -219,11 +219,20 @@ class User(UserMixin, db.Model):
 
         for i in range(len(self.PrivStr)):
             if self.PrivStr[i] == '1':
-                rv += sep+TabPrivs[i]
+                rv += sep+TabPrivs[i][0]
                 sep = " "
 
         return rv
 
+    def privilegesStrDescs(self):
+        self.checkPrivileges()
+        d = []
+
+        for i in range(len(self.PrivStr)):
+            if self.PrivStr[i] == '1':
+                d.append(TabPrivs[i][1])
+
+        return d
 
 
 # --------------- EVENT CLASS
@@ -235,6 +244,7 @@ class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     cat_id = db.Column(db.Integer, db.ForeignKey('cats.id'), nullable=False)
     edate = db.Column(db.DateTime, default=datetime.now)
+    etype = db.Column(db.Integer, default=0)
     etext = db.Column(db.String(1024))
 
 # --------------- CAT CLASS
@@ -257,7 +267,7 @@ class Cat(db.Model):
     description = db.Column(db.String(2048))
     comments = db.Column(db.String(1024))
     vetshort = db.Column(db.String(16))
-    adoptable = db.Column(db.Boolean)
+#    adoptable = db.Column(db.Boolean)
     vetvisits = db.relationship('VetInfo', backref='cat', order_by='VetInfo.vdate', lazy=True)
     lastop = db.Column(db.DateTime)
     events = db.relationship('Event', backref='cat', order_by="Event.edate.desc()", lazy=True)

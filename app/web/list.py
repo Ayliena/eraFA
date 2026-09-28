@@ -48,7 +48,7 @@ def listpage():
         return redirect(url_for('fapage'))
 
     if current_user.hasSuperviseur() and cmd == "sv_adoptTab":
-        # list of all cats with adoptable=true
+        # list of all cats with annonce adoption
         session["otherMode"] = "special-adopt"
         return redirect(url_for('fapage'))
 
@@ -57,7 +57,7 @@ def listpage():
 
 
 def exportCSV(catlist):
-    csv="FA,Registre,Puce,Nom,Sexe,Date Naissance,Couleur,Poil,Veterinaire,Adoptable,Commentaires\n"
+    csv="FA,Registre,Puce,Nom,Sexe,Date Naissance,Couleur,Poil,Veterinaire,Annonce,Commentaires\n"
 
     for cat in catlist:
         # historical cats are ignored ?
@@ -70,7 +70,7 @@ def exportCSV(catlist):
 
         csv += ('"'+cat.nameFA()+'",'+cat.regStr()+','+cat.identif+',"'+cat.name+'",'+
             TabSex[cat.sex]+','+(cat.birthdate.strftime("%d/%m/%y") if cat.birthdate else '')+','+TabColor[cat.color]+','+
-            TabHair[cat.longhair]+','+cat.vetshort+','+('Adoptable' if cat.adoptable else '')+',"'+cdesc+'"\n')
+            TabHair[cat.longhair]+','+cat.vetshort+','+',"'+cdesc+'"\n')
 
     return csv
 
@@ -102,7 +102,8 @@ def listdownload():
 def listadownload():
     if current_user.hasSuperviseur():
         # generate the table as CSV file
-        catlist=Cat.query.filter_by(adoptable=True).all()
+        # TODO: generate a list of the cats with an announce
+        catlist= []
 
         csv = exportCSV(catlist)
 

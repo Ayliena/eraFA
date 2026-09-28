@@ -1,5 +1,6 @@
 from app import app, db
-from app.models import Event, VetInfo
+from app.models import VetInfo
+from app.events import ET, addEvent
 from app.staticdata import NO_VISIT
 from datetime import datetime, timedelta
 from flask_login import current_user
@@ -158,9 +159,7 @@ def cat_deleteVisit(theCat, theVisit, automode):
     if theVisit.cat_id != theCat.id:
         return False
 
-    theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} annullée{}".format(current_user.FAname, theVisit.vtype,
-        (" (auto)" if automode else "")))
-    db.session.add(theEvent)
+    addEvent(theCat, ET.VET_DEL, "{}: visite vétérinaire {} annullée{}".format(current_user.FAname, theVisit.vtype, (" (auto)" if automode else "")))
     db.session.delete(theVisit)
     db.session.commit()
     return True
@@ -277,8 +276,7 @@ def cat_addVetVisit(VETlist, theCat, vplan, vtype, vvet, vdate, vcomm):
     db.session.add(theVisit)
     db.session.commit()  # needed for vet.FAname
     # add it as event (planned or not)
-    theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} {} {} chez {}".format(current_user.FAname, vtype, et, vdate.strftime("%d/%m/%y"), theVisit.vet.FAname))
-    db.session.add(theEvent)
+    addEvent(theCat, ET.VET_PLAN if vplan else ET.VET_EXEC, "{}: visite vétérinaire {} {} {} chez {}".format(current_user.FAname, vtype, et, vdate.strftime("%d/%m/%y"), theVisit.vet.FAname))
     db.session.commit()
 
     return " +{}[{}]".format('P' if vplan else 'E', vtype) + vres
@@ -361,8 +359,7 @@ def cat_updateVetVisit(vvid, VETlist, theCat, vstate, vtype, vvet, vdate, vcomm)
             return ""
 
     # generate the event and return the information
-    theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} {} {} chez {}".format(current_user.FAname, vtype, et, vdate.strftime("%d/%m/%y"), theVisit.vet.FAname))
-    db.session.add(theEvent)
+    addEvent(theCat, ET.VET_PLAN if theVisit.planned else ET.VET_EXEC, "{}: visite vétérinaire {} {} {} chez {}".format(current_user.FAname, vtype, et, vdate.strftime("%d/%m/%y"), theVisit.vet.FAname))
 
     return " *{}[{}]".format('P' if theVisit.planned else 'E', vtype) + vres
 
@@ -401,8 +398,7 @@ def cat_executeVetVisit(vvid, theCat, vdate):
     vres = cat_executedPostProcess(theCat, theVisit)
 
     # generate the event and return the information
-    theEvent = Event(cat_id=theCat.id, edate=datetime.now(), etext="{}: visite vétérinaire {} {} {} chez {}".format(current_user.FAname, theVisit.vtype, et, theVisit.vdate.strftime("%d/%m/%y"), theVisit.vet.FAname))
-    db.session.add(theEvent)
+    addEvent(theCat, ET.VET_EXEC, "{}: visite vétérinaire {} {} {} chez {}".format(current_user.FAname, theVisit.vtype, et, theVisit.vdate.strftime("%d/%m/%y"), theVisit.vet.FAname))
 
     return " *E[{}]".format(theVisit.vtype) + vres
 
