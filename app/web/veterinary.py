@@ -563,7 +563,7 @@ def vetpage():
         # indicate that we did this
         for theCat,vtype in zip(catlist, catvtypes):
             # add it as event (planned or not)
-            addEvent(theCat, EV.BVETO, "{}: bon imprime pour {} le {} chez {} ({})".format(current_user.FAname, vtype, vdate.strftime("%d/%m/%y"), VETname, FAname))
+            addEvent(theCat, ET.VET_BON, "{}: bon imprime pour {} le {} chez {} ({})".format(current_user.FAname, vtype, vdate.strftime("%d/%m/%y"), VETname, FAname))
 
         db.session.commit()
 

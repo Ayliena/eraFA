@@ -1,3 +1,8 @@
+# --- STATIC DEFINITIONS FOR:
+# --- USER TYPES
+# --- PERMISSIONS (=PRIVILEGES)
+# --- OPTIONS
+
 # user types (defines the type of main page)
 
 UT_FA     = 0

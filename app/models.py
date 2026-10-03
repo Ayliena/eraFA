@@ -25,6 +25,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     usertype = db.Column(db.Integer)
     PrivStr = db.Column(db.String(64))
+    OptionStr = db.Column(db.String(32))
     FAname = db.Column(db.String(128), nullable=False)
     FAid = db.Column(db.String(64))
     FAemail = db.Column(db.String(128))
@@ -130,7 +131,7 @@ class User(UserMixin, db.Model):
     def hasEvents(self):
         return self.hasPrivilege(PRIV_EVENTS)
 
-
+    # --- MANAGEMENT OF THE PRIVILEGES STR
     # check that the privilieges definition for this user is correct
     def checkPrivileges(self):
         # if length of string is less than PRIV_NUMBER, expend and pad with zeroes
@@ -233,6 +234,47 @@ class User(UserMixin, db.Model):
                 d.append(TabPrivs[i][1])
 
         return d
+
+    # --- MANAGEMENT OF THE OPTIONS STR
+    # check that the option definition for this user is correct
+    def checkOptions(self):
+        # if length of string is less than OPT_NUMBER, expend and pad with zeroes
+        if not self.OptionStr or len(self.OptionStr) < NUM_OPTS:
+            self.OptionStr = self.OptionStr.rjust(NUM_OPTS, '0')
+        return True
+
+    # set/unset a privilege (note: also works on menus)
+    def setOption(self, on, val):
+        self.checkOptions()
+        # validate
+        if on >= len(self.OptionStr):
+            return False
+
+        # convert value to character
+        if val >= 0 and val <= 9:
+            oc = chr(val+48)
+        elif val >= 10 and val <= 25:
+            oc = chr(val+65)
+        else:
+            return False
+        
+        nos = self.OptionStr[:on] + oc + self.OptionStr[on+1:]
+        self.OptionStr = nos
+        return True
+
+    def getOption(self, on):
+        if not self.OptionStr or on >= len(self.OptionStr):
+            return False
+
+        oc = ord(OptionStr[on])
+        if oc >= 48 and oc <= 57:
+            oc = oc - 48
+        elif oc >= 65 and oc <= 90:
+            oc = oc - 65
+        else:
+            return 0
+
+        return oc
 
 
 # --------------- EVENT CLASS
