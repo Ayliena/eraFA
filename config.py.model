@@ -45,8 +45,8 @@ CSRF_SESSION_KEY = "<random string>"
 # Secret key for signing cookies
 SECRET_KEY = "<random string>"
 
-# Connexion unique avec le site des adoptions (eraAdopt) : cookie de session partagé
-# entre les sous-domaines de association-era.org. eraAdopt doit utiliser la même
-# SECRET_KEY et les mêmes valeurs ci-dessous.
+# Single sign-on with the adoptions website (eraAdopt): session cookie shared
+# between the association-era.org subdomains. eraAdopt must use the same
+# SECRET_KEY and the same values below.
 SESSION_COOKIE_DOMAIN = "association-era.org"
 SESSION_COOKIE_NAME = "session"

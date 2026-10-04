@@ -208,7 +208,7 @@ def create_listing(cats, values, photos):
             created_by=current_user.id,
         ))
 
-    # photos shared by the listing, named after its first cat: Nom_debutUUID_N.jpg
+    # photos shared by the listing, named after its first cat: Name_uuidstart_N.jpg
     first = entries[0]
     filenames = photo_filenames(folder, first.name, first.uuid, len(photos))
     written = []
