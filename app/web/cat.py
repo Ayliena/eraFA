@@ -374,7 +374,7 @@ def catpage(catid=-1):
             # generate the event
             message.append([0, "Chat {} rélaché sur site".format(theCat.asText())])
             session["pendingmessage"] = message
-            addEvent(theCat, ET.RELACHE, etext="{}: rélaché sur site".format(current_user.FAname))
+            addEvent(theCat, ET.RELACHE, "{}: rélaché sur site".format(current_user.FAname))
             current_user.FAlastop = datetime.now()
             db.session.commit()
             return redirect(url_for('fapage'))
@@ -428,7 +428,7 @@ def catpage(catid=-1):
             # generate the event
             message.append([0, "Chat {} transféré chez {}".format(theCat.asText(), newFAname)])
             session["pendingmessage"] = message
-            addEvent(theCat, ET.TRANSFER, etext="{}: transferé chez {}".format(current_user.FAname, newFAname))
+            addEvent(theCat, ET.TRANSFER, "{}: transferé chez {}".format(current_user.FAname, newFAname))
             current_user.FAlastop = datetime.now()
             db.session.commit()
             return redirect(url_for('fapage'))

@@ -237,7 +237,7 @@ def proc_page():
 
                 # generate the event
                 messages.append("Chat N{}/{} rajoute dans le systeme".format(theCat.id, cd[0]))
-                addEvent(theCat, ET.ADD, etext="{}: auto-genere par prise en charge".format(current_user.FAname))
+                addEvent(theCat, ET.ADD, "{}: auto-genere par prise en charge".format(current_user.FAname))
 
             db.session.commit()
 
