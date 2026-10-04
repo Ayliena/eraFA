@@ -10,6 +10,12 @@ UPLOAD_FOLDER = os.path.join(BASE_DIR, 'app/static')
 SIGNATURE_FOLDER = os.path.join(BASE_DIR, 'app/protected')
 ALLOWED_EXTENSIONS = set(['jpg', 'png'])
 
+# Adoption listings (eraAdopt): photos are written in the eraAdopt upload folder
+ADOPT_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(BASE_DIR), 'uploads', 'eraAdopt'))
+ADOPT_MAX_PHOTOS = 6
+# Maximum request size (photos are reduced in the browser before upload, this is only a safeguard)
+MAX_CONTENT_LENGTH = 20 * 1024 * 1024  # 20 MB
+
 # Define the database - we are working with
 SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
     username="<your username>",

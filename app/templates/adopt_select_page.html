@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+    <head>
+        <title>Familles d'accueil ERA - Créer une annonce</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+    </head>
+<body>
+{% include 'navbar.html' %}
+
+    <div class="container">
+{% include '_messages.html' %}
+
+        {% if viewuser != user %}<h2>Situation FA : {{ viewuser.FAname }}</h2>{% endif %}
+        <h2>Créer une annonce d'adoption</h2>
+        <p>Cochez le chat à proposer à l'adoption, ou plusieurs chats s'ils doivent être adoptés ensemble
+        (ils partageront la même annonce). L'annonce sera publiée sur le site des adoptions après validation par un administrateur.</p>
+
+        {% if cats %}
+        <form action="{{ url_for('adopt_create') }}" method="POST">
+            <input type="hidden" name="step" value="form">
+            <div class="table-responsive">
+            <table class="table table-sm table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Registre</th>
+                        <th>Sexe</th>
+                        <th>Naissance</th>
+                        <th>Robe</th>
+                        <th>Identification</th>
+                        <th class="text-center">Annonce</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for cat in cats %}
+                    {% set status = listings.get(cat.id) %}
+                    <tr>
+                        <td><label for="cat_{{ cat.id }}"><b>{% if cat.name %}{{ cat.name }}{% else %}<span class="bg-warning">sans nom</span>{% endif %}</b></label></td>
+                        <td>{{ cat.regStr() }}</td>
+                        <td>{% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}<span class="bg-warning">??sexe??</span>{% endif %}</td>
+                        <td>{% if cat.birthdate %}{{ cat.birthdate.strftime("%d/%m/%Y") }}{% else %}<span class="bg-warning">??âge??</span>{% endif %}</td>
+                        <td>{% if cat.color %}{{ tabcol[cat.color] }}{% endif %}{{ tabhair[cat.longhair] }}</td>
+                        <td>{{ cat.identif or "" }}</td>
+                        <td class="text-center">
+                            {% if status %}
+                            <span class="badge {{ 'bg-success' if status == 'ACCEPTED' else 'bg-secondary' }}" title="{{ statuslabels[status] }}">{{ statuslabels[status] }}</span>
+                            {% else %}
+                            <input class="form-check-input border border-dark" type="checkbox" name="cat_ids" value="{{ cat.id }}" id="cat_{{ cat.id }}">
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            <button class="btn btn-primary" type="submit">Créer une annonce</button>
+        </form>
+        {% else %}
+        <div class="alert alert-info">Aucun chat détenu pour le moment.</div>
+        {% endif %}
+
+        {% include 'bottom.html' %}
+    </div>
+</body>
+</html>
