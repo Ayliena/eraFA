@@ -13,6 +13,8 @@ ALLOWED_EXTENSIONS = set(['jpg', 'png'])
 # Adoption listings (eraAdopt): photos are written in the eraAdopt upload folder
 ADOPT_UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(BASE_DIR), 'uploads', 'eraAdopt'))
 ADOPT_MAX_PHOTOS = 6
+# URL of the adoptions website (link "Valider les annonces" in the Referent menu, shown to PRIV_ADMIN users)
+ADOPT_SITE_URL = "https://adoptions.association-era.org"
 # Maximum request size (photos are reduced in the browser before upload, this is only a safeguard)
 MAX_CONTENT_LENGTH = 20 * 1024 * 1024  # 20 MB
 
