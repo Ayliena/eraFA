@@ -75,24 +75,43 @@
             {% set p = 'c' ~ cat.id ~ '_' %}
             {% set v = values[cat.id] %}
             {% set test = tests[cat.id] %}
+            {% set lock = locked[cat.id] %}
             <div class="card mb-3">
                 <div class="card-header">
                     <b>{{ cat.name or "Chat sans nom" }}</b> &mdash; {{ cat.regStr() }}{% if cat.identif %}, identification {{ cat.identif }}{% endif %}{% if cat.color %}, {{ tabcol[cat.color] }}{% endif %}{{ tabhair[cat.longhair] }}
                 </div>
                 <div class="card-body">
+                    {% for w in warnings[cat.id] %}<div class="alert alert-danger py-2 fw-bold">⚠ {{ w }}</div>{% endfor %}
+                    {% if lock.name or lock.sex or lock.birthdate %}<p class="text-muted small">Les informations reprises d'eraFA ne sont pas modifiables ici : si elles sont fausses, il faut les corriger dans Refugilys.</p>{% endif %}
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label class="form-label" for="{{ p }}name"><b>Nom</b></label>
+                            {% if lock.name %}
+                            <input class="form-control" id="{{ p }}name" value="{{ v.name }}" disabled>
+                            {% else %}
                             <input class="form-control border border-dark" id="{{ p }}name" name="{{ p }}name" value="{{ v.name }}" maxlength="100" required>
+                            {% endif %}
                             {% if errors.get(p ~ 'name') %}<div class="text-danger small">{{ errors.get(p ~ 'name') }}</div>{% endif %}
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label"><b>Sexe</b></label>
+                            {% if lock.sex %}
+                            <input class="form-control" value="{{ dict(sex_choices)[v.sex] }}" disabled>
+                            {% else %}
                             {{ choice(p ~ 'sex', sex_choices, v.sex, errors.get(p ~ 'sex')) }}
+                            {% endif %}
                         </div>
                         <div class="col-md-4 mb-3">
+                            {% if lock.birthdate %}
+                            <label class="form-label"><b>Âge</b></label>
+                            <div class="form-control {{ 'text-danger fw-bold' if cat.id in young }}" style="background-color: #e9ecef;">
+                                {{ readable_age(cat.birthdate) }}
+                                <span class="text-muted fw-normal">(né le {{ cat.birthdate.strftime("%d/%m/%Y") }})</span>
+                            </div>
+                            {% else %}
                             <label class="form-label" for="{{ p }}birthdate"><b>Date de naissance</b> <span class="text-muted">(estimée si inconnue)</span></label>
                             <input class="form-control border border-dark" type="date" id="{{ p }}birthdate" name="{{ p }}birthdate" value="{{ v.birthdate }}" required>
+                            {% endif %}
                             {% if errors.get(p ~ 'birthdate') %}<div class="text-danger small">{{ errors.get(p ~ 'birthdate') }}</div>{% endif %}
                         </div>
                         <div class="col-md-4 mb-3">
@@ -108,8 +127,9 @@
                         {% endfor %}
                     </div>
                     <div class="text-muted small">
+                        Résultats pré-remplis d'après les commentaires du chat et de ses visites (« FIV+ », « Positif LEUCOSE » ; un résultat négatif n'est pas noté), à vérifier.<br>
                         {% if test %}Dernier test FIV/FeLV enregistré : le {{ test.vdate.strftime("%d/%m/%Y") }}{% if test.comments %} (commentaire : {{ test.comments }}){% endif %}.
-                        {% else %}Aucun test FIV/FeLV enregistré pour ce chat.{% endif %}
+                        {% else %}<span class="text-danger fw-bold">Aucun test FIV/FeLV enregistré pour ce chat.</span>{% endif %}
                     </div>
                 </div>
             </div>

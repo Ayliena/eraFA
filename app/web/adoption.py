@@ -3,12 +3,13 @@ from app.staticdata import TabColor, TabSex, TabHair
 from app.models import Cat
 from app.helpers import getViewUser
 from app.adoption import AdoptionCat, ADOPT_STATUS_LABELS, adopt_csrf_token, adopt_csrf_valid, \
-    save_adoption_photo, photo_filenames, PhotoError
+    save_adoption_photo, photo_filenames, PhotoError, readable_age
 from app.vetvisits import vetIsTest
 from flask import render_template, redirect, request, url_for, session, abort
 from flask_login import login_required, current_user
 from datetime import date
 import os
+import re
 import uuid
 
 # cat sex in eraFA (cats.sex) -> adoption_cats.sex
@@ -20,11 +21,20 @@ COMMON_FIELDS = [
     ('good_with_children', "Entente avec les enfants", [('1', "Sociable"), ('0', "Non recommandé"), ('', "Inconnu")]),
     ('outdoor_access', "Accès extérieur", [('1', "Nécessaire"), ('0', "Vie en intérieur"), ('', "Inconnu")]),
 ]
+# the test is always done before adoption: no "unknown" value
 TEST_FIELDS = [
-    ('fiv', "Test FIV", [('0', "Négatif"), ('1', "Positif"), ('', "Inconnu")]),
-    ('felv', "Test FeLV", [('0', "Négatif"), ('1', "Positif"), ('', "Inconnu")]),
+    ('fiv', "Test FIV", [('0', "Négatif"), ('1', "Positif")]),
+    ('felv', "Test FeLV", [('0', "Négatif"), ('1', "Positif")]),
 ]
 SEX_CHOICES = [('MALE', "Mâle"), ('FEMALE', "Femelle")]
+
+# positive test results are written in the comments ("FIV+", "Positif LEUCOSE", see help_page.html),
+# negative ones are not written at all
+FIV_POSITIVE = re.compile(r"FIV\s?\+", re.IGNORECASE)
+FELV_POSITIVE = re.compile(r"(LEUCOSE|FeLV\s?\+)", re.IGNORECASE)
+
+# a listing for a cat younger than this is questionable (warning only)
+YOUNG_AGE_DAYS = 90
 
 
 def form_to_bool(raw):
@@ -37,6 +47,39 @@ def adoption_owner():
     if not FAid or not theFA.menuFA() or theFA.typeRefuge():
         abort(403)
     return FAid, theFA
+
+
+def is_regular(cat):
+    """Unregistered ('N') and private ('P') cats cannot be proposed for adoption."""
+    return not cat.isUnreg() and not cat.isPrivate()
+
+
+def locked_fields(cat):
+    """Fields known in eraFA, which are not editable in the form (they must already be right in Refugilys)."""
+    return {
+        "name": bool(cat.name),
+        "sex": cat.sex in SEX_TO_ADOPT,
+        "birthdate": cat.birthdate is not None,
+    }
+
+
+def cat_warnings(cat):
+    """Warnings shown in red (the listing is still allowed)."""
+    warnings = []
+    if cat.birthdate and cat.ageDays() < YOUNG_AGE_DAYS:
+        warnings.append("Moins de 3 mois : une annonce est discutable à cet âge.")
+    if not cat.identif:
+        warnings.append("Chat non identifié : une annonce pour un chat non identifié est déconseillée (presque illégale).")
+    return warnings
+
+
+def test_results(cat):
+    """Prefilled FIV / FeLV results ('1' positive, '0' negative), from the cat and vet visit comments."""
+    texts = [cat.comments or ""] + [v.comments or "" for v in cat.vetvisits]
+    return {
+        "fiv": '1' if any(FIV_POSITIVE.search(t) for t in texts) else '0',
+        "felv": '1' if any(FELV_POSITIVE.search(t) for t in texts) else '0',
+    }
 
 
 def last_fiv_test(cat):
@@ -58,11 +101,13 @@ def existing_listings(cat_ids):
 def adopt_select():
     """List of the FA cats, to select the one(s) of a new adoption listing."""
     FAid, theFA = adoption_owner()
-    cats = Cat.query.filter_by(owner_id=FAid).order_by(Cat.regnum).all()
+    cats = [c for c in Cat.query.filter_by(owner_id=FAid).order_by(Cat.regnum).all() if is_regular(c)]
     listings = existing_listings([c.id for c in cats])
 
     return render_template("adopt_select_page.html", devsite=devel_site, user=current_user, viewuser=theFA,
                            tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, cats=cats, listings=listings,
+                           young={c.id for c in cats if c.birthdate and c.ageDays() < YOUNG_AGE_DAYS},
+                           readable_age=readable_age,
                            statuslabels=ADOPT_STATUS_LABELS, msg=session.pop("pendingmessage", []))
 
 
@@ -82,7 +127,7 @@ def adopt_create():
         return redirect(url_for('adopt_select'))
 
     cats = Cat.query.filter(Cat.id.in_(cat_ids), Cat.owner_id == FAid).order_by(Cat.regnum).all()
-    if len(cats) != len(cat_ids):
+    if len(cats) != len(cat_ids) or not all(is_regular(c) for c in cats):
         abort(403)
     already = existing_listings(cat_ids)
     if already:
@@ -119,24 +164,28 @@ def adopt_create():
     return render_template("adopt_create_page.html", devsite=devel_site, user=current_user, viewuser=theFA,
                            tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, cats=cats, values=values, errors=errors,
                            tests={c.id: last_fiv_test(c) for c in cats}, common_fields=COMMON_FIELDS,
-                           test_fields=TEST_FIELDS, sex_choices=SEX_CHOICES, csrf_token=adopt_csrf_token(),
+                           locked={c.id: locked_fields(c) for c in cats}, warnings={c.id: cat_warnings(c) for c in cats},
+                           young={c.id for c in cats if c.birthdate and c.ageDays() < YOUNG_AGE_DAYS},
+                           readable_age=readable_age, test_fields=TEST_FIELDS, sex_choices=SEX_CHOICES, csrf_token=adopt_csrf_token(),
                            max_photos=app.config.get("ADOPT_MAX_PHOTOS", 6), msg=[])
 
 
 def initial_values(cats):
-    """Form values guessed from eraFA (name, sex, birthdate), the others are asked."""
+    """Form values guessed from eraFA (name, sex, birthdate, test results), the others are asked."""
     values = {f: None for f, _, _ in COMMON_FIELDS}
     values["description"] = ""
     for c in cats:
-        values[c.id] = {
-            "name": c.name or "",
-            "sex": SEX_TO_ADOPT.get(c.sex, ""),
-            "birthdate": c.birthdate.strftime("%Y-%m-%d") if c.birthdate else "",
-            "breed": "Européen",
-            "fiv": None,
-            "felv": None,
-        }
+        values[c.id] = dict(eraFA_values(c), breed="Européen", **test_results(c))
     return values
+
+
+def eraFA_values(cat):
+    """Name, sex and birthdate of a cat as known in eraFA (empty if unknown)."""
+    return {
+        "name": cat.name or "",
+        "sex": SEX_TO_ADOPT.get(cat.sex, ""),
+        "birthdate": cat.birthdate.strftime("%Y-%m-%d") if cat.birthdate else "",
+    }
 
 
 def parse_create_form(form, cats):
@@ -154,6 +203,11 @@ def parse_create_form(form, cats):
     for c in cats:
         p = "c{}_".format(c.id)
         v = {k: form.get(p + k, "").strip() for k in ("name", "sex", "birthdate", "breed")}
+        # fields known in eraFA are not editable: the eraFA values are used, whatever was submitted
+        known = eraFA_values(c)
+        for field, is_locked in locked_fields(c).items():
+            if is_locked:
+                v[field] = known[field]
         for field, _, _ in TEST_FIELDS:
             v[field] = form.get(p + field)
         values[c.id] = v

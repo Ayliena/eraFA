@@ -20,6 +20,7 @@
         <h2>Créer une annonce d'adoption</h2>
         <p>Cochez le chat à proposer à l'adoption, ou plusieurs chats s'ils doivent être adoptés ensemble
         (ils partageront la même annonce). L'annonce sera publiée sur le site des adoptions après validation par un administrateur.</p>
+        <p class="small">En <span class="text-danger fw-bold">rouge</span> : chat de moins de 3 mois ou non identifié, une annonce est déconseillée.</p>
 
         {% if cats %}
         <form action="{{ url_for('adopt_create') }}" method="POST">
@@ -31,7 +32,7 @@
                         <th>Nom</th>
                         <th>Registre</th>
                         <th>Sexe</th>
-                        <th>Naissance</th>
+                        <th>Âge</th>
                         <th>Robe</th>
                         <th>Identification</th>
                         <th class="text-center">Annonce</th>
@@ -44,9 +45,9 @@
                         <td><label for="cat_{{ cat.id }}"><b>{% if cat.name %}{{ cat.name }}{% else %}<span class="bg-warning">sans nom</span>{% endif %}</b></label></td>
                         <td>{{ cat.regStr() }}</td>
                         <td>{% if cat.sex %}{{ tabsex[cat.sex] }}{% else %}<span class="bg-warning">??sexe??</span>{% endif %}</td>
-                        <td>{% if cat.birthdate %}{{ cat.birthdate.strftime("%d/%m/%Y") }}{% else %}<span class="bg-warning">??âge??</span>{% endif %}</td>
+                        <td>{% if cat.birthdate %}<span class="{{ 'text-danger fw-bold' if cat.id in young }}" title="Né le {{ cat.birthdate.strftime('%d/%m/%Y') }}{{ ' : moins de 3 mois' if cat.id in young }}">{{ readable_age(cat.birthdate) }}</span>{% else %}<span class="bg-warning">??âge??</span>{% endif %}</td>
                         <td>{% if cat.color %}{{ tabcol[cat.color] }}{% endif %}{{ tabhair[cat.longhair] }}</td>
-                        <td>{{ cat.identif or "" }}</td>
+                        <td>{% if cat.identif %}{{ cat.identif }}{% else %}<span class="text-danger fw-bold">Non identifié</span>{% endif %}</td>
                         <td class="text-center">
                             {% if status %}
                             <span class="badge {{ 'bg-success' if status == 'ACCEPTED' else 'bg-secondary' }}" title="{{ statuslabels[status] }}">{{ statuslabels[status] }}</span>

@@ -9,7 +9,7 @@ import secrets
 import unicodedata
 import uuid
 import warnings
-from datetime import datetime
+from datetime import date, datetime
 
 from flask import session
 from app import db
@@ -50,6 +50,28 @@ ADOPT_STATUS_LABELS = {
     'ACCEPTED': "Annonce publiée",
     'ARCHIVED': "Annonce archivée",
 }
+
+
+# --- readable age, same format as the adoptions website ("1 an et 5 mois", "4 mois")
+
+def readable_age(birthdate):
+    if not birthdate:
+        return "Âge non renseigné"
+    birth = birthdate.date() if hasattr(birthdate, "date") else birthdate
+    today = date.today()
+    years = today.year - birth.year
+    months = today.month - birth.month
+    if today.day < birth.day:
+        months -= 1
+    if months < 0:
+        years -= 1
+        months += 12
+    parts = []
+    if years > 0:
+        parts.append("{} an{}".format(years, "s" if years > 1 else ""))
+    if months > 0:
+        parts.append("{} mois".format(months))
+    return " et ".join(parts) if parts else "Moins d'un mois"
 
 
 # --- anti-CSRF token of the creation form
