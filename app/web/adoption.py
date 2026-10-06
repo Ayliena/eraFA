@@ -252,7 +252,7 @@ def create_listing(cats, values, photos):
             name=v["name"],
             sex=v["sex"],
             birthdate=date.fromisoformat(v["birthdate"]) if v["birthdate"] else None,
-            breed=v["breed"] or None,
+            breed=v["breed"] or "Européen",
             good_with_cats=form_to_bool(values["good_with_cats"]),
             good_with_children=form_to_bool(values["good_with_children"]),
             outdoor_access=form_to_bool(values["outdoor_access"]),

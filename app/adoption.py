@@ -22,21 +22,21 @@ class AdoptionCat(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     uuid = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
-    cat_id = db.Column(db.Integer, nullable=True, index=True)  # cats.id
+    cat_id = db.Column(db.Integer, nullable=False, index=True)  # cats.id
     status = db.Column(db.Enum('UNDER_REVIEW', 'ACCEPTED', 'ARCHIVED'), default='UNDER_REVIEW', nullable=False)
     name = db.Column(db.String(100), nullable=False)
     sex = db.Column(db.Enum('MALE', 'FEMALE'), nullable=False)
-    birthdate = db.Column(db.Date, nullable=True)
-    breed = db.Column(db.String(100), nullable=True)
+    birthdate = db.Column(db.Date, nullable=False)
+    breed = db.Column(db.String(100), default='Européen', nullable=False)
     good_with_cats = db.Column(db.Boolean, nullable=True)
     good_with_children = db.Column(db.Boolean, nullable=True)
     outdoor_access = db.Column(db.Boolean, nullable=True)
-    fiv = db.Column(db.Boolean, nullable=True)
-    felv = db.Column(db.Boolean, nullable=True)
-    description = db.Column(db.Text, nullable=True)
-    photos = db.Column(db.JSON(none_as_null=True), nullable=True)
+    fiv = db.Column(db.Boolean, nullable=False)
+    felv = db.Column(db.Boolean, nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    photos = db.Column(db.JSON(none_as_null=True), nullable=False)
     linked_cats = db.Column(db.JSON(none_as_null=True), nullable=True)
-    created_by = db.Column(db.Integer, nullable=True)  # users.id
+    created_by = db.Column(db.Integer, nullable=False)  # users.id
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
