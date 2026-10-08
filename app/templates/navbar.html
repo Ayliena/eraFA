@@ -14,7 +14,7 @@
 			{% else %}<a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Famille</a>
                     <ul class="dropdown-menu"><form class="form-inline" action="/vet" method="POST">
                         <li><button class="dropdown-item" type="submit" name="action" value="fa_catlist">Chats detenus</button></li>
-                        <li><button class="dropdown-item" type="submit" formaction="{{ url_for('adopt_select') }}" formmethod="get">Créer une annonce</button></li>{% endif %}
+                        {% if user.hasAnnonces() %}<li><button class="dropdown-item" type="submit" formaction="{{ url_for('adopt_select') }}" formmethod="get">Créer une annonce</button></li>{% endif %}{% endif %}
                         <li><button class="dropdown-item" type="submit" name="action" value="fa_sitvet">Situation vétérinaire</button></li>
                         <li><button class="dropdown-item" type="submit" name="action" value="fa_vetplan">Visites vétérinaires</button></li>
                         <li><button class="dropdown-item" type="submit" name="action" value="fa_vetreg">Registre des Soins</button></li>
@@ -33,7 +33,7 @@
                         {% if user.hasReferent() %}<form class="form-inline" action="/list" method="POST">
                         <li><button class="dropdown-item" type="submit" name="action" value="sv_viewFAresp">FA sous ma responsabilité</button></li>
                         </form>{% endif %}
-                        {% if user.hasAdmin() and config.ADOPT_SITE_URL %}<li><a class="dropdown-item" href="{{ config.ADOPT_SITE_URL }}/admin/validation">Valider les annonces</a></li>{% endif %}
+                        {% if user.hasValidAnnonces() and config.ADOPT_SITE_URL %}<li><a class="dropdown-item" href="{{ config.ADOPT_SITE_URL }}/admin/validation">Valider les annonces</a></li>{% endif %}
                         {% if user.hasRefuge() %}<form class="form-inline" action="/" method="POST"><input type="hidden" name="action" value="sv_fastate">
                             <li><button class="dropdown-item" name="FAspec" value="ref">Chats au refuge</button></li>
                         </form>{% endif %}

@@ -62,9 +62,11 @@ PRIV_RVETO   = 30   # can plan visits for refuge
 PRIV_APIR    = 31   # api read access
 PRIV_APIW    = 32   # api write access
 PRIV_EVENTS  = 33   # see events associated to a cat
+PRIV_ANNAD   = 34   # can create annonce adoption
+PRIV_ANNVAL  = 35   # can validate/publish annonce adoption
 
 FIRST_PRIV = 10
-NUM_PRIVS = 34
+NUM_PRIVS = 36
 
 TabPrivs = [
     ["MENU_FA", ""],
@@ -101,4 +103,6 @@ TabPrivs = [
     ["APIR", "API: read"],
     ["APIW", "API: write/modify"],
     ["EVENTS", "Historique des modifications"],
+    ["ANNAD", "Redaction d'annonces d'adoption"],
+    ["ANNVAL", "Publication d'annonces d'adoption"],
 ]

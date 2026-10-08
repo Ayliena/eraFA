@@ -42,7 +42,12 @@ def form_to_bool(raw):
 
 
 def adoption_owner():
-    """FA whose cats are listed (self, or the FA viewed by a referent / supervisor), or 403."""
+    """
+    FA whose cats are listed (self, or the FA viewed by a referent / supervisor), or 403.
+    The logged-in user must have the right to write adoption listings (PRIV_ANNAD).
+    """
+    if not current_user.hasAnnonces():
+        abort(403)
     FAid, theFA = getViewUser()
     if not FAid or not theFA.menuFA() or theFA.typeRefuge():
         abort(403)

@@ -136,6 +136,10 @@
             <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasCAD"{% if fauser.hasContratAD() %} checked{% endif %}>Generer des contrats d'adoption</label></div>
         </div>
         <div class="row form-group">
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasANNAD"{% if fauser.hasAnnonces() %} checked{% endif %}>Rediger les annonces d'adoption</label></div>
+            <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasANNVAL"{% if fauser.hasValidAnnonces() %} checked{% endif %}>Valider/publier les annonces d'adoption</label></div>
+        </div>
+        <div class="row form-group">
             <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasMOVE"{% if fauser.hasMove() %} checked{% endif %}>Deplacer un chat</label></div>
             <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasREGNUM"{% if fauser.hasRegNum() %} checked{% endif %}>Indiquer un numero de registre</label></div>
             <div class="col-sm-4"><label class="checkbox-inline"><input class="form-check-input border border-dark me-2" type="checkbox" name="u_hasRVETO"{% if fauser.hasRefugeVeto() %} checked{% endif %}>Gerer les visites veto du refuge</label></div>

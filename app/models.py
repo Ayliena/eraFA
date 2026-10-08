@@ -1,6 +1,6 @@
 from app import db
 from werkzeug.security import check_password_hash
-from app.permissions import NUM_MENUS, NUM_PRIVS, UT_FA, UT_MANAGER, UT_REFUGE, UT_AD, UT_DCD, UT_RS, UT_HIST, UT_FATEMP, UT_VETO, MENU_FA, MENU_VET, MENU_RFA, MENU_PROC, MENU_COMPTA, MENU_ADMIN, PRIV_RFA, PRIV_RFATEMP, PRIV_SUPER, PRIV_REF, PRIV_ADR, PRIV_HIST, PRIV_SEARCH, PRIV_PEC, PRIV_BSC, PRIV_ADDCAT, PRIV_COMPTA, PRIV_CMMOD, PRIV_CMSELF, PRIV_USERS, PRIV_ADMIN, PRIV_REGNUM, PRIV_MOVE, PRIV_BVETO, PRIV_RVETO, PRIV_APIR, PRIV_APIW, TabUserTypes, TabPrivs, PRIV_CFA, PRIV_CAD, PRIV_EVENTS
+from app.permissions import NUM_MENUS, NUM_PRIVS, UT_FA, UT_MANAGER, UT_REFUGE, UT_AD, UT_DCD, UT_RS, UT_HIST, UT_FATEMP, UT_VETO, MENU_FA, MENU_VET, MENU_RFA, MENU_PROC, MENU_COMPTA, MENU_ADMIN, PRIV_RFA, PRIV_RFATEMP, PRIV_SUPER, PRIV_REF, PRIV_ADR, PRIV_HIST, PRIV_SEARCH, PRIV_PEC, PRIV_BSC, PRIV_ADDCAT, PRIV_COMPTA, PRIV_CMMOD, PRIV_CMSELF, PRIV_USERS, PRIV_ADMIN, PRIV_REGNUM, PRIV_MOVE, PRIV_BVETO, PRIV_RVETO, PRIV_APIR, PRIV_APIW, TabUserTypes, TabPrivs, PRIV_CFA, PRIV_CAD, PRIV_EVENTS, PRIV_ANNAD, PRIV_ANNVAL
 from app.staticdata import FAC_FROZEN, FAC_UNPAID, FAC_PAID, FAC_RECONC, FAC_BEINGPAID
 from flask_login import UserMixin
 from datetime import date, datetime, timedelta
@@ -130,13 +130,18 @@ class User(UserMixin, db.Model):
         return self.hasPrivilege(PRIV_APIW)
     def hasEvents(self):
         return self.hasPrivilege(PRIV_EVENTS)
+    def hasAnnonces(self):
+        return self.hasPrivilege(PRIV_ANNAD)
+    def hasValidAnnonces(self):
+        return self.hasPrivilege(PRIV_ANNVAL)
 
     # --- MANAGEMENT OF THE PRIVILEGES STR
     # check that the privilieges definition for this user is correct
     def checkPrivileges(self):
         # if length of string is less than PRIV_NUMBER, expend and pad with zeroes
+        # (on the right: new privileges are added at the end, existing ones must keep their position)
         if not self.PrivStr or len(self.PrivStr) < NUM_PRIVS:
-            self.PrivStr = self.PrivStr.rjust(NUM_PRIVS, '0')
+            self.PrivStr = (self.PrivStr or "").ljust(NUM_PRIVS, '0')
         return True
 
     # set/unset a privilege (note: also works on menus)
@@ -187,7 +192,7 @@ class User(UserMixin, db.Model):
             self.setPrivilege(MENU_FA, 1)
             self.setPrivilege(MENU_VET, 0)
 
-        if self.hasPrivilegeAny([PRIV_RFA, PRIV_SUPER, PRIV_REF, PRIV_ADR, PRIV_HIST, PRIV_SEARCH, PRIV_ADDCAT]):
+        if self.hasPrivilegeAny([PRIV_RFA, PRIV_SUPER, PRIV_REF, PRIV_ADR, PRIV_HIST, PRIV_SEARCH, PRIV_ADDCAT, PRIV_ANNVAL]):
             self.setPrivilege(MENU_RFA, 1)
         else:
             self.setPrivilege(MENU_RFA, 0)
