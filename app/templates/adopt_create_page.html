@@ -53,7 +53,14 @@
             <div class="card mb-3">
                 <div class="card-header"><b>{% if cats|length > 1 %}Informations communes aux {{ cats|length }} chats{% else %}L'annonce{% endif %}</b></div>
                 <div class="card-body">
-                    {% if cats|length > 1 %}<p class="text-muted">Ces chats seront adoptés ensemble par le même foyer : l'entente, l'accès extérieur, la description et les photos sont communs.</p>{% endif %}
+                    {% if cats|length > 1 %}
+                    <p class="text-muted">Ces chats partagent la même annonce : l'entente, l'accès extérieur, la description et les photos sont communs.</p>
+                    <div class="mb-3">
+                        <label class="form-label"><b>Mode d'adoption</b> <span class="text-muted">(par défaut, les chats d'une même annonce sont à adopter ensemble)</span></label>
+                        {{ choice('adoption_mode', mode_choices, values.adoption_mode, errors.get('adoption_mode')) }}
+                        <div class="text-muted small">« Adoptables séparément » : les chats partagent l'annonce (ex. une portée), mais chacun peut être adopté seul.</div>
+                    </div>
+                    {% endif %}
                     <div class="row">
                     {% for field, label, choices in common_fields %}
                         <div class="col-md-4 mb-3">

@@ -36,6 +36,7 @@ class AdoptionCat(db.Model):
     description = db.Column(db.Text, nullable=False)
     photos = db.Column(db.JSON(none_as_null=True), nullable=False)
     linked_cats = db.Column(db.JSON(none_as_null=True), nullable=True)
+    adoption_mode = db.Column(db.Enum('TOGETHER', 'SEPARATE'), default='TOGETHER', nullable=False)
     created_by = db.Column(db.Integer, nullable=False)  # users.id
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

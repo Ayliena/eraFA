@@ -27,6 +27,8 @@ TEST_FIELDS = [
     ('felv', "Test FeLV", [('0', "Négatif"), ('1', "Positif")]),
 ]
 SEX_CHOICES = [('MALE', "Mâle"), ('FEMALE', "Femelle")]
+# listing with several cats: adopted together (default) or separately (e.g. a litter)
+MODE_CHOICES = [('TOGETHER', "À adopter ensemble"), ('SEPARATE', "Adoptables séparément")]
 
 # positive test results are written in the comments ("FIV+", "Positif LEUCOSE", see help_page.html),
 # negative ones are not written at all
@@ -171,7 +173,7 @@ def adopt_create():
                            tests={c.id: last_fiv_test(c) for c in cats}, common_fields=COMMON_FIELDS,
                            locked={c.id: locked_fields(c) for c in cats}, warnings={c.id: cat_warnings(c) for c in cats},
                            young={c.id for c in cats if c.birthdate and c.ageDays() < YOUNG_AGE_DAYS},
-                           readable_age=readable_age, test_fields=TEST_FIELDS, sex_choices=SEX_CHOICES, csrf_token=adopt_csrf_token(),
+                           readable_age=readable_age, test_fields=TEST_FIELDS, sex_choices=SEX_CHOICES, mode_choices=MODE_CHOICES, csrf_token=adopt_csrf_token(),
                            max_photos=app.config.get("ADOPT_MAX_PHOTOS", 6), msg=[])
 
 
@@ -179,6 +181,7 @@ def initial_values(cats):
     """Form values guessed from eraFA (name, sex, birthdate, test results), the others are asked."""
     values = {f: None for f, _, _ in COMMON_FIELDS}
     values["description"] = ""
+    values["adoption_mode"] = "TOGETHER"
     for c in cats:
         values[c.id] = dict(eraFA_values(c), breed="Européen", **test_results(c))
     return values
@@ -204,6 +207,9 @@ def parse_create_form(form, cats):
     values["description"] = form.get("description", "").strip()
     if not values["description"]:
         errors["description"] = "La description est obligatoire."
+    values["adoption_mode"] = form.get("adoption_mode", "TOGETHER") if len(cats) > 1 else "TOGETHER"
+    if values["adoption_mode"] not in [m for m, _ in MODE_CHOICES]:
+        errors["adoption_mode"] = "Choisissez une valeur."
 
     for c in cats:
         p = "c{}_".format(c.id)
@@ -264,6 +270,7 @@ def create_listing(cats, values, photos):
             fiv=form_to_bool(v["fiv"]),
             felv=form_to_bool(v["felv"]),
             description=values["description"],
+            adoption_mode=values["adoption_mode"],
             created_by=current_user.id,
         ))
 
