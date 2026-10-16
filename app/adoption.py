@@ -30,7 +30,7 @@ class AdoptionCat(db.Model):
     breed = db.Column(db.String(100), default='Européen', nullable=False)
     good_with_cats = db.Column(db.Boolean, nullable=True)
     good_with_children = db.Column(db.Boolean, nullable=True)
-    outdoor_access = db.Column(db.Boolean, nullable=True)
+    outdoor_access = db.Column(db.Enum('INDOOR', 'OPTIONAL', 'REQUIRED'), nullable=True)  # NULL: unknown
     fiv = db.Column(db.Boolean, nullable=False)
     felv = db.Column(db.Boolean, nullable=False)
     description = db.Column(db.Text, nullable=False)

@@ -15,11 +15,13 @@ import uuid
 # cat sex in eraFA (cats.sex) -> adoption_cats.sex
 SEX_TO_ADOPT = {1: 'FEMALE', 2: 'MALE'}
 
-# yes / no / unknown fields of the form: (name, label, [(form value, label), ...])
+# choice fields of the form, all with an "unknown" value: (name, label, [(form value, label), ...])
+# yes / no fields are booleans in the database; outdoor_access is an ENUM (form value = database value)
 COMMON_FIELDS = [
     ('good_with_cats', "Entente avec les chats", [('1', "Sociable"), ('0', "Non souhaité"), ('', "Inconnu")]),
     ('good_with_children', "Entente avec les enfants", [('1', "Sociable"), ('0', "Non recommandé"), ('', "Inconnu")]),
-    ('outdoor_access', "Accès extérieur", [('1', "Nécessaire"), ('0', "Vie en intérieur"), ('', "Inconnu")]),
+    ('outdoor_access', "Accès extérieur", [('INDOOR', "Intérieur uniquement"), ('OPTIONAL', "Sortie possible"),
+                                           ('REQUIRED', "Sortie nécessaire"), ('', "Inconnu")]),
 ]
 # the test is always done before adoption: no "unknown" value
 TEST_FIELDS = [
@@ -266,7 +268,7 @@ def create_listing(cats, values, photos):
             breed=v["breed"] or "Européen",
             good_with_cats=form_to_bool(values["good_with_cats"]),
             good_with_children=form_to_bool(values["good_with_children"]),
-            outdoor_access=form_to_bool(values["outdoor_access"]),
+            outdoor_access=values["outdoor_access"] or None,
             fiv=form_to_bool(v["fiv"]),
             felv=form_to_bool(v["felv"]),
             description=values["description"],
