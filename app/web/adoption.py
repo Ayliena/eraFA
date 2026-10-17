@@ -16,9 +16,10 @@ import uuid
 SEX_TO_ADOPT = {1: 'FEMALE', 2: 'MALE'}
 
 # choice fields of the form, all with an "unknown" value: (name, label, [(form value, label), ...])
-# yes / no fields are booleans in the database; outdoor_access is an ENUM (form value = database value)
+# good_with_children is a boolean in the database; good_with_cats and outdoor_access are ENUMs (form value = database value)
 COMMON_FIELDS = [
-    ('good_with_cats', "Entente avec les chats", [('1', "Sociable"), ('0', "Non souhaité"), ('', "Inconnu")]),
+    ('good_with_cats', "Vie avec d'autres chats", [('NONE', "Sans autres chats"), ('OK', "Autres chats OK"),
+                                                   ('REQUIRED', "Autres chats nécessaires"), ('', "Inconnu")]),
     ('good_with_children', "Entente avec les enfants", [('1', "Sociable"), ('0', "Non recommandé"), ('', "Inconnu")]),
     ('outdoor_access', "Accès extérieur", [('INDOOR', "Intérieur uniquement"), ('OPTIONAL', "Sortie possible"),
                                            ('REQUIRED', "Sortie nécessaire"), ('', "Inconnu")]),
@@ -266,7 +267,7 @@ def create_listing(cats, values, photos):
             sex=v["sex"],
             birthdate=date.fromisoformat(v["birthdate"]) if v["birthdate"] else None,
             breed=v["breed"] or "Européen",
-            good_with_cats=form_to_bool(values["good_with_cats"]),
+            good_with_cats=values["good_with_cats"] or None,
             good_with_children=form_to_bool(values["good_with_children"]),
             outdoor_access=values["outdoor_access"] or None,
             fiv=form_to_bool(v["fiv"]),
