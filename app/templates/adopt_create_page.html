@@ -89,7 +89,7 @@
                 </div>
                 <div class="card-body">
                     {% for w in warnings[cat.id] %}<div class="alert alert-danger py-2 fw-bold">⚠ {{ w }}</div>{% endfor %}
-                    {% if lock.name or lock.sex or lock.birthdate %}<p class="text-muted small">Les informations reprises d'eraFA ne sont pas modifiables ici : si elles sont fausses, il faut les corriger dans Refugilys.</p>{% endif %}
+                    {% if lock.name or lock.sex or lock.birthdate or lock.color %}<p class="text-muted small">Les informations reprises d'eraFA ne sont pas modifiables ici : si elles sont fausses, il faut les corriger dans Refugilys.</p>{% endif %}
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label class="form-label" for="{{ p }}name"><b>Nom</b></label>
@@ -125,6 +125,20 @@
                             <label class="form-label" for="{{ p }}breed"><b>Race</b></label>
                             <input class="form-control border border-dark" id="{{ p }}breed" name="{{ p }}breed" value="{{ v.breed }}" maxlength="100">
                             {% if errors.get(p ~ 'breed') %}<div class="text-danger small">{{ errors.get(p ~ 'breed') }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label" for="{{ p }}color"><b>Couleur</b></label>
+                            {% if lock.color %}
+                            <input class="form-control" id="{{ p }}color" value="{{ v.color }}" disabled>
+                            {% else %}
+                            <select class="form-select border border-dark" id="{{ p }}color" name="{{ p }}color" required>
+                                <option value="">Couleur inconnue dans eraFA : choisissez</option>
+                                {% for value, label in color_choices %}
+                                <option value="{{ value }}" {{ 'selected' if v.color_index == value }}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            {% endif %}
+                            {% if errors.get(p ~ 'color') %}<div class="text-danger small">{{ errors.get(p ~ 'color') }}</div>{% endif %}
                         </div>
                         {% for field, label, choices in test_fields %}
                         <div class="col-md-4 mb-3">

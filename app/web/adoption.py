@@ -38,6 +38,9 @@ MODE_CHOICES = [('TOGETHER', "À adopter ensemble"), ('SEPARATE', "Adoptables s�
 FIV_POSITIVE = re.compile(r"FIV\s?\+", re.IGNORECASE)
 FELV_POSITIVE = re.compile(r"(LEUCOSE|FeLV\s?\+)", re.IGNORECASE)
 
+# colors which can be chosen when the cat color is unknown in eraFA (index 0 = unknown): (form value, label)
+COLOR_CHOICES = [(str(i), label) for i, label in enumerate(TabColor) if i > 0]
+
 # a listing for a cat younger than this is questionable (warning only)
 YOUNG_AGE_DAYS = 90
 
@@ -64,12 +67,23 @@ def is_regular(cat):
     return not cat.isUnreg() and not cat.isPrivate()
 
 
+def color_known(cat):
+    return cat.color is not None and 0 < cat.color < len(TabColor)
+
+
+def color_text(color, longhair):
+    """Text saved in the listing, as displayed on the FA site: 'Tigré', 'Noir et blanc, poil long'."""
+    hair = TabHair[longhair] if longhair is not None and 0 <= longhair < len(TabHair) else ""
+    return TabColor[color] + hair
+
+
 def locked_fields(cat):
     """Fields known in eraFA, which are not editable in the form (they must already be right in Refugilys)."""
     return {
         "name": bool(cat.name),
         "sex": cat.sex in SEX_TO_ADOPT,
         "birthdate": cat.birthdate is not None,
+        "color": color_known(cat),
     }
 
 
@@ -176,7 +190,7 @@ def adopt_create():
                            tests={c.id: last_fiv_test(c) for c in cats}, common_fields=COMMON_FIELDS,
                            locked={c.id: locked_fields(c) for c in cats}, warnings={c.id: cat_warnings(c) for c in cats},
                            young={c.id for c in cats if c.birthdate and c.ageDays() < YOUNG_AGE_DAYS},
-                           readable_age=readable_age, test_fields=TEST_FIELDS, sex_choices=SEX_CHOICES, mode_choices=MODE_CHOICES, csrf_token=adopt_csrf_token(),
+                           readable_age=readable_age, test_fields=TEST_FIELDS, sex_choices=SEX_CHOICES, mode_choices=MODE_CHOICES, color_choices=COLOR_CHOICES, csrf_token=adopt_csrf_token(),
                            max_photos=app.config.get("ADOPT_MAX_PHOTOS", 6), msg=[])
 
 
@@ -186,16 +200,17 @@ def initial_values(cats):
     values["description"] = ""
     values["adoption_mode"] = "TOGETHER"
     for c in cats:
-        values[c.id] = dict(eraFA_values(c), breed="Européen", **test_results(c))
+        values[c.id] = dict(eraFA_values(c), breed="Européen", color_index="", **test_results(c))
     return values
 
 
 def eraFA_values(cat):
-    """Name, sex and birthdate of a cat as known in eraFA (empty if unknown)."""
+    """Name, sex, birthdate and color (with the hair length) of a cat as known in eraFA (empty if unknown)."""
     return {
         "name": cat.name or "",
         "sex": SEX_TO_ADOPT.get(cat.sex, ""),
         "birthdate": cat.birthdate.strftime("%Y-%m-%d") if cat.birthdate else "",
+        "color": color_text(cat.color, cat.longhair) if color_known(cat) else "",
     }
 
 
@@ -222,6 +237,14 @@ def parse_create_form(form, cats):
         for field, is_locked in locked_fields(c).items():
             if is_locked:
                 v[field] = known[field]
+        # unknown color in eraFA: chosen in the list (the hair length is still the eraFA one)
+        if not color_known(c):
+            v["color_index"] = form.get(p + "color", "")
+            if v["color_index"] in [i for i, _ in COLOR_CHOICES]:
+                v["color"] = color_text(int(v["color_index"]), c.longhair)
+            else:
+                v["color"] = ""
+                errors[p + "color"] = "Choisissez la couleur."
         for field, _, _ in TEST_FIELDS:
             v[field] = form.get(p + field)
         values[c.id] = v
@@ -267,6 +290,7 @@ def create_listing(cats, values, photos):
             sex=v["sex"],
             birthdate=date.fromisoformat(v["birthdate"]) if v["birthdate"] else None,
             breed=v["breed"] or "Européen",
+            color=v["color"],
             good_with_cats=values["good_with_cats"] or None,
             good_with_children=form_to_bool(values["good_with_children"]),
             outdoor_access=values["outdoor_access"] or None,

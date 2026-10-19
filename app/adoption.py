@@ -28,6 +28,7 @@ class AdoptionCat(db.Model):
     sex = db.Column(db.Enum('MALE', 'FEMALE'), nullable=False)
     birthdate = db.Column(db.Date, nullable=False)
     breed = db.Column(db.String(100), default='Européen', nullable=False)
+    color = db.Column(db.String(64), nullable=False)  # color and hair length text, e.g. 'Tigré, poil long'
     good_with_cats = db.Column(db.Enum('NONE', 'OK', 'REQUIRED'), nullable=True)  # NULL: unknown
     good_with_children = db.Column(db.Boolean, nullable=True)
     outdoor_access = db.Column(db.Enum('INDOOR', 'OPTIONAL', 'REQUIRED'), nullable=True)  # NULL: unknown
