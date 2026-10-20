@@ -166,7 +166,7 @@ def adopt_create():
 
         values, errors = parse_create_form(request.form, cats)
         photos = [f for f in request.files.getlist("photos") if f and f.filename]
-        max_photos = app.config.get("ADOPT_MAX_PHOTOS", 6)
+        max_photos = app.config.get("ADOPT_MAX_PHOTOS", 8)
         if not photos:
             errors["photos"] = "Ajoutez au moins une photo."
         elif len(photos) > max_photos:
@@ -191,7 +191,7 @@ def adopt_create():
                            locked={c.id: locked_fields(c) for c in cats}, warnings={c.id: cat_warnings(c) for c in cats},
                            young={c.id for c in cats if c.birthdate and c.ageDays() < YOUNG_AGE_DAYS},
                            readable_age=readable_age, test_fields=TEST_FIELDS, sex_choices=SEX_CHOICES, mode_choices=MODE_CHOICES, color_choices=COLOR_CHOICES, csrf_token=adopt_csrf_token(),
-                           max_photos=app.config.get("ADOPT_MAX_PHOTOS", 6), msg=[])
+                           max_photos=app.config.get("ADOPT_MAX_PHOTOS", 8), msg=[])
 
 
 def initial_values(cats):
