@@ -120,6 +120,16 @@ def existing_listings(cat_ids):
     return {cat_id: status for cat_id, status in rows}
 
 
+def published_listing_urls(cat_ids):
+    """{cats.id: URL of the listing on the adoption site} of the cats whose listing is published."""
+    if not cat_ids:
+        return {}
+    rows = AdoptionCat.query.with_entities(AdoptionCat.cat_id, AdoptionCat.uuid) \
+        .filter(AdoptionCat.cat_id.in_(cat_ids), AdoptionCat.status == 'ACCEPTED').all()
+    site = app.config.get("ADOPT_SITE_URL", "").rstrip("/")
+    return {cat_id: "{}/chat/{}".format(site, cat_uuid) for cat_id, cat_uuid in rows}
+
+
 @app.route("/annonce", methods=["GET"])
 @login_required
 def adopt_select():
@@ -130,6 +140,7 @@ def adopt_select():
 
     return render_template("adopt_select_page.html", devsite=devel_site, user=current_user, viewuser=theFA,
                            tabcol=TabColor, tabsex=TabSex, tabhair=TabHair, cats=cats, listings=listings,
+                           listing_urls=published_listing_urls([c.id for c in cats]),
                            young={c.id for c in cats if c.birthdate and c.ageDays() < YOUNG_AGE_DAYS},
                            readable_age=readable_age,
                            statuslabels=ADOPT_STATUS_LABELS, msg=session.pop("pendingmessage", []))

@@ -49,7 +49,9 @@
                         <td>{% if cat.color %}{{ tabcol[cat.color] }}{% endif %}{{ tabhair[cat.longhair] }}</td>
                         <td>{% if cat.identif %}{{ cat.identif }}{% else %}<span class="text-danger fw-bold">Non identifié</span>{% endif %}</td>
                         <td class="text-center">
-                            {% if status %}
+                            {% if status and listing_urls.get(cat.id) %}
+                            <a href="{{ listing_urls[cat.id] }}" target="_blank" rel="noopener" class="badge bg-success text-decoration-none" title="Voir l'annonce sur le site des adoptions">{{ statuslabels[status] }} ↗</a>
+                            {% elif status %}
                             <span class="badge {{ 'bg-success' if status == 'ACCEPTED' else 'bg-secondary' }}" title="{{ statuslabels[status] }}">{{ statuslabels[status] }}</span>
                             {% else %}
                             <input class="form-check-input border border-dark" type="checkbox" name="cat_ids" value="{{ cat.id }}" id="cat_{{ cat.id }}">
