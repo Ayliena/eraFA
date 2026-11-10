@@ -34,9 +34,9 @@ SEX_CHOICES = [('MALE', "Mâle"), ('FEMALE', "Femelle")]
 MODE_CHOICES = [('TOGETHER', "À adopter ensemble"), ('SEPARATE', "Adoptables séparément")]
 
 # positive test results are written in the comments ("FIV+", "Positif LEUCOSE", see help_page.html),
-# negative ones are not written at all
+# negative ones are not written at all: any mention of leucose / FeLV means positive
 FIV_POSITIVE = re.compile(r"FIV\s?\+", re.IGNORECASE)
-FELV_POSITIVE = re.compile(r"(LEUCOSE|FeLV\s?\+)", re.IGNORECASE)
+FELV_POSITIVE = re.compile(r"(leucose|felv)", re.IGNORECASE)
 
 # colors which can be chosen when the cat color is unknown in eraFA (index 0 = unknown): (form value, label)
 COLOR_CHOICES = [(str(i), label) for i, label in enumerate(TabColor) if i > 0]
