@@ -1,5 +1,6 @@
 from app import app, db
 from app.models import User, VetInfo, Event
+from app.adoption import AdoptionCat
 from app.permissions import UT_REFUGE, UT_AD, UT_DCD, UT_RS, UT_HIST, UT_FATEMP, UT_VETO
 from app.staticdata import TabCage
 from sqlalchemy import and_, or_
@@ -63,7 +64,10 @@ def cat_associate_to_FA(theCat, newFA, optName=None):
         theCat.temp_owner = newFA.FAname
 
     if newFA.typeAdoptes() or newFA.typeDecedes() or newFA.typeRelaches() or newFA.typeHistorique():
-        # TODO: delete association to the annonce adoption?
+        # the cat leaves the association: its adoption listing is archived (pending or published, any reason),
+        # the adoption site then shows it as adopted and updates its Facebook post (flask sync-facebook)
+        AdoptionCat.query.filter(AdoptionCat.cat_id == theCat.id, AdoptionCat.status != 'ARCHIVED') \
+            .update({'status': 'ARCHIVED'}, synchronize_session=False)
         # theCat.adoptable = False
         # erase any planned visit
         VetInfo.query.filter_by(cat_id=theCat.id, planned=True).delete()
